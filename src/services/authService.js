@@ -24,3 +24,7 @@ export function verifyOtp(email, code) {
 export function resendOtp(email) {
   return apiPost("/auth/otp/resend", { email });
 }
+
+export function resetPassword(email, code, newPassword) {
+  return apiPost("/auth/password/reset", { email, code, newPassword });
+}

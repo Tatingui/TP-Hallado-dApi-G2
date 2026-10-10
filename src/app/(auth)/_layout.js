@@ -13,6 +13,8 @@ export default function AuthLayout() {
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ title: "Crear cuenta" }} />
       <Stack.Screen name="verify-otp" options={{ title: "Verificar email" }} />
+      <Stack.Screen name="forgot-password" options={{ title: "Recuperar contrase\u00f1a" }} />
+      <Stack.Screen name="reset-password" options={{ title: "Nueva contrase\u00f1a" }} />
     </Stack>
   );
 }
