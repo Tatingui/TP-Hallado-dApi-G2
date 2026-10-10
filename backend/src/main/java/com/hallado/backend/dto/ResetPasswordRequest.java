@@ -1,6 +1,7 @@
 package com.hallado.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class ResetPasswordRequest {
@@ -12,7 +13,11 @@ public class ResetPasswordRequest {
     private String code;
 
     @NotBlank(message = "La nueva password es obligatoria")
-    @Size(min = 6, message = "La password debe tener al menos 6 caracteres")
+    @Size(min = 6, message = "La contrasena debe tener al menos 6 caracteres")
+    @Pattern(
+        regexp = "^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$",
+        message = "La contrasena debe contener al menos una mayuscula, un numero y un caracter especial"
+    )
     private String newPassword;
 
     public ResetPasswordRequest() {}
