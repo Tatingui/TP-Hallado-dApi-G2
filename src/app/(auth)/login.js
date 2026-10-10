@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { login } from "../../services/authService";
 import { saveSession } from "../../storage/authStorage";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import LogoHallado from "../../components/LogoHallado";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -63,7 +64,7 @@ export default function LoginScreen() {
         {/* Logo / Icono */}
         <View style={styles.logoContainer}>
           <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>H</Text>
+            <LogoHallado size={50} color={Colors.textOnPrimary} />
           </View>
           <Text style={styles.appName}>Hallado</Text>
           <Text style={styles.subtitle}>Encontrá lo que perdiste</Text>

@@ -1,30 +1,255 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Colors, FontSize, Spacing } from "../../constants/theme";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { router } from "expo-router";
+import { register } from "../../services/authService";
+import { Colors, Spacing, FontSize } from "../../constants/theme";
+import LogoHallado from "../../components/LogoHallado";
 
 export default function RegisterScreen() {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleRegister() {
+    setError("");
+
+    if (!nombre.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setError("Completá todos los campos");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await register(nombre, email, password);
+
+      if (response.success) {
+        router.push({
+          pathname: "/(auth)/verify-otp",
+          params: { email, fromRegister: "true" },
+        });
+      } else {
+        setError(response.message || "Error al registrar");
+      }
+    } catch (err) {
+      setError("Error de conexión con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Pantalla de Registro</Text>
-      <Text style={styles.subtext}>Se implementa en el próximo incremento</Text>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoBg}>
+            <LogoHallado size={40} color={Colors.textOnPrimary} />
+          </View>
+          <Text style={styles.appName}>Crear cuenta</Text>
+          <Text style={styles.subtitle}>Unite a Hallado</Text>
+        </View>
+
+        {/* Formulario */}
+        <View style={styles.form}>
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.label}>Nombre completo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: Juan Pérez"
+            placeholderTextColor={Colors.disabled}
+            value={nombre}
+            onChangeText={setNombre}
+            autoCapitalize="words"
+          />
+
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="tu@email.com"
+            placeholderTextColor={Colors.disabled}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <Text style={styles.label}>Contraseña</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Mínimo 6 caracteres"
+            placeholderTextColor={Colors.disabled}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <Text style={styles.label}>Confirmar contraseña</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Repetí tu contraseña"
+            placeholderTextColor={Colors.disabled}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+
+          <Pressable
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={Colors.textOnPrimary} />
+            ) : (
+              <Text style={styles.buttonText}>REGISTRARME</Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={styles.linkContainer}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.linkText}>
+              ¿Ya tenés cuenta?{" "}
+              <Text style={styles.linkBold}>Iniciá sesión</Text>
+            </Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: Colors.background,
   },
-  text: {
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: Spacing.lg,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  logoBg: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  appName: {
     fontSize: FontSize.xl,
     fontWeight: "bold",
     color: Colors.text,
   },
-  subtext: {
+  subtitle: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  form: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: Spacing.lg,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  errorBox: {
+    backgroundColor: Colors.errorLight,
+    padding: Spacing.sm,
+    borderRadius: 8,
+    marginBottom: Spacing.md,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: FontSize.sm,
+    textAlign: "center",
+  },
+  label: {
+    fontSize: FontSize.sm,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: Spacing.xs,
     marginTop: Spacing.sm,
+  },
+  input: {
+    backgroundColor: Colors.inputBackground,
+    borderRadius: 10,
+    padding: Spacing.md,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    padding: Spacing.md,
+    alignItems: "center",
+    marginTop: Spacing.lg,
+  },
+  buttonDisabled: {
+    backgroundColor: Colors.disabled,
+  },
+  buttonText: {
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.md,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  linkContainer: {
+    marginTop: Spacing.lg,
+    alignItems: "center",
+  },
+  linkText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  linkBold: {
+    color: Colors.primary,
+    fontWeight: "bold",
   },
 });
