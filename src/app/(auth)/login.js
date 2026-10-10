@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { login } from "../../services/authService";
 import { saveSession } from "../../storage/authStorage";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { resetSuccess } = useLocalSearchParams();
 
   async function handleLogin() {
     setError("");
@@ -116,6 +117,13 @@ export default function LoginScreen() {
             ) : (
               <Text style={styles.buttonText}>INGRESAR</Text>
             )}
+          </Pressable>
+
+          <Pressable
+            style={styles.forgotContainer}
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
 
           <Pressable
@@ -244,5 +252,25 @@ const styles = StyleSheet.create({
   linkBold: {
     color: Colors.primary,
     fontWeight: "bold",
+  },
+  successBox: {
+    backgroundColor: "#DCFCE7",
+    padding: Spacing.sm,
+    borderRadius: 8,
+    marginBottom: Spacing.md,
+  },
+  successText: {
+    color: Colors.success,
+    fontSize: FontSize.sm,
+    textAlign: "center",
+  },
+  forgotContainer: {
+    marginTop: Spacing.md,
+    alignItems: "center",
+  },
+  forgotText: {
+    fontSize: FontSize.sm,
+    color: Colors.primary,
+    fontWeight: "600",
   },
 });
