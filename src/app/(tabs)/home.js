@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { getUserEmail, clearSession } from "../../storage/authStorage";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import LogoHallado from "../../components/LogoHallado";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,10 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Hallado</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <LogoHallado size={32} color={Colors.textOnPrimary} />
+          <Text style={styles.headerTitle}>Hallado</Text>
+        </View>
       </View>
 
       <View style={styles.content}>

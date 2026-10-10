@@ -12,6 +12,7 @@ export default function AuthLayout() {
     >
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ title: "Crear cuenta" }} />
+      <Stack.Screen name="verify-otp" options={{ title: "Verificar email" }} />
     </Stack>
   );
 }
