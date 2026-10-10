@@ -14,16 +14,24 @@ import LogoHallado from "../../components/LogoHallado";
 export default function LockScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [biometricLabel, setBiometricLabel] = useState("Biometría");
+  const [biometricLabel, setBiometricLabel] = useState("Biometria");
 
   useEffect(() => {
     loadBiometricType();
-    handleUnlock();
+    // Delay to let navigation finish before invoking native biometric prompt
+    const timer = setTimeout(() => {
+      handleUnlock();
+    }, 600);
+    return () => clearTimeout(timer);
   }, []);
 
   async function loadBiometricType() {
-    const type = await getBiometricType();
-    setBiometricLabel(type);
+    try {
+      const type = await getBiometricType();
+      setBiometricLabel(type);
+    } catch {
+      // ignore
+    }
   }
 
   async function handleUnlock() {
@@ -52,9 +60,9 @@ export default function LockScreen() {
           </View>
         </View>
 
-        <Text style={styles.title}>Hallado está bloqueado</Text>
+        <Text style={styles.title}>Hallado esta bloqueado</Text>
         <Text style={styles.subtitle}>
-          Usá {biometricLabel} para desbloquear
+          Usa {biometricLabel} para desbloquear
         </Text>
 
         {error ? (
