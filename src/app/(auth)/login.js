@@ -39,6 +39,11 @@ export default function LoginScreen() {
       if (data.success && data.token) {
         await saveSession(data.token, email.trim());
         router.replace("/(tabs)/home");
+      } else if (data.requiresVerification) {
+        router.push({
+          pathname: "/(auth)/verify-otp",
+          params: { email: email.trim(), fromLogin: "true" },
+        });
       } else {
         setError(data.message || "Error al iniciar sesion");
       }

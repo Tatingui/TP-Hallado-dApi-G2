@@ -54,7 +54,10 @@ public class AuthService {
         }
 
         if (!user.isEmailVerified()) {
-            return AuthResponse.error("Email no verificado. Ingresá el código OTP enviado a tu correo.");
+            asignarNuevoOtp(user);
+            userRepository.save(user);
+            return AuthResponse.pendingVerification(
+                "Tu email aún no fue verificado. Te reenviamos el código OTP.");
         }
 
         String token = jwtUtil.generateToken(user.getEmail());

@@ -5,6 +5,7 @@ public class AuthResponse {
     private String token;
     private String message;
     private boolean success;
+    private boolean requiresVerification;
 
     public AuthResponse() {
     }
@@ -13,6 +14,7 @@ public class AuthResponse {
         this.token = token;
         this.message = message;
         this.success = success;
+        this.requiresVerification = false;
     }
 
     public static AuthResponse ok(String token, String message) {
@@ -23,6 +25,12 @@ public class AuthResponse {
         return new AuthResponse(null, message, false);
     }
 
+    public static AuthResponse pendingVerification(String message) {
+        AuthResponse response = new AuthResponse(null, message, false);
+        response.setRequiresVerification(true);
+        return response;
+    }
+
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
 
@@ -31,4 +39,7 @@ public class AuthResponse {
 
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
+
+    public boolean isRequiresVerification() { return requiresVerification; }
+    public void setRequiresVerification(boolean requiresVerification) { this.requiresVerification = requiresVerification; }
 }
