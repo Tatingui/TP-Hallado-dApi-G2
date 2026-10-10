@@ -14,6 +14,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { resetPassword, resendOtp } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import PasswordInput from "../../components/PasswordInput";
+import PasswordCriteria, { validatePassword } from "../../components/PasswordCriteria";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
@@ -65,19 +67,22 @@ export default function ResetPasswordScreen() {
     const fullCode = code.join("");
 
     if (fullCode.length !== OTP_LENGTH) {
-      setError("Ingresá los 6 dígitos del código");
+      setError("Ingresa los 6 digitos del codigo");
       return;
     }
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      setError("Completá ambos campos de contraseña");
+      setError("Completa ambos campos de contrasena");
       return;
     }
-    if (newPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+
+    const { valid, errors } = validatePassword(newPassword);
+    if (!valid) {
+      setError("La contrasena no cumple: " + errors[0]);
       return;
     }
+
     if (newPassword !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError("Las contrasenas no coinciden");
       return;
     }
 
@@ -92,14 +97,14 @@ export default function ResetPasswordScreen() {
           params: { resetSuccess: "true" },
         });
       } else {
-        setError(response.message || "No se pudo restablecer la contraseña");
-        if (response.message && response.message.toLowerCase().includes("código")) {
+        setError(response.message || "No se pudo restablecer la contrasena");
+        if (response.message && response.message.toLowerCase().includes("codigo")) {
           setCode(Array(OTP_LENGTH).fill(""));
           inputRefs.current[0]?.focus();
         }
       }
     } catch (err) {
-      setError("Error de conexión con el servidor");
+      setError("Error de conexion con el servidor");
     } finally {
       setLoading(false);
     }
@@ -114,15 +119,15 @@ export default function ResetPasswordScreen() {
     try {
       const response = await resendOtp(email);
       if (response.success) {
-        setSuccessMsg("Código reenviado a tu email");
+        setSuccessMsg("Codigo reenviado a tu email");
         setResendTimer(RESEND_COOLDOWN);
         setCode(Array(OTP_LENGTH).fill(""));
         inputRefs.current[0]?.focus();
       } else {
-        setError(response.message || "No se pudo reenviar el código");
+        setError(response.message || "No se pudo reenviar el codigo");
       }
     } catch (err) {
-      setError("Error de conexión con el servidor");
+      setError("Error de conexion con el servidor");
     } finally {
       setResendLoading(false);
     }
@@ -141,11 +146,11 @@ export default function ResetPasswordScreen() {
           <View style={styles.iconBg}>
             <LogoHallado size={36} color={Colors.textOnPrimary} />
           </View>
-          <Text style={styles.title}>Nueva contraseña</Text>
+          <Text style={styles.title}>Nueva contrasena</Text>
           <Text style={styles.subtitle}>
-            Ingresá el código enviado a{"\n"}
+            Ingresa el codigo enviado a{"\n"}
             <Text style={styles.emailText}>{email}</Text>
-            {"\n"}y elegí tu nueva contraseña.
+            {"\n"}y elegi tu nueva contrasena.
           </Text>
         </View>
 
@@ -174,39 +179,34 @@ export default function ResetPasswordScreen() {
         <View style={styles.resendContainer}>
           {resendTimer > 0 ? (
             <Text style={styles.resendTimer}>
-              Reenviar código en {resendTimer}s
+              Reenviar codigo en {resendTimer}s
             </Text>
           ) : (
             <Pressable onPress={handleResend} disabled={resendLoading}>
               {resendLoading ? (
                 <ActivityIndicator size="small" color={Colors.primary} />
               ) : (
-                <Text style={styles.resendLink}>Reenviar código</Text>
+                <Text style={styles.resendLink}>Reenviar codigo</Text>
               )}
             </Pressable>
           )}
         </View>
 
-        {/* Nueva contraseña */}
+        {/* Nueva contrasena */}
         <View style={styles.form}>
-          <Text style={styles.label}>Nueva contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Mínimo 6 caracteres"
-            placeholderTextColor={Colors.disabled}
+          <Text style={styles.label}>Nueva contrasena</Text>
+          <PasswordInput
             value={newPassword}
             onChangeText={setNewPassword}
-            secureTextEntry
+            placeholder="Minimo 6 caracteres"
           />
+          <PasswordCriteria password={newPassword} />
 
-          <Text style={styles.label}>Confirmar contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Repetí tu contraseña"
-            placeholderTextColor={Colors.disabled}
+          <Text style={styles.label}>Confirmar contrasena</Text>
+          <PasswordInput
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry
+            placeholder="Repeti tu contrasena"
           />
         </View>
 
@@ -223,7 +223,7 @@ export default function ResetPasswordScreen() {
           </View>
         ) : null}
 
-        {/* Botón */}
+        {/* Boton */}
         <Pressable
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleReset}
@@ -232,7 +232,7 @@ export default function ResetPasswordScreen() {
           {loading ? (
             <ActivityIndicator color={Colors.textOnPrimary} />
           ) : (
-            <Text style={styles.buttonText}>RESTABLECER CONTRASEÑA</Text>
+            <Text style={styles.buttonText}>RESTABLECER CONTRASENA</Text>
           )}
         </Pressable>
       </ScrollView>
@@ -337,15 +337,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: Spacing.xs,
     marginTop: Spacing.sm,
-  },
-  input: {
-    backgroundColor: Colors.inputBackground,
-    borderRadius: 10,
-    padding: Spacing.md,
-    fontSize: FontSize.md,
-    color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   errorBox: {
     backgroundColor: Colors.errorLight,

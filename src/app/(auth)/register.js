@@ -14,6 +14,8 @@ import { router } from "expo-router";
 import { register } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import PasswordInput from "../../components/PasswordInput";
+import PasswordCriteria, { validatePassword } from "../../components/PasswordCriteria";
 
 export default function RegisterScreen() {
   const [nombre, setNombre] = useState("");
@@ -27,17 +29,18 @@ export default function RegisterScreen() {
     setError("");
 
     if (!nombre.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setError("Completá todos los campos");
+      setError("Completa todos los campos");
+      return;
+    }
+
+    const { valid, errors } = validatePassword(password);
+    if (!valid) {
+      setError("La contrasena no cumple: " + errors[0]);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      setError("Las contrasenas no coinciden");
       return;
     }
 
@@ -54,7 +57,7 @@ export default function RegisterScreen() {
         setError(response.message || "Error al registrar");
       }
     } catch (err) {
-      setError("Error de conexión con el servidor");
+      setError("Error de conexion con el servidor");
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,7 @@ export default function RegisterScreen() {
           <Text style={styles.label}>Nombre completo</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ej: Juan Pérez"
+            placeholder="Ej: Juan Perez"
             placeholderTextColor={Colors.disabled}
             value={nombre}
             onChangeText={setNombre}
@@ -107,24 +110,19 @@ export default function RegisterScreen() {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Mínimo 6 caracteres"
-            placeholderTextColor={Colors.disabled}
+          <Text style={styles.label}>Contrasena</Text>
+          <PasswordInput
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            placeholder="Minimo 6 caracteres"
           />
+          <PasswordCriteria password={password} />
 
-          <Text style={styles.label}>Confirmar contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Repetí tu contraseña"
-            placeholderTextColor={Colors.disabled}
+          <Text style={styles.label}>Confirmar contrasena</Text>
+          <PasswordInput
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry
+            placeholder="Repeti tu contrasena"
           />
 
           <Pressable
@@ -144,8 +142,8 @@ export default function RegisterScreen() {
             onPress={() => router.back()}
           >
             <Text style={styles.linkText}>
-              ¿Ya tenés cuenta?{" "}
-              <Text style={styles.linkBold}>Iniciá sesión</Text>
+              Ya tenes cuenta?{" "}
+              <Text style={styles.linkBold}>Inicia sesion</Text>
             </Text>
           </Pressable>
         </View>

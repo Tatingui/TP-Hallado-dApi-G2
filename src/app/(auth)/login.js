@@ -9,13 +9,13 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { login } from "../../services/authService";
 import { saveSession } from "../../storage/authStorage";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import PasswordInput from "../../components/PasswordInput";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -28,7 +28,7 @@ export default function LoginScreen() {
     setError("");
 
     if (!email.trim() || !password.trim()) {
-      setError("Completá todos los campos");
+      setError("Completa todos los campos");
       return;
     }
 
@@ -40,13 +40,13 @@ export default function LoginScreen() {
         await saveSession(data.token, email.trim());
         router.replace("/(tabs)/home");
       } else {
-        setError(data.message || "Error al iniciar sesión");
+        setError(data.message || "Error al iniciar sesion");
       }
     } catch (e) {
       if (e.message) {
         setError(e.message);
       } else {
-        setError("Error de conexión. Verificá que el servidor esté corriendo.");
+        setError("Error de conexion. Verifica que el servidor este corriendo.");
       }
     } finally {
       setLoading(false);
@@ -68,12 +68,20 @@ export default function LoginScreen() {
             <LogoHallado size={50} color={Colors.textOnPrimary} />
           </View>
           <Text style={styles.appName}>Hallado</Text>
-          <Text style={styles.subtitle}>Encontrá lo que perdiste</Text>
+          <Text style={styles.subtitle}>Encontra lo que perdiste</Text>
         </View>
 
         {/* Formulario */}
         <View style={styles.form}>
-          <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.title}>Iniciar Sesion</Text>
+
+          {resetSuccess ? (
+            <View style={styles.successBox}>
+              <Text style={styles.successText}>
+                Contrasena restablecida. Inicia sesion con tu nueva contrasena.
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
@@ -90,14 +98,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Tu contraseña"
-              placeholderTextColor={Colors.disabled}
+            <Text style={styles.label}>Contrasena</Text>
+            <PasswordInput
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              placeholder="Tu contrasena"
             />
           </View>
 
@@ -123,7 +128,7 @@ export default function LoginScreen() {
             style={styles.forgotContainer}
             onPress={() => router.push("/(auth)/forgot-password")}
           >
-            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+            <Text style={styles.forgotText}>Olvidaste tu contrasena?</Text>
           </Pressable>
 
           <Pressable
@@ -131,7 +136,7 @@ export default function LoginScreen() {
             onPress={() => router.push("/(auth)/register")}
           >
             <Text style={styles.linkText}>
-              ¿No tenés cuenta?{" "}
+              No tenes cuenta?{" "}
               <Text style={styles.linkBold}>Registrate</Text>
             </Text>
           </Pressable>
@@ -163,11 +168,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.md,
-  },
-  logoText: {
-    fontSize: 40,
-    fontWeight: "bold",
-    color: Colors.textOnPrimary,
   },
   appName: {
     fontSize: FontSize.xxl,
@@ -225,6 +225,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     textAlign: "center",
   },
+  successBox: {
+    backgroundColor: "#DCFCE7",
+    padding: Spacing.sm,
+    borderRadius: 8,
+    marginBottom: Spacing.md,
+  },
+  successText: {
+    color: Colors.success,
+    fontSize: FontSize.sm,
+    textAlign: "center",
+  },
   button: {
     backgroundColor: Colors.primary,
     borderRadius: 10,
@@ -252,17 +263,6 @@ const styles = StyleSheet.create({
   linkBold: {
     color: Colors.primary,
     fontWeight: "bold",
-  },
-  successBox: {
-    backgroundColor: "#DCFCE7",
-    padding: Spacing.sm,
-    borderRadius: 8,
-    marginBottom: Spacing.md,
-  },
-  successText: {
-    color: Colors.success,
-    fontSize: FontSize.sm,
-    textAlign: "center",
   },
   forgotContainer: {
     marginTop: Spacing.md,
