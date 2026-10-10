@@ -4,41 +4,49 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const BIOMETRIC_KEY = "hallado_biometric_enabled";
 
 /**
- * Verifica si el dispositivo tiene hardware biométrico disponible.
+ * Verifica si el dispositivo tiene hardware biometrico disponible.
  */
 export async function hasBiometricHardware() {
-  const hasHardware = await LocalAuthentication.hasHardwareAsync();
-  if (!hasHardware) return false;
+  try {
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    if (!hasHardware) return false;
 
-  const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-  return isEnrolled;
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    return isEnrolled;
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Obtiene los tipos de biometría disponibles (huella, face, iris).
+ * Obtiene los tipos de biometria disponibles (huella, face, iris).
  */
 export async function getBiometricType() {
-  const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-  if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-    return "Face ID";
+  try {
+    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+      return "Face ID";
+    }
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+      return "Huella digital";
+    }
+    if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
+      return "Iris";
+    }
+  } catch {
+    // ignore
   }
-  if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-    return "Huella digital";
-  }
-  if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-    return "Iris";
-  }
-  return "Biometría";
+  return "Biometria";
 }
 
 /**
- * Realiza la autenticación biométrica.
+ * Realiza la autenticacion biometrica.
  * Retorna { success: true } o { success: false, error: string }.
  */
 export async function authenticate() {
   try {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Desbloqueá Hallado",
+      promptMessage: "Desbloquea Hallado",
       cancelLabel: "Cancelar",
       disableDeviceFallback: false,
       fallbackLabel: "Usar PIN",
@@ -46,7 +54,7 @@ export async function authenticate() {
 
     return {
       success: result.success,
-      error: result.success ? null : "Autenticación cancelada o fallida",
+      error: result.success ? null : "Autenticacion cancelada o fallida",
     };
   } catch (err) {
     return { success: false, error: "Error al autenticar" };
@@ -54,14 +62,14 @@ export async function authenticate() {
 }
 
 /**
- * Guarda la preferencia de bloqueo biométrico.
+ * Guarda la preferencia de bloqueo biometrico.
  */
 export async function setBiometricEnabled(enabled) {
   await AsyncStorage.setItem(BIOMETRIC_KEY, JSON.stringify(enabled));
 }
 
 /**
- * Lee si el bloqueo biométrico está activado.
+ * Lee si el bloqueo biometrico esta activado.
  */
 export async function isBiometricEnabled() {
   try {
@@ -69,5 +77,16 @@ export async function isBiometricEnabled() {
     return value ? JSON.parse(value) : false;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Limpia la preferencia de bloqueo biometrico (para logout).
+ */
+export async function clearBiometricEnabled() {
+  try {
+    await AsyncStorage.removeItem(BIOMETRIC_KEY);
+  } catch {
+    // ignore
   }
 }

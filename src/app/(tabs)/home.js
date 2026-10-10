@@ -9,13 +9,14 @@ import {
   getBiometricType,
   isBiometricEnabled,
   setBiometricEnabled,
+  clearBiometricEnabled,
 } from "../../services/biometricService";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricOn, setBiometricOn] = useState(false);
-  const [biometricLabel, setBiometricLabel] = useState("Bloqueo biométrico");
+  const [biometricLabel, setBiometricLabel] = useState("Bloqueo biometrico");
 
   useEffect(() => {
     loadUser();
@@ -23,37 +24,50 @@ export default function HomeScreen() {
   }, []);
 
   async function loadUser() {
-    const userEmail = await getUserEmail();
-    if (userEmail) setEmail(userEmail);
+    try {
+      const userEmail = await getUserEmail();
+      if (userEmail) setEmail(userEmail);
+    } catch {
+      // ignore
+    }
   }
 
   async function loadBiometricState() {
-    const available = await hasBiometricHardware();
-    setBiometricAvailable(available);
-    if (available) {
-      const type = await getBiometricType();
-      setBiometricLabel("Bloqueo con " + type);
-      const enabled = await isBiometricEnabled();
-      setBiometricOn(enabled);
+    try {
+      const available = await hasBiometricHardware();
+      setBiometricAvailable(available);
+      if (available) {
+        const type = await getBiometricType();
+        setBiometricLabel("Bloqueo con " + type);
+        const enabled = await isBiometricEnabled();
+        setBiometricOn(enabled);
+      }
+    } catch {
+      setBiometricAvailable(false);
     }
   }
 
   async function handleToggleBiometric(value) {
-    if (value) {
-      const available = await hasBiometricHardware();
-      if (!available) {
-        Alert.alert(
-          "No disponible",
-          "Tu dispositivo no tiene biometría configurada."
-        );
-        return;
+    try {
+      if (value) {
+        const available = await hasBiometricHardware();
+        if (!available) {
+          Alert.alert(
+            "No disponible",
+            "Tu dispositivo no tiene biometria configurada."
+          );
+          return;
+        }
       }
+      await setBiometricEnabled(value);
+      setBiometricOn(value);
+    } catch {
+      Alert.alert("Error", "No se pudo cambiar la configuracion.");
     }
-    await setBiometricEnabled(value);
-    setBiometricOn(value);
   }
 
   async function handleLogout() {
+    await clearBiometricEnabled();
     await clearSession();
     router.replace("/(auth)/login");
   }
@@ -71,7 +85,7 @@ export default function HomeScreen() {
         <Text style={styles.welcome}>Bienvenido</Text>
         {email ? <Text style={styles.email}>{email}</Text> : null}
         <Text style={styles.placeholder}>
-          El feed de publicaciones se implementa en los próximos incrementos.
+          El feed de publicaciones se implementa en los proximos incrementos.
         </Text>
 
         {biometricAvailable ? (
@@ -79,7 +93,7 @@ export default function HomeScreen() {
             <View style={styles.biometricInfo}>
               <Text style={styles.biometricLabel}>{biometricLabel}</Text>
               <Text style={styles.biometricHint}>
-                Pedí autenticación al abrir la app
+                Pide autenticacion al abrir la app
               </Text>
             </View>
             <Switch
@@ -92,7 +106,7 @@ export default function HomeScreen() {
         ) : null}
 
         <Pressable style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
+          <Text style={styles.logoutText}>Cerrar sesion</Text>
         </Pressable>
       </View>
     </View>
