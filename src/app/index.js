@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { isLoggedIn } from "../storage/authStorage";
+import { isBiometricEnabled } from "../services/biometricService";
 import { Colors } from "../constants/theme";
 
 export default function Index() {
@@ -15,7 +16,12 @@ export default function Index() {
     try {
       const logged = await isLoggedIn();
       if (logged) {
-        router.replace("/(tabs)/home");
+        const bioEnabled = await isBiometricEnabled();
+        if (bioEnabled) {
+          router.replace("/(auth)/lock");
+        } else {
+          router.replace("/(tabs)/home");
+        }
       } else {
         router.replace("/(auth)/login");
       }
