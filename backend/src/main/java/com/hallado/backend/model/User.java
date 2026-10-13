@@ -35,7 +35,19 @@ public class User {
 
     private String telefono;
 
+    private boolean telefonoVisible = true;
+
     private String zona;
+
+    private String barrio;
+
+    private String profileImageUrl;
+
+    private int devolucionesConcretadas = 0;
+
+    private int valoracionesPositivas = 0;
+
+    private int valoracionesNegativas = 0;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -78,8 +90,26 @@ public class User {
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
+    public boolean isTelefonoVisible() { return telefonoVisible; }
+    public void setTelefonoVisible(boolean telefonoVisible) { this.telefonoVisible = telefonoVisible; }
+
     public String getZona() { return zona; }
     public void setZona(String zona) { this.zona = zona; }
+
+    public String getBarrio() { return barrio != null && !barrio.isEmpty() ? barrio : zona; }
+    public void setBarrio(String barrio) { this.barrio = barrio; this.zona = barrio; }
+
+    public String getProfileImageUrl() { return profileImageUrl; }
+    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+
+    public int getDevolucionesConcretadas() { return devolucionesConcretadas; }
+    public void setDevolucionesConcretadas(int devolucionesConcretadas) { this.devolucionesConcretadas = devolucionesConcretadas; }
+
+    public int getValoracionesPositivas() { return valoracionesPositivas; }
+    public void setValoracionesPositivas(int valoracionesPositivas) { this.valoracionesPositivas = valoracionesPositivas; }
+
+    public int getValoracionesNegativas() { return valoracionesNegativas; }
+    public void setValoracionesNegativas(int valoracionesNegativas) { this.valoracionesNegativas = valoracionesNegativas; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
