@@ -96,8 +96,8 @@ public class User {
     public String getZona() { return zona; }
     public void setZona(String zona) { this.zona = zona; }
 
-    public String getBarrio() { return barrio != null && !barrio.isEmpty() ? barrio : zona; }
-    public void setBarrio(String barrio) { this.barrio = barrio; this.zona = barrio; }
+    public String getBarrio() { return barrio; }
+    public void setBarrio(String barrio) { this.barrio = barrio; }
 
     public String getProfileImageUrl() { return profileImageUrl; }
     public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }

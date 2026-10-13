@@ -178,7 +178,7 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Devoluciones Concretadas</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{profile?.porcentajePositivo ?? 100}%</Text>
+            <Text style={styles.statNumber}>{profile?.porcentajePositivo ?? 0}%</Text>
             <Text style={styles.statLabel}>Valoración Positiva</Text>
           </View>
         </View>
@@ -189,7 +189,7 @@ export default function ProfileScreen() {
           {profile?.insignias && profile.insignias.length > 0 ? (
             profile.insignias.map((insignia, index) => (
               <View key={index} style={styles.badgeChip}>
-                <Ionicons name="star" size={14} color="#E5A93C" />
+                <Ionicons name="star" size={14} color={Colors.badgeStar} />
                 <Text style={styles.badgeText}>{insignia}</Text>
               </View>
             ))
@@ -433,9 +433,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#FFF8E7",
+    backgroundColor: Colors.badgeBackground,
     borderWidth: 1,
-    borderColor: "#F3D89D",
+    borderColor: Colors.badgeBorder,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 16,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: FontSize.xs,
     fontWeight: "bold",
-    color: "#B47100",
+    color: Colors.badgeText,
   },
   noInsigniasText: {
     fontSize: FontSize.xs,

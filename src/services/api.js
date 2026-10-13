@@ -21,10 +21,13 @@ export async function apiPost(endpoint, body, token = null) {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
-    throw { status: response.status, ...data };
+    throw { status: response.status, ...(data || {}) };
   }
 
   return data;
@@ -45,10 +48,13 @@ export async function apiGet(endpoint, token = null) {
     headers,
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
-    throw { status: response.status, ...data };
+    throw { status: response.status, ...(data || {}) };
   }
 
   return data;
@@ -72,10 +78,13 @@ export async function apiPut(endpoint, body, token = null) {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
-    throw { status: response.status, ...data };
+    throw { status: response.status, ...(data || {}) };
   }
 
   return data;

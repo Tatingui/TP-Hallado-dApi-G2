@@ -14,6 +14,10 @@ export const Colors = {
   border: '#E2E8F0',
   inputBackground: '#F1F5F9',
   disabled: '#94A3B8',
+  badgeBackground: '#FFF8E7',
+  badgeBorder: '#F3D89D',
+  badgeText: '#B47100',
+  badgeStar: '#E5A93C',
 };
 
 export const Spacing = {
