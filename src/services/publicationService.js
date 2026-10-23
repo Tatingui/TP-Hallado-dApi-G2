@@ -1,4 +1,4 @@
-import api from './api';
+import { apiGet } from './api';
 
 export const searchPublicationsApi = async ({
   type, // LOST or FOUND
@@ -14,21 +14,25 @@ export const searchPublicationsApi = async ({
   page = 0,
   size = 10,
 }) => {
-  const params = {};
+  const queryParams = new URLSearchParams();
 
-  if (type) params.type = type;
-  if (category) params.category = category;
-  if (query && query.trim()) params.query = query.trim();
-  if (barrio && barrio !== 'Todos los barrios') params.barrio = barrio;
-  if (dateFilter && dateFilter !== 'ALL') params.dateFilter = dateFilter;
-  if (startDate) params.startDate = startDate;
-  if (endDate) params.endDate = endDate;
-  if (lat != null) params.lat = lat;
-  if (lng != null) params.lng = lng;
-  if (sortBy) params.sortBy = sortBy;
-  params.page = page;
-  params.size = size;
+  if (type) queryParams.append('type', type);
+  if (category) queryParams.append('category', category);
+  if (query && query.trim()) queryParams.append('query', query.trim());
+  if (barrio && barrio !== 'Todos los barrios') queryParams.append('barrio', barrio);
+  if (dateFilter && dateFilter !== 'ALL') queryParams.append('dateFilter', dateFilter);
+  if (startDate) queryParams.append('startDate', startDate);
+  if (endDate) queryParams.append('endDate', endDate);
+  if (lat != null) queryParams.append('lat', lat);
+  if (lng != null) queryParams.append('lng', lng);
+  if (sortBy) queryParams.append('sortBy', sortBy);
+  queryParams.append('page', page.toString());
+  queryParams.append('size', size.toString());
 
-  const response = await api.get('/publications/search', { params });
-  return response.data;
+  const queryString = queryParams.toString();
+  const endpoint = `/publications/search?${queryString}`;
+
+  const data = await apiGet(endpoint);
+  return data;
 };
+
