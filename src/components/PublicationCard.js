@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
+import { IMAGE_BASE_URL } from '../services/api';
 import {
   getCategoryLabel,
   getCategoryIcon,
@@ -24,11 +25,14 @@ export default function PublicationCard({ publication, onPress }) {
       })
     : 'Fecha no especificada';
 
-  // Primary image
-  const imageUrl =
+  // Primary image — si la URL es relativa, le agregamos la base del servidor
+  const rawUrl =
     publication.imageUrls && publication.imageUrls.length > 0
       ? publication.imageUrls[0]
-      : 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?q=80&w=400';
+      : null;
+  const imageUrl = rawUrl
+    ? (rawUrl.startsWith('http') ? rawUrl : IMAGE_BASE_URL + rawUrl)
+    : null;
 
   return (
     <Pressable
@@ -36,7 +40,13 @@ export default function PublicationCard({ publication, onPress }) {
       onPress={onPress}
     >
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={[styles.image, { alignItems: "center", justifyContent: "center", backgroundColor: "#F3E8FF" }]}>
+            <MaterialCommunityIcons name="image-off-outline" size={40} color="#D1D5DB" />
+          </View>
+        )}
 
         {/* Type Badge */}
         <View

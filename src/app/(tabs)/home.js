@@ -265,7 +265,7 @@ export default function HomeScreen() {
               publication={item}
               onPress={() => {
                 // Navigate to Publication Detail (Point 4)
-                router.push(`/(tabs)/profile`);
+                router.push(`/publication/${item.id}`);
               }}
             />
           )}
