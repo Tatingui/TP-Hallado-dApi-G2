@@ -1,53 +1,184 @@
 package com.hallado.backend.service;
 
+import com.hallado.backend.dto.CreatePublicationRequest;
 import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.dto.PublicationResponseDTO;
-import com.hallado.backend.model.CategoryEnum;
-import com.hallado.backend.model.Publication;
-import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.model.*;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.hallado.backend.repository.UserRepository;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class PublicationService {
 
     private final PublicationRepository publicationRepository;
+    private final UserRepository userRepository;
 
-    public PublicationService(PublicationRepository publicationRepository) {
+    // Directorio donde se guardan las imágenes subidas
+    private static final String UPLOAD_DIR = "uploads/publications/";
+
+    public PublicationService(PublicationRepository publicationRepository,
+                              UserRepository userRepository) {
         this.publicationRepository = publicationRepository;
+        this.userRepository = userRepository;
     }
 
+    // ─── Punto 5: Crear publicación ───────────────────────────────────
+
+    /**
+     * Crea una nueva publicación con imágenes opcionales.
+     * Las imágenes se guardan en el filesystem y sus rutas se almacenan
+     * como string separado por comas en el campo imageUrls.
+     */
+    public PublicationResponseDTO createPublication(CreatePublicationRequest req,
+                                                     List<MultipartFile> images,
+                                                     String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Validaciones
+        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("El título es obligatorio");
+        }
+        if (req.getType() == null) {
+            throw new IllegalArgumentException("El tipo de publicación es obligatorio");
+        }
+        if (req.getCategory() == null) {
+            throw new IllegalArgumentException("La categoría es obligatoria");
+        }
+        if (req.getBarrio() == null || req.getBarrio().trim().isEmpty()) {
+            throw new IllegalArgumentException("El barrio es obligatorio");
+        }
+
+        // Guardar imágenes y obtener rutas
+        String imageUrlsStr = null;
+        if (images != null && !images.isEmpty()) {
+            List<String> savedPaths = new ArrayList<>();
+            for (MultipartFile file : images) {
+                String savedPath = saveImage(file);
+                savedPaths.add(savedPath);
+            }
+            imageUrlsStr = String.join(",", savedPaths);
+        }
+
+        Publication pub = new Publication(
+                req.getTitle().trim(),
+                req.getDescription() != null ? req.getDescription().trim() : null,
+                req.getType(),
+                req.getCategory(),
+                req.getBarrio().trim(),
+                req.getAddress() != null ? req.getAddress().trim() : null,
+                req.getLatitude(),
+                req.getLongitude(),
+                req.getEventDate() != null ? req.getEventDate() : LocalDateTime.now(),
+                imageUrlsStr,
+                user
+        );
+
+        // Pregunta de verificación solo para FOUND
+        if (req.getType() == PublicationType.FOUND) {
+            pub.setVerificationQuestion(req.getVerificationQuestion());
+            pub.setVerificationAnswer(req.getVerificationAnswer());
+        }
+
+        Publication saved = publicationRepository.save(pub);
+        return PublicationResponseDTO.fromEntity(saved);
+    }
+
+    /**
+     * Guarda una imagen en el filesystem y devuelve la ruta relativa.
+     */
+    private String saveImage(MultipartFile file) {
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalName = file.getOriginalFilename();
+            String extension = "";
+            if (originalName != null && originalName.contains(".")) {
+                extension = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String fileName = UUID.randomUUID() + extension;
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath);
+
+            return "/uploads/publications/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar imagen: " + e.getMessage());
+        }
+    }
+
+    // ─── Punto 5: Mis publicaciones ──────────────────────────────────
+
+    /**
+     * Obtiene las publicaciones del usuario autenticado, con filtro opcional por estado.
+     */
+    public PageResponseDTO<PublicationResponseDTO> getMyPublications(String userEmail,
+                                                                      PublicationStatus status,
+                                                                      int page, int size) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Publication> pubPage;
+
+        if (status != null) {
+            pubPage = publicationRepository.findByUserAndStatusOrderByCreatedAtDesc(user, status, pageable);
+        } else {
+            pubPage = publicationRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+        }
+
+        List<PublicationResponseDTO> dtos = pubPage.getContent().stream()
+                .map(PublicationResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtos, pageable, pubPage.getTotalElements());
+        return PageResponseDTO.fromPage(dtoPage);
+    }
+
+    // ─── Detalle de publicación ──────────────────────────────────────
+
+    /**
+     * Obtiene una publicación por ID.
+     */
+    public PublicationResponseDTO getPublicationById(Long id) {
+        Publication pub = publicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+        return PublicationResponseDTO.fromEntity(pub);
+    }
+
+    // ─── Punto 3: Búsqueda (existente) ──────────────────────────────
+
     public PageResponseDTO<PublicationResponseDTO> searchPublications(
-            PublicationType userActionType, // User's condition: LOST or FOUND
+            PublicationType userActionType,
             CategoryEnum category,
             String query,
             String barrio,
-            String dateFilterOption, // TODAY, LAST_3_DAYS, LAST_WEEK, RANGO
+            String dateFilterOption,
             LocalDate startDateParam,
             LocalDate endDateParam,
             Double userLat,
             Double userLng,
-            String sortBy, // "recent" or "distance"
+            String sortBy,
             int page,
             int size
     ) {
-        // Punto 3: "La búsqueda devuelve las publicaciones del tipo opuesto"
-        // If user lost something (userActionType == LOST), search for FOUND items
-        // If user found something (userActionType == FOUND), search for LOST items
         PublicationType targetType = null;
         if (userActionType == PublicationType.LOST) {
             targetType = PublicationType.FOUND;
@@ -55,7 +186,6 @@ public class PublicationService {
             targetType = PublicationType.LOST;
         }
 
-        // Calculate Date Range based on dateFilterOption
         LocalDateTime startDate = null;
         LocalDateTime endDate = LocalDateTime.now();
 
@@ -88,7 +218,6 @@ public class PublicationService {
                 targetType, category, query, barrio, startDate, endDate
         );
 
-        // Sorting
         Sort sort = Sort.by(Sort.Direction.DESC, "eventDate");
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -105,7 +234,6 @@ public class PublicationService {
                 })
                 .collect(Collectors.toList());
 
-        // Sort by distance if requested and coordinates exist
         if ("distance".equalsIgnoreCase(sortBy) && userLat != null && userLng != null) {
             dtoList.sort(Comparator.comparing(PublicationResponseDTO::getDistanceKm, Comparator.nullsLast(Comparator.naturalOrder())));
         }
@@ -114,11 +242,8 @@ public class PublicationService {
         return PageResponseDTO.fromPage(dtoPage);
     }
 
-    /**
-     * Haversine formula to calculate geographical distance between two lat/lng points in km.
-     */
     private double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Earth radius in km
+        final int R = 6371;
         double latDistance = Math.toRadians(lat2 - lat1);
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
