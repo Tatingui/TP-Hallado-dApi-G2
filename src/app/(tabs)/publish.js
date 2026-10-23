@@ -26,6 +26,7 @@ import {
 } from "../../constants/publicationConstants";
 import { createPublicationApi } from "../../services/publicationService";
 import { saveDraft, loadDraft, clearDraft } from "../../storage/draftStorage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -52,6 +53,7 @@ export default function PublishScreen() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Cargar borrador al montar
   useEffect(() => {
@@ -385,19 +387,28 @@ export default function PublishScreen() {
             </Text>
             <TouchableOpacity
               style={styles.input}
-              onPress={() => {
-                // Por ahora se usa la fecha actual; en una iteración futura se puede agregar DateTimePicker
-                const now = new Date();
-                updateField("eventDate", now.toISOString());
-                Alert.alert("Fecha registrada", "Se registró la fecha de hoy: " + now.toLocaleDateString("es-AR"));
-              }}
+              onPress={() => setShowDatePicker(true)}
             >
               <Text style={{ color: form.eventDate ? Colors.text : Colors.textSecondary, fontSize: 15 }}>
                 {form.eventDate
                   ? new Date(form.eventDate).toLocaleDateString("es-AR")
-                  : "Tocar para registrar fecha de hoy"}
+                  : "Tocar para seleccionar fecha"}
               </Text>
             </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={form.eventDate ? new Date(form.eventDate) : new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                maximumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === "ios");
+                  if (selectedDate) {
+                    updateField("eventDate", selectedDate.toISOString());
+                  }
+                }}
+              />
+            )}
           </View>
         );
 

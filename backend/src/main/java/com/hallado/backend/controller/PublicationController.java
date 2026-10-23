@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/publications")
+@RequestMapping("/publications")
 public class PublicationController {
 
     private final PublicationService publicationService;
@@ -37,7 +37,7 @@ public class PublicationController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PublicationResponseDTO> createPublication(
-            @RequestPart("publication") String publicationJson,
+            @RequestParam("publication") String publicationJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             Authentication authentication
     ) {
