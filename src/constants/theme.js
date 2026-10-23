@@ -36,3 +36,6 @@ export const FontSize = {
   xl: 24,
   xxl: 32,
 };
+
+// Alias para compatibilidad con componentes que usan COLORS (ej: punto 3)
+export const COLORS = Colors;

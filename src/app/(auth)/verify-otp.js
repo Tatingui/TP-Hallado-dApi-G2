@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { verifyOtp, resendOtp } from "../../services/authService";
-import { saveSession } from "../../storage/authStorage";
+import { useAuth } from "../../hooks/useAuth";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
 
@@ -26,6 +26,7 @@ export default function VerifyOtpScreen() {
   const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN);
   const [resendLoading, setResendLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const { login: loginContext } = useAuth();
   const inputRefs = useRef([]);
 
   // Timer de reenvío
@@ -75,7 +76,7 @@ export default function VerifyOtpScreen() {
       const response = await verifyOtp(email, fullCode);
 
       if (response.success) {
-        await saveSession(response.token, email);
+        await loginContext(response.token, email);
         router.replace("/(tabs)/home");
       } else {
         setError(response.message || "Código inválido");

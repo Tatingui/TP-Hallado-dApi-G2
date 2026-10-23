@@ -1,34 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { isLoggedIn } from "../storage/authStorage";
+import { useAuth } from "../hooks/useAuth";
 import { isBiometricEnabled } from "../services/biometricService";
 import { Colors } from "../constants/theme";
 
 export default function Index() {
-  const [checking, setChecking] = useState(true);
+  const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    checkSession();
-  }, []);
+    if (loading) return; // Esperar a que AuthContext termine de restaurar
 
-  async function checkSession() {
+    if (isAuthenticated) {
+      checkBiometricAndRedirect();
+    } else {
+      router.replace("/(auth)/login");
+    }
+  }, [loading, isAuthenticated]);
+
+  async function checkBiometricAndRedirect() {
     try {
-      const logged = await isLoggedIn();
-      if (logged) {
-        const bioEnabled = await isBiometricEnabled();
-        if (bioEnabled) {
-          router.replace("/(auth)/lock");
-        } else {
-          router.replace("/(tabs)/home");
-        }
+      const bioEnabled = await isBiometricEnabled();
+      if (bioEnabled) {
+        router.replace("/(auth)/lock");
       } else {
-        router.replace("/(auth)/login");
+        router.replace("/(tabs)/home");
       }
     } catch {
-      router.replace("/(auth)/login");
-    } finally {
-      setChecking(false);
+      router.replace("/(tabs)/home");
     }
   }
 

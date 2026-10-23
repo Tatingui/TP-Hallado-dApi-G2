@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { login } from "../../services/authService";
-import { saveSession } from "../../storage/authStorage";
+import { useAuth } from "../../hooks/useAuth";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
 import PasswordInput from "../../components/PasswordInput";
@@ -23,6 +23,7 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { resetSuccess } = useLocalSearchParams();
+  const { login: loginContext } = useAuth();
 
   async function handleLogin() {
     setError("");
@@ -37,7 +38,7 @@ export default function LoginScreen() {
       const data = await login(email.trim(), password);
 
       if (data.success && data.token) {
-        await saveSession(data.token, email.trim());
+        await loginContext(data.token, email.trim());
         router.replace("/(tabs)/home");
       } else if (data.requiresVerification) {
         router.push({
