@@ -8,7 +8,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
@@ -30,6 +30,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function MyPublicationsScreen() {
+  const router = useRouter();
   const { token } = useAuth();
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +95,7 @@ export default function MyPublicationsScreen() {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
       <View style={styles.cardHeader}>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>

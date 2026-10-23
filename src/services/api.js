@@ -2,6 +2,9 @@
 // 10.0.2.2 es la IP del host desde el emulador Android
 const BASE_URL = "http://10.0.2.2:8081/api";
 
+// URL base del servidor (sin /api) para construir URLs de imágenes
+export const IMAGE_BASE_URL = "http://10.0.2.2:8081";
+
 /**
  * Realiza un POST al backend.
  * Equivalente a ApiClient + Retrofit en la app Android de Ronda.
