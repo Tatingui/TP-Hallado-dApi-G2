@@ -1,9 +1,8 @@
-import { apiGet } from "./api";
+import { apiGet, apiPostMultipart } from "./api";
 import { getToken } from "../storage/authStorage";
 
 /**
- * Busca publicaciones en el backend.
- * Arma los query params y usa apiGet (fetch).
+ * Busca publicaciones en el backend (endpoint de Agus).
  */
 export const searchPublicationsApi = async ({
   type,
@@ -36,5 +35,75 @@ export const searchPublicationsApi = async ({
 
   const token = await getToken();
   const data = await apiGet(`/publications/search?${params.toString()}`, token);
+  return data;
+};
+
+/**
+ * Crea una publicación nueva.
+ * Envía multipart/form-data con las imágenes como archivos
+ * y los datos de la publicación como campo JSON.
+ *
+ * @param {Object} publication - Datos de la publicación
+ * @param {string} publication.title
+ * @param {string} publication.description
+ * @param {string} publication.type - LOST | FOUND
+ * @param {string} publication.category - CategoryEnum
+ * @param {string} publication.barrio
+ * @param {string} [publication.address]
+ * @param {number} [publication.latitude]
+ * @param {number} [publication.longitude]
+ * @param {string} [publication.eventDate] - ISO string
+ * @param {string} [publication.verificationQuestion] - Solo para FOUND
+ * @param {string} [publication.verificationAnswer] - Solo para FOUND
+ * @param {Array} [images] - Array de objetos { uri, type, fileName }
+ */
+export const createPublicationApi = async (publication, images = []) => {
+  const token = await getToken();
+
+  const formData = new FormData();
+
+  // Datos de la publicación como JSON blob
+  formData.append("publication", JSON.stringify(publication));
+
+  // Imágenes como archivos adjuntos
+  images.forEach((img, index) => {
+    formData.append("images", {
+      uri: img.uri,
+      type: img.type || "image/jpeg",
+      name: img.fileName || `image_${index}.jpg`,
+    });
+  });
+
+  const data = await apiPostMultipart("/publications", formData, token);
+  return data;
+};
+
+/**
+ * Obtiene las publicaciones del usuario autenticado.
+ * Paginado con Spring Data Page.
+ *
+ * @param {number} page
+ * @param {number} size
+ * @param {string} [status] - Filtro opcional por estado
+ */
+export const getMyPublicationsApi = async (page = 0, size = 10, status = null) => {
+  const token = await getToken();
+  const params = new URLSearchParams();
+  params.append("page", String(page));
+  params.append("size", String(size));
+  if (status) params.append("status", status);
+
+  const data = await apiGet(`/publications/mine?${params.toString()}`, token);
+  return data;
+};
+
+/**
+ * Obtiene una publicación por su ID.
+ *
+ * @param {number} id
+ */
+export const getPublicationByIdApi = async (id) => {
+  const token = await getToken();
+  const data = await apiGet(`/publications/${id}`, token);
   return data;
 };

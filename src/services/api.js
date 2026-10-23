@@ -89,3 +89,33 @@ export async function apiPut(endpoint, body, token = null) {
 
   return data;
 }
+
+/**
+ * Realiza un POST multipart/form-data al backend.
+ * Usado para subir imágenes junto con datos.
+ */
+export async function apiPostMultipart(endpoint, formData, token = null) {
+  const headers = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  // No setear Content-Type — fetch lo pone automáticamente con el boundary
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    throw { status: response.status, ...(data || {}) };
+  }
+
+  return data;
+}

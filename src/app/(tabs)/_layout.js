@@ -27,6 +27,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="publish"
+        options={{
+          title: "Publicar",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="my-publications"
+        options={{
+          title: "Mis Publicaciones",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Perfil",
