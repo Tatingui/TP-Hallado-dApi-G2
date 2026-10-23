@@ -95,30 +95,37 @@ export async function apiPut(endpoint, body, token = null) {
 
 /**
  * Realiza un POST multipart/form-data al backend.
- * Usado para subir imágenes junto con datos.
+ * Usa XMLHttpRequest en lugar de fetch para mejor compatibilidad
+ * con uploads de archivos en React Native.
  */
-export async function apiPostMultipart(endpoint, formData, token = null) {
-  const headers = {};
+export function apiPostMultipart(endpoint, formData, token = null) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${BASE_URL}${endpoint}`);
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  // No setear Content-Type — fetch lo pone automáticamente con el boundary
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    }
+    // No setear Content-Type — XMLHttpRequest lo pone con el boundary
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method: "POST",
-    headers,
-    body: formData,
+    xhr.onload = () => {
+      let data = null;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch (e) {
+        // respuesta no es JSON
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(data);
+      } else {
+        reject({ status: xhr.status, ...(data || {}) });
+      }
+    };
+
+    xhr.onerror = () => {
+      reject({ status: 0, message: "Error de red al subir archivos" });
+    };
+
+    xhr.send(formData);
   });
-
-  const contentType = response.headers.get("content-type");
-  const data = contentType && contentType.includes("application/json")
-    ? await response.json()
-    : null;
-
-  if (!response.ok) {
-    throw { status: response.status, ...(data || {}) };
-  }
-
-  return data;
 }

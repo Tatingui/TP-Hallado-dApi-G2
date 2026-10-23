@@ -17,11 +17,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 
 @RestController
 @RequestMapping("/publications")
 public class PublicationController {
+
+    private static final Logger log = LoggerFactory.getLogger(PublicationController.class);
 
     private final PublicationService publicationService;
     private final ObjectMapper objectMapper;
@@ -35,10 +39,10 @@ public class PublicationController {
      * Punto 5: Crear una publicación (hallazgo o pérdida).
      * Recibe multipart: campo "publication" (JSON) + campo "images" (archivos opcionales).
      */
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<PublicationResponseDTO> createPublication(
             @RequestParam("publication") String publicationJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
             Authentication authentication
     ) {
         try {
@@ -49,7 +53,9 @@ public class PublicationController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Error al crear publicación: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 

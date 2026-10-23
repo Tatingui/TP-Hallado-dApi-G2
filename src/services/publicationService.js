@@ -60,21 +60,25 @@ export const searchPublicationsApi = async ({
 export const createPublicationApi = async (publication, images = []) => {
   const token = await getToken();
 
+  // Enviar datos de publicación como query param y las imágenes en FormData.
+  // React Native tiene problemas al mezclar strings y archivos en FormData.
+  const publicationParam = encodeURIComponent(JSON.stringify(publication));
+  const url = "/publications?publication=" + publicationParam;
+
   const formData = new FormData();
 
-  // Datos de la publicación como JSON blob
-  formData.append("publication", JSON.stringify(publication));
-
-  // Imágenes como archivos adjuntos
-  images.forEach((img, index) => {
-    formData.append("images", {
-      uri: img.uri,
-      type: img.type || "image/jpeg",
-      name: img.fileName || `image_${index}.jpg`,
+  // Imágenes como archivos adjuntos (solo si hay)
+  if (images && images.length > 0) {
+    images.forEach((img, index) => {
+      formData.append("images", {
+        uri: img.uri,
+        type: img.type || "image/jpeg",
+        name: img.fileName || `image_${index}.jpg`,
+      });
     });
-  });
+  }
 
-  const data = await apiPostMultipart("/publications", formData, token);
+  const data = await apiPostMultipart(url, formData, token);
   return data;
 };
 
