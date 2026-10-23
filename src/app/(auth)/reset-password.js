@@ -7,24 +7,19 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { resetPassword, resendOtp } from "../../services/authService";
+import { verifyOtp, resendOtp } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
-import PasswordInput from "../../components/PasswordInput";
-import PasswordCriteria, { validatePassword } from "../../components/PasswordCriteria";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
 
-export default function ResetPasswordScreen() {
+export default function ResetPasswordOtpScreen() {
   const { email } = useLocalSearchParams();
   const [code, setCode] = useState(Array(OTP_LENGTH).fill(""));
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN);
@@ -63,45 +58,28 @@ export default function ResetPasswordScreen() {
     }
   }
 
-  async function handleReset() {
+  async function handleVerify() {
     const fullCode = code.join("");
-
     if (fullCode.length !== OTP_LENGTH) {
       setError("Ingresa los 6 digitos del codigo");
-      return;
-    }
-    if (!newPassword.trim() || !confirmPassword.trim()) {
-      setError("Completa ambos campos de contrasena");
-      return;
-    }
-
-    const { valid, errors } = validatePassword(newPassword);
-    if (!valid) {
-      setError("La contrasena no cumple: " + errors[0]);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("Las contrasenas no coinciden");
       return;
     }
 
     setError("");
     setLoading(true);
     try {
-      const response = await resetPassword(email, fullCode, newPassword);
+      const response = await verifyOtp(email, fullCode);
 
       if (response.success) {
-        router.replace({
-          pathname: "/(auth)/login",
-          params: { resetSuccess: "true" },
+        // OTP verificado — navegar a elegir nueva contrasena
+        router.push({
+          pathname: "/(auth)/new-password",
+          params: { email, code: fullCode },
         });
       } else {
-        setError(response.message || "No se pudo restablecer la contrasena");
-        if (response.message && response.message.toLowerCase().includes("codigo")) {
-          setCode(Array(OTP_LENGTH).fill(""));
-          inputRefs.current[0]?.focus();
-        }
+        setError(response.message || "Codigo invalido");
+        setCode(Array(OTP_LENGTH).fill(""));
+        inputRefs.current[0]?.focus();
       }
     } catch (err) {
       setError("Error de conexion con el servidor");
@@ -138,21 +116,16 @@ export default function ResetPasswordScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <View style={styles.iconBg}>
-            <LogoHallado size={36} color={Colors.textOnPrimary} />
-          </View>
-          <Text style={styles.title}>Nueva contrasena</Text>
-          <Text style={styles.subtitle}>
-            Ingresa el codigo enviado a{"\n"}
-            <Text style={styles.emailText}>{email}</Text>
-            {"\n"}y elegi tu nueva contrasena.
-          </Text>
+      <View style={styles.content}>
+        <View style={styles.iconBg}>
+          <LogoHallado size={36} color={Colors.textOnPrimary} />
         </View>
+
+        <Text style={styles.title}>Verificar codigo</Text>
+        <Text style={styles.subtitle}>
+          Ingresa el codigo de 6 digitos enviado a{"\n"}
+          <Text style={styles.emailText}>{email}</Text>
+        </Text>
 
         {/* OTP inputs */}
         <View style={styles.otpRow}>
@@ -163,7 +136,7 @@ export default function ResetPasswordScreen() {
               style={[
                 styles.otpInput,
                 digit ? styles.otpInputFilled : null,
-                error && code.join("").length < OTP_LENGTH ? styles.otpInputError : null,
+                error ? styles.otpInputError : null,
               ]}
               value={digit}
               onChangeText={(text) => handleChange(text, index)}
@@ -174,6 +147,32 @@ export default function ResetPasswordScreen() {
             />
           ))}
         </View>
+
+        {/* Mensajes */}
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        {successMsg ? (
+          <View style={styles.successBox}>
+            <Text style={styles.successText}>{successMsg}</Text>
+          </View>
+        ) : null}
+
+        {/* Boton verificar */}
+        <Pressable
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleVerify}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={Colors.textOnPrimary} />
+          ) : (
+            <Text style={styles.buttonText}>VERIFICAR CODIGO</Text>
+          )}
+        </Pressable>
 
         {/* Reenviar */}
         <View style={styles.resendContainer}>
@@ -192,50 +191,10 @@ export default function ResetPasswordScreen() {
           )}
         </View>
 
-        {/* Nueva contrasena */}
-        <View style={styles.form}>
-          <Text style={styles.label}>Nueva contrasena</Text>
-          <PasswordInput
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholder="Minimo 6 caracteres"
-          />
-          <PasswordCriteria password={newPassword} />
-
-          <Text style={styles.label}>Confirmar contrasena</Text>
-          <PasswordInput
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Repeti tu contrasena"
-          />
-        </View>
-
-        {/* Mensajes */}
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        {successMsg ? (
-          <View style={styles.successBox}>
-            <Text style={styles.successText}>{successMsg}</Text>
-          </View>
-        ) : null}
-
-        {/* Boton */}
-        <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleReset}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={Colors.textOnPrimary} />
-          ) : (
-            <Text style={styles.buttonText}>RESTABLECER CONTRASENA</Text>
-          )}
-        </Pressable>
-      </ScrollView>
+        <Text style={styles.infoText}>
+          El codigo expira en 5 minutos. Revisa tu bandeja de spam si no lo encontras.
+        </Text>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -245,15 +204,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scrollContent: {
-    flexGrow: 1,
+  content: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.lg,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: Spacing.lg,
   },
   iconBg: {
     width: 64,
@@ -262,7 +217,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   title: {
     fontSize: FontSize.xl,
@@ -275,6 +230,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: Spacing.xl,
   },
   emailText: {
     fontWeight: "bold",
@@ -283,7 +239,7 @@ const styles = StyleSheet.create({
   otpRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   otpInput: {
     width: 48,
@@ -303,40 +259,6 @@ const styles = StyleSheet.create({
   },
   otpInputError: {
     borderColor: Colors.error,
-  },
-  resendContainer: {
-    alignItems: "center",
-    marginBottom: Spacing.lg,
-    minHeight: 24,
-    justifyContent: "center",
-  },
-  resendTimer: {
-    fontSize: FontSize.sm,
-    color: Colors.disabled,
-  },
-  resendLink: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: "bold",
-  },
-  form: {
-    width: "100%",
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  label: {
-    fontSize: FontSize.sm,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.sm,
   },
   errorBox: {
     backgroundColor: Colors.errorLight,
@@ -377,5 +299,27 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: "bold",
     letterSpacing: 1,
+  },
+  resendContainer: {
+    marginTop: Spacing.lg,
+    alignItems: "center",
+    minHeight: 24,
+    justifyContent: "center",
+  },
+  resendTimer: {
+    fontSize: FontSize.sm,
+    color: Colors.disabled,
+  },
+  resendLink: {
+    fontSize: FontSize.sm,
+    color: Colors.primary,
+    fontWeight: "bold",
+  },
+  infoText: {
+    fontSize: 12,
+    color: Colors.disabled,
+    textAlign: "center",
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
 });
