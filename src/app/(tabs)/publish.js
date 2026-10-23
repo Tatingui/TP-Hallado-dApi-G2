@@ -162,7 +162,7 @@ export default function PublishScreen() {
         address: form.address.trim() || null,
         latitude: form.latitude,
         longitude: form.longitude,
-        eventDate: form.eventDate,
+        eventDate: form.eventDate || new Date().toISOString(),
       };
       if (form.type === PublicationType.FOUND) {
         payload.verificationQuestion = form.verificationQuestion.trim() || null;
@@ -379,6 +379,25 @@ export default function PublishScreen() {
                 {form.latitude ? "Ubicación GPS registrada ✓" : "Usar mi ubicación actual"}
               </Text>
             </TouchableOpacity>
+
+            <Text style={[styles.inputLabel, { marginTop: 16 }]}>
+              ¿Cuándo {form.type === PublicationType.LOST ? "lo perdiste" : "lo encontraste"}? (opcional)
+            </Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => {
+                // Por ahora se usa la fecha actual; en una iteración futura se puede agregar DateTimePicker
+                const now = new Date();
+                updateField("eventDate", now.toISOString());
+                Alert.alert("Fecha registrada", "Se registró la fecha de hoy: " + now.toLocaleDateString("es-AR"));
+              }}
+            >
+              <Text style={{ color: form.eventDate ? Colors.text : Colors.textSecondary, fontSize: 15 }}>
+                {form.eventDate
+                  ? new Date(form.eventDate).toLocaleDateString("es-AR")
+                  : "Tocar para registrar fecha de hoy"}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
 
@@ -429,6 +448,14 @@ export default function PublishScreen() {
                   <Text style={styles.reviewValue}>{form.address}</Text>
                 </>
               ) : null}
+              {form.eventDate && (
+                <>
+                  <Text style={styles.reviewLabel}>Fecha</Text>
+                  <Text style={styles.reviewValue}>
+                    {new Date(form.eventDate).toLocaleDateString("es-AR")}
+                  </Text>
+                </>
+              )}
               {form.images.length > 0 && (
                 <>
                   <Text style={styles.reviewLabel}>Fotos</Text>
