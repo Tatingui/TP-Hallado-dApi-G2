@@ -16,8 +16,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function ProfileScreen() {
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -219,6 +221,16 @@ export default function ProfileScreen() {
       >
         <Ionicons name="eye-outline" size={20} color={Colors.surface} />
         <Text style={styles.publicProfileButtonText}>Ver mi Perfil Público</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.publicProfileButton, { backgroundColor: '#EF4444', marginTop: 12 }]}
+        onPress={async () => {
+          await logout();
+        }}
+      >
+        <Ionicons name="log-out-outline" size={20} color={Colors.surface} />
+        <Text style={styles.publicProfileButtonText}>Cerrar Sesión</Text>
       </Pressable>
     </ScrollView>
   );
