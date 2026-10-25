@@ -33,8 +33,7 @@ public class ClaimService {
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
 
-    // Hardcoded upload dir para el TP
-    private final String UPLOAD_DIR = "uploads/";
+    private static final String UPLOAD_DIR = "uploads/";
 
     public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository) {
         this.claimRepository = claimRepository;
@@ -42,6 +41,10 @@ public class ClaimService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Punto 7: Crear un reclamo ("Es mío" / "Lo encontré").
+     * Valida el límite de 3 intentos y la respuesta de seguridad para publicaciones FOUND.
+     */
     @Transactional
     public ClaimResponseDTO createClaim(Long publicationId, ClaimRequestDTO request, MultipartFile image, String claimantEmail) {
         User claimant = userRepository.findByEmail(claimantEmail)
@@ -50,33 +53,28 @@ public class ClaimService {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
-        // Validar que la publicación esté ABIERTA
         if (publication.getStatus() != PublicationStatus.OPEN) {
             throw new BadRequestException("La publicación no está disponible para recibir reclamos.");
         }
 
-        // El creador no puede reclamar su propia publicación
         if (publication.getUser().getId().equals(claimant.getId())) {
             throw new BadRequestException("No puedes reclamar tu propia publicación.");
         }
 
-        // Punto 7: "Cada persona tiene un máximo de 3 intentos de reclamo por publicación."
+        // Límite de 3 intentos fallidos por usuario por publicación
         long previousAttempts = claimRepository.countByPublicationAndClaimant(publication, claimant);
         if (previousAttempts >= 3) {
-            throw new ForbiddenException("Has alcanzado el límite de 3 intentos fallidos de reclamo para esta publicación.");
+            throw new ForbiddenException("Has alcanzado el límite de 3 intentos de reclamo para esta publicación.");
         }
 
         // Validaciones según el tipo (LOST / FOUND)
         if (publication.getType() == PublicationType.FOUND) {
-            // Regla: Si es FOUND, el que reclama ("Es mío") DEBE responder la pregunta de verificación
             if (publication.getVerificationAnswer() != null && !publication.getVerificationAnswer().trim().isEmpty()) {
                 String expected = publication.getVerificationAnswer().trim().toLowerCase();
                 String received = request.getVerificationAnswer() != null ? request.getVerificationAnswer().trim().toLowerCase() : "";
 
-                // Verificación laxa de string (ignora mayúsculas/espacios extra)
                 if (!expected.equals(received)) {
-                    // Guarda el intento fallido? No, el TP dice 3 intentos de reclamo, por lo que creamos el reclamo RECHAZADO directo?
-                    // Mejor lo guardamos como RECHAZADO para contar el intento.
+                    // Registrar intento fallido
                     Claim failedClaim = new Claim(publication, claimant, request.getProofMessage(), null);
                     failedClaim.setStatus(ClaimStatus.REJECTED);
                     claimRepository.save(failedClaim);
@@ -85,25 +83,22 @@ public class ClaimService {
             }
         }
 
-        // Si llegó acá, superó la pregunta (o no había) -> Crear el reclamo válido
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             imageUrl = saveImage(image);
         } else if (publication.getType() == PublicationType.LOST) {
-            // Regla: Si es LOST, el que reclama ("Lo encontré") DEBE subir foto
             throw new BadRequestException("Debes adjuntar una foto para demostrar que lo encontraste.");
         }
 
         Claim newClaim = new Claim(publication, claimant, request.getProofMessage(), imageUrl);
         claimRepository.save(newClaim);
 
-        // Pasamos la publicación a EN RECLAMO?
-        // El TP dice que el publicador debe aceptar o rechazar, puede recibir varios pendientes.
-        // Entonces la publicación queda OPEN hasta que el publicador Acepte uno.
-
         return ClaimResponseDTO.fromEntity(newClaim, false);
     }
 
+    /**
+     * Punto 7: Responder a un reclamo (ACCEPT / REJECT).
+     */
     @Transactional
     public ClaimResponseDTO respondToClaim(Long claimId, ClaimStatus newStatus, String publisherEmail) {
         User publisher = userRepository.findByEmail(publisherEmail)
@@ -123,14 +118,14 @@ public class ClaimService {
         claim.setStatus(newStatus);
         claimRepository.save(claim);
 
-        // Si ACEPTA el reclamo:
         if (newStatus == ClaimStatus.ACCEPTED) {
-            // 1. Pasa la publicación a "EN_RECLAMO" (o resuelta, el TP usa "en reclamo" para coordinar entrega)
             claim.getPublication().setStatus(PublicationStatus.IN_CLAIM);
             publicationRepository.save(claim.getPublication());
 
-            // 2. Todos los demás reclamos pendientes para esta publicación pasan a REJECTED
-            List<Claim> otherPending = claimRepository.findByPublicationAndStatusAndIdNot(claim.getPublication(), ClaimStatus.PENDING, claim.getId());
+            // Rechazar automáticamente los demás reclamos pendientes
+            List<Claim> otherPending = claimRepository.findByPublicationAndStatusAndIdNot(
+                    claim.getPublication(), ClaimStatus.PENDING, claim.getId()
+            );
             for (Claim c : otherPending) {
                 c.setStatus(ClaimStatus.REJECTED);
             }
