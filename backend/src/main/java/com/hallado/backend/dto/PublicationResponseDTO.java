@@ -33,15 +33,17 @@ public class PublicationResponseDTO {
     public static class PublisherSummaryDTO {
         private Long id;
         private String nombre;
+        private String email; // <- Agregado para validar isMyPublication en frontend
         private String profileImageUrl;
         private int devolucionesConcretadas;
         private int valoracionesPositivas;
         private int valoracionesNegativas;
 
-        public PublisherSummaryDTO(Long id, String nombre, String profileImageUrl, 
+        public PublisherSummaryDTO(Long id, String nombre, String email, String profileImageUrl, 
                                    int devolucionesConcretadas, int valoracionesPositivas, int valoracionesNegativas) {
             this.id = id;
             this.nombre = nombre;
+            this.email = email;
             this.profileImageUrl = profileImageUrl;
             this.devolucionesConcretadas = devolucionesConcretadas;
             this.valoracionesPositivas = valoracionesPositivas;
@@ -50,6 +52,7 @@ public class PublicationResponseDTO {
 
         public Long getId() { return id; }
         public String getNombre() { return nombre; }
+        public String getEmail() { return email; }
         public String getProfileImageUrl() { return profileImageUrl; }
         public int getDevolucionesConcretadas() { return devolucionesConcretadas; }
         public int getValoracionesPositivas() { return valoracionesPositivas; }
@@ -83,6 +86,7 @@ public class PublicationResponseDTO {
             dto.setPublisher(new PublisherSummaryDTO(
                 p.getUser().getId(),
                 p.getUser().getNombre(),
+                p.getUser().getEmail(),
                 p.getUser().getProfileImageUrl(),
                 p.getUser().getDevolucionesConcretadas(),
                 p.getUser().getValoracionesPositivas(),
