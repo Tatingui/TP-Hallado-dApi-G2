@@ -127,7 +127,7 @@ export default function PublicationDetailScreen() {
   const images = publication.imageUrls || [];
   const hasImages = images.length > 0;
 
-  const isMyPublication = publication.publisher?.email === email || publication.publisher?.nombre === email; // Ajustar logica si el DTO no devuelve email
+  const isMyPublication = publication.publisher?.email === email || publication.publisher?.nombre === email;
   const isFound = publication.type === PublicationType.FOUND;
   const isLost = publication.type === PublicationType.LOST;
   const canInteract = !isMyPublication && publication.status === PublicationStatus.OPEN;
