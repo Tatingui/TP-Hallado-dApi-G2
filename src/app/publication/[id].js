@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { IMAGE_BASE_URL } from "../../services/api";
@@ -31,6 +32,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function PublicationDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { email } = useAuth(); // User autenticado
 
   const [publication, setPublication] = useState(null);
@@ -277,7 +279,7 @@ export default function PublicationDetailScreen() {
 
       {/* Footer Dinámico con Botones de Reclamo */}
       {canInteract && (
-        <View style={styles.actionFooter}>
+        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: isFound ? Colors.primary : "#10B981" }]}
             onPress={() => setClaimModalVisible(true)}
@@ -295,7 +297,7 @@ export default function PublicationDetailScreen() {
       )}
 
       {isMyPublication && publication.status === PublicationStatus.OPEN && (
-        <View style={styles.actionFooter}>
+        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: "#374151" }]}>
             <Ionicons name="settings-outline" size={20} color="#FFF" />
             <Text style={styles.mainActionText}>Gestionar Publicación</Text>
@@ -422,4 +424,33 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   distanceText: { fontSize: 14, color: Colors.text },
+  actionFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  mainActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  mainActionText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+  }
 });
