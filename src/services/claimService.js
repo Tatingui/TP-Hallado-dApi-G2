@@ -1,8 +1,10 @@
 import { apiGet, apiPut, apiPostMultipart, apiPost } from "./api";
+import { getToken } from "../storage/authStorage";
 
 // Punto 7: Enviar Reclamo con multipart (FormData)
 export const createClaimApi = async (publicationId, proofMessage, verificationAnswer, imageUri) => {
   const formData = new FormData();
+  const token = await getToken();
 
   const claimRequest = {
     proofMessage: proofMessage || "",
@@ -25,7 +27,7 @@ export const createClaimApi = async (publicationId, proofMessage, verificationAn
 
   // La API asume Token ya interceptado o se puede pasar manualmente,
   // pero usaremos apiPostMultipart que lo toma directo si tenes el token a mano.
-  return apiPostMultipart(`/claims/${publicationId}`, formData);
+  return apiPostMultipart(`/claims/${publicationId}`, formData, token);
 };
 
 // Modificada para recibir Token si se necesita explicito
@@ -54,16 +56,19 @@ export const createClaimApiWithToken = async (publicationId, proofMessage, verif
   return apiPostMultipart(`/claims/${publicationId}`, formData, token);
 };
 
-export const getMySentClaimsApi = async (page = 0, size = 10, token) => {
+export const getMySentClaimsApi = async (page = 0, size = 10, tokenParam) => {
+  const token = tokenParam || await getToken();
   return apiGet(`/claims/my-sent?page=${page}&size=${size}`, token);
 };
 
-export const getMyReceivedClaimsApi = async (page = 0, size = 10, token) => {
+export const getMyReceivedClaimsApi = async (page = 0, size = 10, tokenParam) => {
+  const token = tokenParam || await getToken();
   return apiGet(`/claims/my-received?page=${page}&size=${size}`, token);
 };
 
 // Usa fetch PATCH con el auth manual o apiPut adaptada
-export const respondToClaimApi = async (claimId, status, token) => {
+export const respondToClaimApi = async (claimId, status, tokenParam) => {
+  const token = tokenParam || await getToken();
   const BASE_URL = require("./api").IMAGE_BASE_URL + "/api";
   const response = await fetch(`${BASE_URL}/claims/${claimId}/respond`, {
     method: "PATCH",
