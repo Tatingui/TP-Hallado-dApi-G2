@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   StyleSheet,
   Dimensions,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { IMAGE_BASE_URL } from "../../services/api";
 import { getPublicationByIdApi } from "../../services/publicationService";
+import { createClaimApi } from "../../services/claimService";
 import {
   getTypeLabel,
   getCategoryLabel,
@@ -21,15 +23,23 @@ import {
   PublicationStatus,
   PublicationType,
 } from "../../constants/publicationConstants";
+import CreateClaimModal from "../../components/CreateClaimModal";
+import { useAuth } from "../../hooks/useAuth";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function PublicationDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { email } = useAuth(); // User autenticado
+
   const [publication, setPublication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+
+  // States for Claim Modal
+  const [claimModalVisible, setClaimModalVisible] = useState(false);
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -49,6 +59,30 @@ export default function PublicationDetailScreen() {
     }
   };
 
+  const handleSubmitClaim = async (claimData) => {
+    try {
+      setIsSubmittingClaim(true);
+      await createClaimApi(
+        publication.id,
+        claimData.proofMessage,
+        claimData.verificationAnswer,
+        claimData.imageUri
+      );
+
+      setClaimModalVisible(false);
+      Alert.alert(
+        "Reclamo enviado",
+        "Tu reclamo fue enviado exitosamente al publicador. Podés seguir el estado desde 'Mis Reclamos'.",
+        [{ text: "Entendido", onPress: () => router.push("/(tabs)/claims") }]
+      );
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", err.message || "No se pudo enviar el reclamo. Recordá el límite de 3 intentos.");
+    } finally {
+      setIsSubmittingClaim(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case PublicationStatus.OPEN:
@@ -64,11 +98,6 @@ export default function PublicationDetailScreen() {
     }
   };
 
-  /**
-   * Construye la URL completa de una imagen.
-   * Si la URL ya es absoluta (http/https) la usa directo,
-   * si no, le agrega la base del servidor.
-   */
   const buildImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
@@ -98,9 +127,13 @@ export default function PublicationDetailScreen() {
   const images = publication.imageUrls || [];
   const hasImages = images.length > 0;
 
+  const isMyPublication = publication.publisher?.email === email || publication.publisher?.nombre === email; // Ajustar logica si el DTO no devuelve email
+  const isFound = publication.type === PublicationType.FOUND;
+  const isLost = publication.type === PublicationType.LOST;
+  const canInteract = !isMyPublication && publication.status === PublicationStatus.OPEN;
+
   return (
     <View style={styles.container}>
-      {/* Header con botón atrás */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
@@ -108,11 +141,13 @@ export default function PublicationDetailScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           Detalle
         </Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity style={styles.backButton}>
+           {/* Placeholder for Follow button */}
+           <Ionicons name="bookmark-outline" size={24} color={Colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Carrusel de imágenes */}
         {hasImages && (
           <View style={styles.imageCarousel}>
             <ScrollView
@@ -146,13 +181,12 @@ export default function PublicationDetailScreen() {
           </View>
         )}
 
-        {/* Badges de tipo y estado */}
         <View style={styles.badgeRow}>
           <View style={[styles.typeBadge, {
-            backgroundColor: publication.type === PublicationType.LOST ? "#ef4444" : Colors.primary
+            backgroundColor: isLost ? "#ef4444" : Colors.primary
           }]}>
             <Ionicons
-              name={publication.type === PublicationType.LOST ? "search-outline" : "eye-outline"}
+              name={isLost ? "search-outline" : "eye-outline"}
               size={14}
               color={Colors.surface}
             />
@@ -163,68 +197,50 @@ export default function PublicationDetailScreen() {
           </View>
         </View>
 
-        {/* Título y descripción */}
         <Text style={styles.title}>{publication.title}</Text>
         {publication.description ? (
           <Text style={styles.description}>{publication.description}</Text>
         ) : null}
 
-        {/* Info card */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Ionicons name="folder-outline" size={18} color={Colors.textSecondary} />
             <Text style={styles.infoLabel}>Categoría</Text>
             <Text style={styles.infoValue}>{getCategoryLabel(publication.category)}</Text>
           </View>
-
           <View style={styles.divider} />
-
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={18} color={Colors.textSecondary} />
             <Text style={styles.infoLabel}>Barrio</Text>
             <Text style={styles.infoValue}>{publication.barrio}</Text>
           </View>
 
-          {publication.address ? (
-            <>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Ionicons name="navigate-outline" size={18} color={Colors.textSecondary} />
-                <Text style={styles.infoLabel}>Dirección</Text>
-                <Text style={styles.infoValue}>{publication.address}</Text>
-              </View>
-            </>
-          ) : null}
+          {/* Ocultar dirección exacta hasta reclamo (Punto 4) */}
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Ionicons name="navigate-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoLabel}>Dirección</Text>
+            {isMyPublication ? (
+               <Text style={styles.infoValue}>{publication.address || "No especificada"}</Text>
+            ) : (
+               <Text style={[styles.infoValue, { fontStyle: "italic", color: "#9CA3AF" }]}>
+                 🔒 Oculta hasta aceptar reclamo
+               </Text>
+            )}
+          </View>
 
           <View style={styles.divider} />
-
           <View style={styles.infoRow}>
             <Ionicons name="calendar-outline" size={18} color={Colors.textSecondary} />
             <Text style={styles.infoLabel}>Fecha</Text>
             <Text style={styles.infoValue}>
               {publication.eventDate
                 ? new Date(publication.eventDate).toLocaleDateString("es-AR")
-                : publication.createdAt
-                  ? new Date(publication.createdAt).toLocaleDateString("es-AR")
-                  : "Sin fecha"}
+                : "Sin fecha"}
             </Text>
           </View>
-
-          {publication.expiresAt ? (
-            <>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={18} color={Colors.textSecondary} />
-                <Text style={styles.infoLabel}>Vence</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(publication.expiresAt).toLocaleDateString("es-AR")}
-                </Text>
-              </View>
-            </>
-          ) : null}
         </View>
 
-        {/* Publicador */}
         {publication.publisher && (
           <TouchableOpacity
             style={styles.publisherCard}
@@ -257,17 +273,45 @@ export default function PublicationDetailScreen() {
             <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
           </TouchableOpacity>
         )}
-
-        {/* Distancia si está disponible */}
-        {publication.distanceKm != null && (
-          <View style={styles.distanceCard}>
-            <Ionicons name="map-outline" size={20} color={Colors.primary} />
-            <Text style={styles.distanceText}>
-              A {publication.distanceKm} km de tu ubicación
-            </Text>
-          </View>
-        )}
       </ScrollView>
+
+      {/* Footer Dinámico con Botones de Reclamo */}
+      {canInteract && (
+        <View style={styles.actionFooter}>
+          <TouchableOpacity
+            style={[styles.mainActionBtn, { backgroundColor: isFound ? Colors.primary : "#10B981" }]}
+            onPress={() => setClaimModalVisible(true)}
+          >
+            <MaterialCommunityIcons
+              name={isFound ? "hand-heart" : "hand-back-right"}
+              size={20}
+              color="#FFF"
+            />
+            <Text style={styles.mainActionText}>
+              {isFound ? "¡Es mío!" : "¡Lo encontré!"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isMyPublication && publication.status === PublicationStatus.OPEN && (
+        <View style={styles.actionFooter}>
+          <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: "#374151" }]}>
+            <Ionicons name="settings-outline" size={20} color="#FFF" />
+            <Text style={styles.mainActionText}>Gestionar Publicación</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Modal Reclamo */}
+      <CreateClaimModal
+        visible={claimModalVisible}
+        onClose={() => setClaimModalVisible(false)}
+        onSubmit={handleSubmitClaim}
+        publicationType={publication.type}
+        verificationQuestion={publication.verificationQuestion}
+        isSubmitting={isSubmittingClaim}
+      />
     </View>
   );
 }
