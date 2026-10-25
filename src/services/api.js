@@ -1,9 +1,21 @@
+import Constants from 'expo-constants';
+
+// Obtiene dinámicamente la IP de la PC en la red local cuando se ejecuta desde un celular físico con Expo Go
+function getHostIp() {
+  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.developer?.tool;
+  if (hostUri) {
+    return hostUri.split(':')[0];
+  }
+  return '10.0.2.2'; // Fallback para emulador de Android Studio
+}
+
+const HOST_IP = getHostIp();
+
 // Base URL del backend Spring Boot
-// 10.0.2.2 es la IP del host desde el emulador Android
-const BASE_URL = "http://10.0.2.2:8081/api";
+const BASE_URL = `http://${HOST_IP}:8081/api`;
 
 // URL base del servidor (sin /api) para construir URLs de imágenes
-export const IMAGE_BASE_URL = "http://10.0.2.2:8081";
+export const IMAGE_BASE_URL = `http://${HOST_IP}:8081`;
 
 /**
  * Realiza un POST al backend.
