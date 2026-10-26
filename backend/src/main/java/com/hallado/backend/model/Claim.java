@@ -33,6 +33,16 @@ public class Claim {
 
     private LocalDateTime resolvedAt;
 
+    // Punto 8: Punto de encuentro acordado una vez aceptado el reclamo
+    private String meetingAddress;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "meeting_proposed_by_id")
+    private User meetingProposedBy;
+
+    @Enumerated(EnumType.STRING)
+    private MeetingPointStatus meetingStatus;
+
     public Claim() {
     }
 
@@ -68,4 +78,13 @@ public class Claim {
 
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+
+    public String getMeetingAddress() { return meetingAddress; }
+    public void setMeetingAddress(String meetingAddress) { this.meetingAddress = meetingAddress; }
+
+    public User getMeetingProposedBy() { return meetingProposedBy; }
+    public void setMeetingProposedBy(User meetingProposedBy) { this.meetingProposedBy = meetingProposedBy; }
+
+    public MeetingPointStatus getMeetingStatus() { return meetingStatus; }
+    public void setMeetingStatus(MeetingPointStatus meetingStatus) { this.meetingStatus = meetingStatus; }
 }
