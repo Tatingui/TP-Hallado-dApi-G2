@@ -1,32 +1,32 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  BARRIOS_LIST,
+  CATEGORY_OPTIONS,
+  getTypeLabel,
+  PublicationType,
+} from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  PublicationType,
-  CATEGORY_OPTIONS,
-  BARRIOS_LIST,
-  getTypeLabel,
-} from "../../constants/publicationConstants";
 import { createPublicationApi } from "../../services/publicationService";
-import { saveDraft, loadDraft, clearDraft } from "../../storage/draftStorage";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { clearDraft, loadDraft, saveDraft } from "../../storage/draftStorage";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -80,7 +80,7 @@ export default function PublishScreen() {
                 setHasDraft(false);
               },
             },
-          ]
+          ],
         );
       }
     })();
@@ -108,7 +108,10 @@ export default function PublishScreen() {
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a tu galería para agregar fotos.");
+      Alert.alert(
+        "Permiso necesario",
+        "Necesitamos acceso a tu galería para agregar fotos.",
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -130,7 +133,7 @@ export default function PublishScreen() {
   const removeImage = (index) => {
     updateField(
       "images",
-      form.images.filter((_, i) => i !== index)
+      form.images.filter((_, i) => i !== index),
     );
   };
 
@@ -142,7 +145,9 @@ export default function PublishScreen() {
       return;
     }
     try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       updateField("latitude", loc.coords.latitude);
       updateField("longitude", loc.coords.longitude);
       Alert.alert("Ubicación obtenida", "Se registró tu ubicación actual.");
@@ -172,14 +177,24 @@ export default function PublishScreen() {
       }
       await createPublicationApi(payload, form.images);
       await clearDraft();
-      Alert.alert("¡Publicación creada!", "Tu publicación fue creada con éxito.", [
-        { text: "Ver mis publicaciones", onPress: () => router.replace("/(tabs)/my-publications") },
-        { text: "OK" },
-      ]);
+      Alert.alert(
+        "¡Publicación creada!",
+        "Tu publicación fue creada con éxito.",
+        [
+          {
+            text: "Ver mis publicaciones",
+            onPress: () => router.replace("/(tabs)/my-publications"),
+          },
+          { text: "OK" },
+        ],
+      );
       setForm(INITIAL_FORM);
       setStep(0);
     } catch (err) {
-      Alert.alert("Error", err?.message || "No se pudo crear la publicación. Intentá de nuevo.");
+      Alert.alert(
+        "Error",
+        err?.message || "No se pudo crear la publicación. Intentá de nuevo.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -192,8 +207,15 @@ export default function PublishScreen() {
         return form.type !== null;
       case "category":
         return form.category !== null;
-      case "details":
-        return form.title.trim().length >= 5 && form.description.trim().length >= 10;
+      case "details": {
+        const hasBasicDetails =
+          form.title.trim().length >= 5 && form.description.trim().length >= 10;
+        const hasVerificationData =
+          form.type !== PublicationType.FOUND ||
+          (form.verificationQuestion.trim().length > 0 &&
+            form.verificationAnswer.trim().length > 0);
+        return hasBasicDetails && hasVerificationData;
+      }
       case "location":
         return form.barrio !== null;
       case "images":
@@ -212,25 +234,42 @@ export default function PublishScreen() {
         return (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>¿Qué querés publicar?</Text>
-            <Text style={styles.stepSubtitle}>Seleccioná el tipo de publicación</Text>
+            <Text style={styles.stepSubtitle}>
+              Seleccioná el tipo de publicación
+            </Text>
             {[PublicationType.LOST, PublicationType.FOUND].map((t) => (
               <TouchableOpacity
                 key={t}
-                style={[styles.optionCard, form.type === t && styles.optionCardSelected]}
+                style={[
+                  styles.optionCard,
+                  form.type === t && styles.optionCardSelected,
+                ]}
                 onPress={() => updateField("type", t)}
               >
                 <Ionicons
-                  name={t === PublicationType.LOST ? "search-outline" : "eye-outline"}
+                  name={
+                    t === PublicationType.LOST
+                      ? "search-outline"
+                      : "eye-outline"
+                  }
                   size={28}
                   color={form.type === t ? Colors.surface : Colors.primary}
                 />
                 <View style={{ marginLeft: 12, flex: 1 }}>
                   <Text
-                    style={[styles.optionTitle, form.type === t && styles.optionTitleSelected]}
+                    style={[
+                      styles.optionTitle,
+                      form.type === t && styles.optionTitleSelected,
+                    ]}
                   >
                     {getTypeLabel(t)}
                   </Text>
-                  <Text style={[styles.optionDesc, form.type === t && styles.optionDescSelected]}>
+                  <Text
+                    style={[
+                      styles.optionDesc,
+                      form.type === t && styles.optionDescSelected,
+                    ]}
+                  >
                     {t === PublicationType.LOST
                       ? "Perdiste algo y querés encontrarlo"
                       : "Encontraste algo y querés devolverlo"}
@@ -250,20 +289,30 @@ export default function PublishScreen() {
               {CATEGORY_OPTIONS.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
-                  style={[styles.categoryCard, form.category === cat.id && styles.categoryCardSelected]}
+                  style={[
+                    styles.categoryCard,
+                    form.category === cat.id && styles.categoryCardSelected,
+                  ]}
                   onPress={() => updateField("category", cat.id)}
                 >
                   <Ionicons
                     name={
-                      cat.icon === "paw" ? "paw-outline" :
-                      cat.icon === "key" ? "key-outline" :
-                      cat.icon === "card-account-details" ? "card-outline" :
-                      cat.icon === "cellphone" ? "phone-portrait-outline" :
-                      cat.icon === "tshirt-crew" ? "shirt-outline" :
-                      "ellipsis-horizontal-circle-outline"
+                      cat.icon === "paw"
+                        ? "paw-outline"
+                        : cat.icon === "key"
+                          ? "key-outline"
+                          : cat.icon === "card-account-details"
+                            ? "card-outline"
+                            : cat.icon === "cellphone"
+                              ? "phone-portrait-outline"
+                              : cat.icon === "tshirt-crew"
+                                ? "shirt-outline"
+                                : "ellipsis-horizontal-circle-outline"
                     }
                     size={28}
-                    color={form.category === cat.id ? Colors.surface : Colors.primary}
+                    color={
+                      form.category === cat.id ? Colors.surface : Colors.primary
+                    }
                   />
                   <Text
                     style={[
@@ -283,7 +332,9 @@ export default function PublishScreen() {
         return (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Detalles</Text>
-            <Text style={styles.stepSubtitle}>Describí lo que perdiste o encontraste</Text>
+            <Text style={styles.stepSubtitle}>
+              Describí lo que perdiste o encontraste
+            </Text>
             <Text style={styles.inputLabel}>Título *</Text>
             <TextInput
               style={styles.input}
@@ -311,7 +362,7 @@ export default function PublishScreen() {
             {form.type === PublicationType.FOUND && (
               <>
                 <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-                  Pregunta de verificación (opcional)
+                  Pregunta de verificación *
                 </Text>
                 <Text style={styles.helperText}>
                   Una pregunta que solo el dueño real podría responder
@@ -324,7 +375,7 @@ export default function PublishScreen() {
                   onChangeText={(v) => updateField("verificationQuestion", v)}
                   maxLength={200}
                 />
-                <Text style={styles.inputLabel}>Respuesta esperada</Text>
+                <Text style={styles.inputLabel}>Respuesta esperada *</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Ej: Luna"
@@ -343,30 +394,41 @@ export default function PublishScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Ubicación</Text>
             <Text style={styles.stepSubtitle}>
-              ¿Dónde {form.type === PublicationType.LOST ? "lo perdiste" : "lo encontraste"}?
+              ¿Dónde{" "}
+              {form.type === PublicationType.LOST
+                ? "lo perdiste"
+                : "lo encontraste"}
+              ?
             </Text>
 
             <Text style={styles.inputLabel}>Barrio *</Text>
             <View style={styles.barrioGrid}>
-              {BARRIOS_LIST.filter((b) => b !== "Todos los barrios").map((b) => (
-                <TouchableOpacity
-                  key={b}
-                  style={[styles.barrioChip, form.barrio === b && styles.barrioChipSelected]}
-                  onPress={() => updateField("barrio", b)}
-                >
-                  <Text
+              {BARRIOS_LIST.filter((b) => b !== "Todos los barrios").map(
+                (b) => (
+                  <TouchableOpacity
+                    key={b}
                     style={[
-                      styles.barrioChipText,
-                      form.barrio === b && styles.barrioChipTextSelected,
+                      styles.barrioChip,
+                      form.barrio === b && styles.barrioChipSelected,
                     ]}
+                    onPress={() => updateField("barrio", b)}
                   >
-                    {b}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.barrioChipText,
+                        form.barrio === b && styles.barrioChipTextSelected,
+                      ]}
+                    >
+                      {b}
+                    </Text>
+                  </TouchableOpacity>
+                ),
+              )}
             </View>
 
-            <Text style={[styles.inputLabel, { marginTop: 16 }]}>Dirección (opcional)</Text>
+            <Text style={[styles.inputLabel, { marginTop: 16 }]}>
+              Dirección (opcional)
+            </Text>
             <TextInput
               style={styles.input}
               placeholder="Ej: Av. Corrientes 1234"
@@ -376,20 +438,35 @@ export default function PublishScreen() {
             />
 
             <TouchableOpacity style={styles.locationBtn} onPress={getLocation}>
-              <Ionicons name="locate-outline" size={20} color={Colors.surface} />
+              <Ionicons
+                name="locate-outline"
+                size={20}
+                color={Colors.surface}
+              />
               <Text style={styles.locationBtnText}>
-                {form.latitude ? "Ubicación GPS registrada ✓" : "Usar mi ubicación actual"}
+                {form.latitude
+                  ? "Ubicación GPS registrada ✓"
+                  : "Usar mi ubicación actual"}
               </Text>
             </TouchableOpacity>
 
             <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-              ¿Cuándo {form.type === PublicationType.LOST ? "lo perdiste" : "lo encontraste"}? (opcional)
+              ¿Cuándo{" "}
+              {form.type === PublicationType.LOST
+                ? "lo perdiste"
+                : "lo encontraste"}
+              ? (opcional)
             </Text>
             <TouchableOpacity
               style={styles.input}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={{ color: form.eventDate ? Colors.text : Colors.textSecondary, fontSize: 15 }}>
+              <Text
+                style={{
+                  color: form.eventDate ? Colors.text : Colors.textSecondary,
+                  fontSize: 15,
+                }}
+              >
                 {form.eventDate
                   ? new Date(form.eventDate).toLocaleDateString("es-AR")
                   : "Tocar para seleccionar fecha"}
@@ -421,14 +498,28 @@ export default function PublishScreen() {
               {form.images.map((img, i) => (
                 <View key={i} style={styles.imageContainer}>
                   <Image source={{ uri: img.uri }} style={styles.imageThumb} />
-                  <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(i)}>
-                    <Ionicons name="close-circle" size={24} color={Colors.error} />
+                  <TouchableOpacity
+                    style={styles.removeImageBtn}
+                    onPress={() => removeImage(i)}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={24}
+                      color={Colors.error}
+                    />
                   </TouchableOpacity>
                 </View>
               ))}
               {form.images.length < 4 && (
-                <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
-                  <Ionicons name="camera-outline" size={32} color={Colors.textSecondary} />
+                <TouchableOpacity
+                  style={styles.addImageBtn}
+                  onPress={pickImages}
+                >
+                  <Ionicons
+                    name="camera-outline"
+                    size={32}
+                    color={Colors.textSecondary}
+                  />
                   <Text style={styles.addImageText}>Agregar</Text>
                 </TouchableOpacity>
               )}
@@ -470,7 +561,9 @@ export default function PublishScreen() {
               {form.images.length > 0 && (
                 <>
                   <Text style={styles.reviewLabel}>Fotos</Text>
-                  <Text style={styles.reviewValue}>{form.images.length} imagen(es)</Text>
+                  <Text style={styles.reviewValue}>
+                    {form.images.length} imagen(es)
+                  </Text>
                 </>
               )}
             </View>
@@ -533,7 +626,11 @@ export default function PublishScreen() {
               <ActivityIndicator color={Colors.surface} />
             ) : (
               <>
-                <Ionicons name="checkmark-circle-outline" size={20} color={Colors.surface} />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color={Colors.surface}
+                />
                 <Text style={styles.submitBtnText}>Publicar</Text>
               </>
             )}
@@ -565,7 +662,12 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: 20 },
   stepContainer: {},
-  stepTitle: { fontSize: 22, fontWeight: "700", color: Colors.text, marginBottom: 4 },
+  stepTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 4,
+  },
   stepSubtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 20 },
 
   // Type options
@@ -579,7 +681,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.border,
   },
-  optionCardSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  optionCardSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
   optionTitle: { fontSize: 16, fontWeight: "600", color: Colors.text },
   optionTitleSelected: { color: Colors.surface },
   optionDesc: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
@@ -596,12 +701,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.border,
   },
-  categoryCardSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  categoryLabel: { fontSize: 14, fontWeight: "500", color: Colors.text, marginTop: 8 },
+  categoryCardSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  categoryLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text,
+    marginTop: 8,
+  },
   categoryLabelSelected: { color: Colors.surface },
 
   // Inputs
-  inputLabel: { fontSize: 14, fontWeight: "600", color: Colors.text, marginBottom: 6 },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 6,
+  },
   helperText: { fontSize: 12, color: Colors.textSecondary, marginBottom: 8 },
   input: {
     backgroundColor: Colors.surface,
@@ -614,7 +732,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   textArea: { minHeight: 100, textAlignVertical: "top" },
-  charCount: { fontSize: 12, color: Colors.textSecondary, textAlign: "right", marginBottom: 12 },
+  charCount: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: "right",
+    marginBottom: 12,
+  },
 
   // Barrio chips
   barrioGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -626,7 +749,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  barrioChipSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  barrioChipSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
   barrioChipText: { fontSize: 13, color: Colors.text },
   barrioChipTextSelected: { color: Colors.surface },
 
