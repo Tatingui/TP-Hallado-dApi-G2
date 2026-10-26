@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import { checkNetworkConnection } from "../../hooks/useNetworkStatus";
 
 export default function EditProfileScreen() {
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,12 @@ export default function EditProfileScreen() {
   }
 
   async function handleSave() {
+    const isOnline = await checkNetworkConnection();
+    if (!isOnline) {
+      Alert.alert("Sin conexión", "Se requiere conexión a internet para actualizar la información de tu perfil.");
+      return;
+    }
+
     if (!nombre.trim()) {
       Alert.alert("Campo Requerido", "El nombre no puede estar vacío.");
       return;
