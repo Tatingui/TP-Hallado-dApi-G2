@@ -1,5 +1,5 @@
 import { getToken } from "../storage/authStorage";
-import { apiDelete, apiGet, apiPost, apiPostMultipart } from "./api";
+import { apiDelete, apiGet, apiPost, apiPostMultipart, apiPut } from "./api";
 
 /**
  * Busca publicaciones en el backend (endpoint de Agus).
@@ -119,6 +119,16 @@ export const getPublicationByIdApi = async (id) => {
   const token = await getToken();
   const data = await apiGet(`/publications/${id}`, token);
   return data;
+};
+
+export const updatePublicationApi = async (id, publication) => {
+  const token = await getToken();
+  return apiPut(`/publications/${id}`, publication, token);
+};
+
+export const getPublicationForEditApi = async (id) => {
+  const token = await getToken();
+  return apiGet(`/publications/${id}/edit`, token);
 };
 
 export const getPublicationFollowStatusApi = async (id) => {

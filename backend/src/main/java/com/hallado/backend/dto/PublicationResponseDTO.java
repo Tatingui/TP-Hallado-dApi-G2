@@ -48,6 +48,7 @@ public class PublicationResponseDTO {
         dto.setType(p.getType());
         dto.setCategory(p.getCategory());
         dto.setBarrio(p.getBarrio());
+        dto.setAddress(p.getAddress());
         dto.setLatitude(p.getLatitude());
         dto.setLongitude(p.getLongitude());
         dto.setEventDate(p.getEventDate());
@@ -83,6 +84,7 @@ public class PublicationResponseDTO {
     private PublicationType type;
     private CategoryEnum category;
     private String barrio;
+    private String address;
     private Double latitude;
     private Double longitude;
     private LocalDateTime eventDate;
@@ -103,6 +105,7 @@ public class PublicationResponseDTO {
     public PublicationResponseDTO() {}
 
     public String getBarrio() { return barrio; }
+    public String getAddress() { return address; }
     public CategoryEnum getCategory() { return category; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -130,6 +133,7 @@ public class PublicationResponseDTO {
 
     public boolean isHasNewUpdates() { return hasNewUpdates; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
+    public void setAddress(String address) { this.address = address; }
 
     public void setCategory(CategoryEnum category) { this.category = category; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
