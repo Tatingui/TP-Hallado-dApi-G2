@@ -374,7 +374,10 @@ export default function PublicationDetailScreen() {
 
       {isMyPublication && publication.status === PublicationStatus.OPEN && (
         <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: "#374151" }]}>
+          <TouchableOpacity
+            style={[styles.mainActionBtn, { backgroundColor: "#374151" }]}
+            onPress={() => router.push(`/publication/edit/${publication.id}`)}
+          >
             <Ionicons name="settings-outline" size={20} color="#FFF" />
             <Text style={styles.mainActionText}>Gestionar Publicación</Text>
           </TouchableOpacity>

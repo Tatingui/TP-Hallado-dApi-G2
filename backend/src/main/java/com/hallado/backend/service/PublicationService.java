@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.hallado.backend.dto.CreatePublicationRequest;
+import com.hallado.backend.dto.UpdatePublicationRequest;
+import com.hallado.backend.dto.PublicationEditResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.model.CategoryEnum;
@@ -223,6 +225,59 @@ public class PublicationService {
         Publication pub = publicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
         return PublicationResponseDTO.fromEntity(pub);
+    }
+
+    public PublicationEditResponseDTO getPublicationForEdit(Long id, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+        if (!publication.getUser().getId().equals(user.getId())) {
+            throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
+        }
+        return PublicationEditResponseDTO.fromEntity(publication);
+    }
+
+    public PublicationResponseDTO updatePublication(Long id, UpdatePublicationRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+
+        if (!publication.getUser().getId().equals(user.getId())) {
+            throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
+        }
+        if (publication.getStatus() != PublicationStatus.OPEN) {
+            throw new IllegalArgumentException("Solo se pueden editar publicaciones abiertas");
+        }
+        if (request.getTitle() == null || request.getTitle().trim().length() < 5) {
+            throw new IllegalArgumentException("El título debe tener al menos 5 caracteres");
+        }
+        if (request.getDescription() == null || request.getDescription().trim().length() < 10) {
+            throw new IllegalArgumentException("La descripción debe tener al menos 10 caracteres");
+        }
+        if (request.getBarrio() == null || request.getBarrio().trim().isEmpty()) {
+            throw new IllegalArgumentException("El barrio es obligatorio");
+        }
+
+        publication.setTitle(request.getTitle().trim());
+        publication.setDescription(request.getDescription().trim());
+        publication.setBarrio(request.getBarrio().trim());
+        publication.setAddress(request.getAddress() == null ? null : request.getAddress().trim());
+        publication.setLatitude(request.getLatitude());
+        publication.setLongitude(request.getLongitude());
+        publication.setEventDate(request.getEventDate());
+
+        if (publication.getType() == PublicationType.FOUND) {
+            if (request.getVerificationQuestion() == null || request.getVerificationQuestion().trim().isEmpty()
+                    || request.getVerificationAnswer() == null || request.getVerificationAnswer().trim().isEmpty()) {
+                throw new IllegalArgumentException("La pregunta y respuesta de verificación son obligatorias");
+            }
+            publication.setVerificationQuestion(request.getVerificationQuestion().trim());
+            publication.setVerificationAnswer(request.getVerificationAnswer().trim());
+        }
+
+        return PublicationResponseDTO.fromEntity(publicationRepository.save(publication));
     }
 
     public Map<String, Object> markPublicationAsSeen(String userEmail, Long publicationId) {

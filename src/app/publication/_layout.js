@@ -4,6 +4,7 @@ export default function PublicationLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="edit/[id]" />
     </Stack>
   );
 }

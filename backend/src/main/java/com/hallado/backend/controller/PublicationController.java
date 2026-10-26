@@ -17,10 +17,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hallado.backend.dto.CreatePublicationRequest;
+import com.hallado.backend.dto.UpdatePublicationRequest;
+import com.hallado.backend.dto.PublicationEditResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.model.CategoryEnum;
@@ -40,6 +44,36 @@ public class PublicationController {
     public PublicationController(PublicationService publicationService, ObjectMapper objectMapper) {
         this.publicationService = publicationService;
         this.objectMapper = objectMapper;
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PublicationResponseDTO> updatePublication(
+            @PathVariable Long id,
+            @RequestBody UpdatePublicationRequest request,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(publicationService.updatePublication(id, request, authentication.getName()));
+        } catch (com.hallado.backend.exception.ForbiddenException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+
+    }
+
+    @GetMapping("/{id}/edit")
+    public ResponseEntity<PublicationEditResponseDTO> getPublicationForEdit(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(publicationService.getPublicationForEdit(id, authentication.getName()));
+        } catch (com.hallado.backend.exception.ForbiddenException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**
