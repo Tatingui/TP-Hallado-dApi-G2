@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
 import { PublicationType } from '../constants/publicationConstants';
+import { checkNetworkConnection } from '../hooks/useNetworkStatus';
 
 export default function CreateClaimModal({
   visible,
@@ -80,7 +81,13 @@ export default function CreateClaimModal({
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const isOnline = await checkNetworkConnection();
+    if (!isOnline) {
+      Alert.alert('Sin conexión', 'Se requiere conexión a internet para enviar reclamos.');
+      return;
+    }
+
     // Validaciones estrictas Punto 7
     if (isFound && !verificationAnswer.trim()) {
       Alert.alert('Falta respuesta', 'Debés responder la pregunta de verificación obligatoria.');
