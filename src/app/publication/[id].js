@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreateClaimModal from "../../components/CreateClaimModal";
+import OfflineBanner from "../../components/OfflineBanner";
 import {
   getCategoryLabel,
   getStatusLabel,
@@ -32,6 +33,10 @@ import {
   markPublicationAsSeenApi,
   unfollowPublicationApi,
 } from "../../services/publicationService";
+import {
+  savePublicationDetailOffline,
+  getOfflinePublicationDetail,
+} from "../../storage/offlinePublicationsStorage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -46,6 +51,7 @@ export default function PublicationDetailScreen() {
   const [activeImage, setActiveImage] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // States for Claim Modal
   const [claimModalVisible, setClaimModalVisible] = useState(false);
@@ -58,18 +64,26 @@ export default function PublicationDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (publication?.id) {
+    if (publication?.id && !isOfflineMode) {
       loadFollowState(publication.id);
     }
-  }, [publication?.id, user]);
+  }, [publication?.id, user, isOfflineMode]);
 
   const loadPublication = async (pubId) => {
     try {
       setLoading(true);
+      setIsOfflineMode(false);
       const data = await getPublicationByIdApi(pubId);
       setPublication(data);
+      // Persistir detalle en almacenamiento local para consultas offline
+      await savePublicationDetailOffline(data);
     } catch (err) {
-      console.warn("Error cargando publicación:", err);
+      console.warn("Error o falta de red al cargar publicación, buscando copia local...", err);
+      const cached = await getOfflinePublicationDetail(pubId);
+      if (cached) {
+        setPublication(cached);
+        setIsOfflineMode(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -100,6 +114,10 @@ export default function PublicationDetailScreen() {
   };
 
   const handleToggleFollow = async () => {
+    if (isOfflineMode) {
+      Alert.alert("Sin conexión", "Se requiere conexión a internet para seguir publicaciones.");
+      return;
+    }
     if (!user || !isAuthenticated) {
       Alert.alert("Iniciá sesión", "Necesitás iniciar sesión para seguir esta publicación.");
       return;
@@ -124,7 +142,27 @@ export default function PublicationDetailScreen() {
     }
   };
 
+  const handlePressClaim = () => {
+    if (isOfflineMode) {
+      Alert.alert("Sin conexión", "Se requiere conexión a internet para realizar un reclamo.");
+      return;
+    }
+    setClaimModalVisible(true);
+  };
+
+  const handlePressEdit = () => {
+    if (isOfflineMode) {
+      Alert.alert("Sin conexión", "Se requiere conexión a internet para editar publicaciones.");
+      return;
+    }
+    router.push(`/publication/edit/${publication.id}`);
+  };
+
   const handleSubmitClaim = async (claimData) => {
+    if (isOfflineMode) {
+      Alert.alert("Sin conexión", "Se requiere conexión a internet para enviar reclamos.");
+      return;
+    }
     try {
       setIsSubmittingClaim(true);
       await createClaimApi(
@@ -165,7 +203,7 @@ export default function PublicationDetailScreen() {
 
   const buildImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith("http")) return url;
+    if (url.startsWith("http") || url.startsWith("file://") || url.startsWith("data:")) return url;
     return `${IMAGE_BASE_URL}${url}`;
   };
 
@@ -189,7 +227,7 @@ export default function PublicationDetailScreen() {
     );
   }
 
-  const images = publication.imageUrls || [];
+  const images = publication.imageUrls || publication.images || [];
   const hasImages = images.length > 0;
 
   const normalizedUserEmail = typeof user === "string" ? user.toLowerCase() : "";
@@ -210,20 +248,24 @@ export default function PublicationDetailScreen() {
           Detalle
         </Text>
         <TouchableOpacity
-          style={[styles.followButton, isFollowing && styles.followButtonActive]}
+          style={[styles.followButton, isFollowing && styles.followButtonActive, isOfflineMode && styles.disabledButton]}
           onPress={handleToggleFollow}
           disabled={isUpdatingFollow}
         >
           <Ionicons
             name={isFollowing ? "bookmark" : "bookmark-outline"}
             size={18}
-            color={isFollowing ? Colors.surface : Colors.primary}
+            color={isFollowing ? Colors.surface : (isOfflineMode ? Colors.disabled : Colors.primary)}
           />
-          <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+          <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive, isOfflineMode && { color: Colors.disabled }]}>
             {isFollowing ? "Siguiendo" : "Seguir"}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {isOfflineMode && (
+        <OfflineBanner message="Modo Sin Conexión: Viendo copia guardada localmente" />
+      )}
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {hasImages && (
@@ -240,7 +282,7 @@ export default function PublicationDetailScreen() {
               {images.map((url, i) => (
                 <Image
                   key={i}
-                  source={{ uri: buildImageUrl(url) }}
+                  source={{ uri: buildImageUrl(typeof url === 'string' ? url : url.uri) }}
                   style={styles.carouselImage}
                   resizeMode="cover"
                 />
@@ -293,7 +335,6 @@ export default function PublicationDetailScreen() {
             <Text style={styles.infoValue}>{publication.barrio}</Text>
           </View>
 
-          {/* Ocultar dirección exacta hasta reclamo (Punto 4) */}
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Ionicons name="navigate-outline" size={18} color={Colors.textSecondary} />
@@ -323,7 +364,13 @@ export default function PublicationDetailScreen() {
           <TouchableOpacity
             style={styles.publisherCard}
             activeOpacity={0.7}
-            onPress={() => router.push(`/profile/public/${publication.publisher.id}`)}
+            onPress={() => {
+              if (isOfflineMode) {
+                Alert.alert("Sin conexión", "Se requiere conexión a internet para ver perfiles de usuarios.");
+              } else {
+                router.push(`/profile/public/${publication.publisher.id}`);
+              }
+            }}
           >
             <View style={styles.publisherAvatar}>
               {publication.publisher.profileImageUrl ? (
@@ -339,12 +386,12 @@ export default function PublicationDetailScreen() {
               <Text style={styles.publisherName}>{publication.publisher.nombre}</Text>
               <View style={styles.publisherStats}>
                 <Text style={styles.statText}>
-                  {publication.publisher.devolucionesConcretadas} devoluciones
+                  {publication.publisher.devolucionesConcretadas || 0} devoluciones
                 </Text>
                 <Text style={styles.statDot}>·</Text>
                 <Ionicons name="thumbs-up-outline" size={12} color={Colors.success || "#22c55e"} />
                 <Text style={[styles.statText, { color: Colors.success || "#22c55e" }]}>
-                  {publication.publisher.valoracionesPositivas}
+                  {publication.publisher.valoracionesPositivas || 0}
                 </Text>
               </View>
             </View>
@@ -357,8 +404,12 @@ export default function PublicationDetailScreen() {
       {canInteract && (
         <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
-            style={[styles.mainActionBtn, { backgroundColor: isFound ? Colors.primary : "#10B981" }]}
-            onPress={() => setClaimModalVisible(true)}
+            style={[
+              styles.mainActionBtn,
+              { backgroundColor: isFound ? Colors.primary : "#10B981" },
+              isOfflineMode && styles.disabledActionBtn
+            ]}
+            onPress={handlePressClaim}
           >
             <MaterialCommunityIcons
               name={isFound ? "hand-heart" : "hand-back-right"}
@@ -375,8 +426,8 @@ export default function PublicationDetailScreen() {
       {isMyPublication && publication.status === PublicationStatus.OPEN && (
         <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
-            style={[styles.mainActionBtn, { backgroundColor: "#374151" }]}
-            onPress={() => router.push(`/publication/edit/${publication.id}`)}
+            style={[styles.mainActionBtn, { backgroundColor: "#374151" }, isOfflineMode && styles.disabledActionBtn]}
+            onPress={handlePressEdit}
           >
             <Ionicons name="settings-outline" size={20} color="#FFF" />
             <Text style={styles.mainActionText}>Gestionar Publicación</Text>
@@ -440,6 +491,10 @@ const styles = StyleSheet.create({
   },
   followButtonTextActive: {
     color: Colors.surface,
+  },
+  disabledButton: {
+    borderColor: Colors.border,
+    opacity: 0.6,
   },
 
   scrollView: { flex: 1 },
@@ -512,20 +567,6 @@ const styles = StyleSheet.create({
   statText: { fontSize: 12, color: Colors.textSecondary },
   statDot: { color: Colors.textSecondary },
 
-  // Distance
-  distanceCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  distanceText: { fontSize: 14, color: Colors.text },
   actionFooter: {
     position: 'absolute',
     bottom: 0,
@@ -549,6 +590,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
+  },
+  disabledActionBtn: {
+    opacity: 0.6,
   },
   mainActionText: {
     color: "#FFF",
