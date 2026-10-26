@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { IMAGE_BASE_URL } from '../services/api';
@@ -32,6 +32,18 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
     if (claim.meetingStatus === 'ACCEPTED') return 'Confirmado por ambas partes';
     if (claim.meetingProposedByMe) return `Esperando respuesta de ${counterpartName}`;
     return `${counterpartName} propuso este lugar`;
+  };
+
+  // Punto 8: Abre Google Maps (o el navegador) en modo navegación hacia el punto de encuentro
+  const openDirections = async () => {
+    // Se agrega la ciudad para que Maps no busque la calle en otra localidad
+    const destination = encodeURIComponent(`${claim.meetingAddress}, Buenos Aires, Argentina`);
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving&dir_action=navigate`;
+    try {
+      await Linking.openURL(url);
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo abrir la aplicación de mapas.');
+    }
   };
 
   const buildImageUrl = (url) => {
@@ -147,6 +159,11 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
               ]}>
                 {getMeetingStatusText()}
               </Text>
+
+              <TouchableOpacity style={[styles.actionBtn, styles.directionsBtn]} onPress={openDirections}>
+                <Ionicons name="navigate" size={16} color={Colors.primary} />
+                <Text style={styles.suggestBtnText}>Cómo llegar</Text>
+              </TouchableOpacity>
             </>
           ) : (
             <Text style={styles.meetingStatusText}>
@@ -375,6 +392,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   suggestBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  directionsBtn: {
+    flex: 0,
+    marginTop: 10,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DDD6FE',
