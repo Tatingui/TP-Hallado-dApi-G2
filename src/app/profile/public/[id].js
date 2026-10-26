@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Colors, FontSize, Spacing } from "../../../constants/theme";
 import { getPublicProfile } from "../../../services/userService";
-import { Colors, Spacing, FontSize } from "../../../constants/theme";
 
 export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -33,7 +33,7 @@ export default function PublicProfileScreen() {
     } catch (err) {
       Alert.alert(
         "Error",
-        err?.message || "No se pudo cargar el perfil público solicitado."
+        err?.message || "No se pudo cargar el perfil público solicitado.",
       );
     } finally {
       setLoading(false);
@@ -84,12 +84,20 @@ export default function PublicProfileScreen() {
             )}
           </View>
 
-          <Text style={styles.userName}>{publicData?.nombre || "Usuario Hallado"}</Text>
+          <Text style={styles.userName}>
+            {publicData?.nombre || "Usuario Hallado"}
+          </Text>
 
           <View style={styles.barrioContainer}>
-            <Ionicons name="location-outline" size={16} color={Colors.primary} />
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={Colors.primary}
+            />
             <Text style={styles.barrioText}>
-              {publicData?.barrio ? publicData.barrio : "Barrio no especificado"}
+              {publicData?.barrio
+                ? publicData.barrio
+                : "Barrio no especificado"}
             </Text>
           </View>
 
@@ -124,8 +132,34 @@ export default function PublicProfileScreen() {
             )}
           </View>
 
+          {publicData?.agradecimientos?.length > 0 && (
+            <View style={styles.thanksSection}>
+              <Text style={styles.sectionSubtitle}>
+                Agradecimientos recibidos:
+              </Text>
+              {publicData.agradecimientos.map((thanks, index) => (
+                <View
+                  key={`${thanks.createdAt}-${index}`}
+                  style={styles.thanksCard}
+                >
+                  <Ionicons name="heart" size={16} color="#EF4444" />
+                  <View style={styles.thanksContent}>
+                    <Text style={styles.thanksText}>“{thanks.message}”</Text>
+                    <Text style={styles.thanksAuthor}>
+                      — {thanks.authorName}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           <View style={styles.antiguedadRow}>
-            <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={Colors.textSecondary}
+            />
             <Text style={styles.antiguedadText}>
               Antigüedad: {publicData?.miembroDesde || "Reciente"}
             </Text>
@@ -133,9 +167,14 @@ export default function PublicProfileScreen() {
 
           {/* Privacidad notice */}
           <View style={styles.privacyNotice}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={Colors.primary} />
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={16}
+              color={Colors.primary}
+            />
             <Text style={styles.privacyNoticeText}>
-              Por privacidad y seguridad de la comunidad, el teléfono y el correo de contacto no se muestran públicamente.
+              Por privacidad y seguridad de la comunidad, el teléfono y el
+              correo de contacto no se muestran públicamente.
             </Text>
           </View>
         </View>
@@ -291,6 +330,37 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.textSecondary,
     fontStyle: "italic",
+  },
+  thanksSection: {
+    width: "100%",
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
+    alignSelf: "stretch",
+  },
+  thanksCard: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#FEF2F2",
+  },
+  thanksContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  thanksText: {
+    color: Colors.text,
+    fontSize: 13,
+    lineHeight: 19,
+    flexShrink: 1,
+  },
+  thanksAuthor: {
+    marginTop: 4,
+    color: Colors.textSecondary,
+    fontSize: 13,
   },
   antiguedadRow: {
     flexDirection: "row",

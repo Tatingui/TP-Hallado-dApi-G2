@@ -55,6 +55,7 @@ public class PublicationResponseDTO {
         dto.setCreatedAt(p.getCreatedAt());
         dto.setUpdatedAt(p.getUpdatedAt());
         dto.setExpiresAt(p.getExpiresAt());
+        dto.setVerificationQuestion(p.getVerificationQuestion());
 
         if (p.getImageUrls() != null && !p.getImageUrls().trim().isEmpty()) {
             dto.setImageUrls(Arrays.asList(p.getImageUrls().split(",")));
@@ -90,6 +91,7 @@ public class PublicationResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime expiresAt;
+    private String verificationQuestion;
 
     private Double distanceKm; // Calculated when userLat & userLng are passed
 
@@ -110,6 +112,7 @@ public class PublicationResponseDTO {
     public LocalDateTime getEventDate() { return eventDate; }
 
     public LocalDateTime getExpiresAt() { return expiresAt; }
+    public String getVerificationQuestion() { return verificationQuestion; }
     // Getters & Setters
     public Long getId() { return id; }
 
@@ -136,6 +139,7 @@ public class PublicationResponseDTO {
 
     public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
     public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public void setVerificationQuestion(String verificationQuestion) { this.verificationQuestion = verificationQuestion; }
 
     public void setHasNewUpdates(boolean hasNewUpdates) { this.hasNewUpdates = hasNewUpdates; }
     public void setId(Long id) { this.id = id; }

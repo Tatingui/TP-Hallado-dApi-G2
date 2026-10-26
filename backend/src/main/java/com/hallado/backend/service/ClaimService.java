@@ -10,6 +10,9 @@ import com.hallado.backend.model.*;
 import com.hallado.backend.repository.ClaimRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.UserRepository;
+import com.hallado.backend.repository.ClaimRatingRepository;
+import com.hallado.backend.dto.RatingRequestDTO;
+import com.hallado.backend.dto.ResolvedCaseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +27,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,13 +37,16 @@ public class ClaimService {
     private final ClaimRepository claimRepository;
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
+    private final ClaimRatingRepository claimRatingRepository;
 
     private static final String UPLOAD_DIR = "uploads/";
 
-    public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository) {
+    public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository,
+                        ClaimRatingRepository claimRatingRepository) {
         this.claimRepository = claimRepository;
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
+        this.claimRatingRepository = claimRatingRepository;
     }
 
     /**
@@ -116,6 +124,13 @@ public class ClaimService {
         }
 
         claim.setStatus(newStatus);
+        if (newStatus == ClaimStatus.ACCEPTED) {
+            claim.setResolvedAt(LocalDateTime.now());
+            boolean publisherIsDevolver = claim.getPublication().getType() == PublicationType.FOUND;
+            User devolver = publisherIsDevolver ? claim.getPublication().getUser() : claim.getClaimant();
+            devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
+            userRepository.save(devolver);
+        }
         claimRepository.save(claim);
 
         if (newStatus == ClaimStatus.ACCEPTED) {
@@ -133,6 +148,63 @@ public class ClaimService {
         }
 
         return ClaimResponseDTO.fromEntity(claim, true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResolvedCaseDTO> getResolvedHistory(String email, LocalDate from, LocalDate to, PublicationType type) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        LocalDateTime fromDate = from == null ? null : from.atStartOfDay();
+        LocalDateTime toDate = to == null ? null : to.plusDays(1).atStartOfDay();
+        return claimRepository.findResolvedHistory(user, fromDate, toDate, type).stream()
+                .map(claim -> ResolvedCaseDTO.from(claim, user,
+                        claimRatingRepository.findByClaimAndAuthor(claim, user).orElse(null)))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void rateResolvedCase(Long claimId, RatingRequestDTO request, String email) {
+        User author = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
+        if (claim.getStatus() != ClaimStatus.ACCEPTED || claim.getResolvedAt() == null ||
+                claim.getResolvedAt().plusDays(7).isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("El plazo para valorar este caso venció.");
+        }
+        boolean publisher = claim.getPublication().getUser().getId().equals(author.getId());
+        if (!publisher && !claim.getClaimant().getId().equals(author.getId())) {
+            throw new ForbiddenException("No participaste de este caso.");
+        }
+        if (request.getPositive() == null) {
+            throw new BadRequestException("Debes indicar si la valoración es positiva o negativa.");
+        }
+        if (claimRatingRepository.findByClaimAndAuthor(claim, author).isPresent()) {
+            throw new BadRequestException("Ya valoraste este caso.");
+        }
+        User rated = publisher ? claim.getClaimant() : claim.getPublication().getUser();
+        boolean devolver = claim.getPublication().getType() == PublicationType.FOUND ? publisher : !publisher;
+        String thanks = request.getPublicThanks() == null ? null : request.getPublicThanks().trim();
+        if (!devolver && thanks != null && thanks.length() > 280) {
+            throw new BadRequestException("El agradecimiento no puede superar los 280 caracteres.");
+        }
+        ClaimRating rating = new ClaimRating();
+        rating.setClaim(claim);
+        rating.setAuthor(author);
+        rating.setRatedUser(rated);
+        rating.setPositive(request.getPositive());
+        rating.setMessage(trimToLimit(request.getMessage(), 280));
+        rating.setPublicThanks(!devolver ? trimToLimit(thanks, 280) : null);
+        claimRatingRepository.save(rating);
+        if (request.getPositive()) rated.setValoracionesPositivas(rated.getValoracionesPositivas() + 1);
+        else rated.setValoracionesNegativas(rated.getValoracionesNegativas() + 1);
+        userRepository.save(rated);
+    }
+
+    private String trimToLimit(String value, int limit) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed.substring(0, Math.min(trimmed.length(), limit));
     }
 
     public PageResponseDTO<ClaimResponseDTO> getMySentClaims(String userEmail, int page, int size) {

@@ -31,6 +31,8 @@ public class Claim {
     @Column(nullable = false)
     private LocalDateTime claimDate;
 
+    private LocalDateTime resolvedAt;
+
     public Claim() {
     }
 
@@ -63,4 +65,7 @@ public class Claim {
 
     public LocalDateTime getClaimDate() { return claimDate; }
     public void setClaimDate(LocalDateTime claimDate) { this.claimDate = claimDate; }
+
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

@@ -110,6 +110,10 @@ public class PublicationService {
 
         // Pregunta de verificación solo para FOUND
         if (req.getType() == PublicationType.FOUND) {
+            if (req.getVerificationQuestion() == null || req.getVerificationQuestion().trim().isEmpty()
+                    || req.getVerificationAnswer() == null || req.getVerificationAnswer().trim().isEmpty()) {
+                throw new IllegalArgumentException("La pregunta y respuesta de verificación son obligatorias para publicaciones encontradas");
+            }
             pub.setVerificationQuestion(req.getVerificationQuestion());
             pub.setVerificationAnswer(req.getVerificationAnswer());
         }

@@ -5,6 +5,9 @@ import com.hallado.backend.dto.ClaimRequestDTO;
 import com.hallado.backend.dto.ClaimResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.model.ClaimStatus;
+import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.dto.RatingRequestDTO;
+import com.hallado.backend.dto.ResolvedCaseDTO;
 import com.hallado.backend.service.ClaimService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/claims")
@@ -90,5 +95,23 @@ public class ClaimController {
         String userEmail = authentication.getName();
         PageResponseDTO<ClaimResponseDTO> result = claimService.getMyReceivedClaims(userEmail, page, size);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/resolved-history")
+    public ResponseEntity<List<ResolvedCaseDTO>> getResolvedHistory(
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) PublicationType type,
+            Authentication authentication) {
+        return ResponseEntity.ok(claimService.getResolvedHistory(authentication.getName(), from, to, type));
+    }
+
+    @PostMapping("/{claimId}/rating")
+    public ResponseEntity<Void> rateResolvedCase(
+            @PathVariable Long claimId,
+            @RequestBody RatingRequestDTO request,
+            Authentication authentication) {
+        claimService.rateResolvedCase(claimId, request, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }
