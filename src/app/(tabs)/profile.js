@@ -16,7 +16,10 @@ import {
 import LogoHallado from "../../components/LogoHallado";
 import { Colors, FontSize, Spacing } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
-import { getFollowedPublicationsApi, markPublicationAsSeenApi } from "../../services/publicationService";
+import {
+  getFollowedPublicationsApi,
+  markPublicationAsSeenApi,
+} from "../../services/publicationService";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
 import { setProfileTabBadge } from "../../storage/profileTabBadge";
 
@@ -26,7 +29,8 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState(null);
   const [followedPublications, setFollowedPublications] = useState([]);
-  const [followedPublicationsExpanded, setFollowedPublicationsExpanded] = useState(true);
+  const [followedPublicationsExpanded, setFollowedPublicationsExpanded] =
+    useState(true);
   const [updatingPhoneVisibility, setUpdatingPhoneVisibility] = useState(false);
 
   const loadFollowedPublications = useCallback(async () => {
@@ -35,7 +39,9 @@ export default function ProfileScreen() {
       const followedPublicationsWithUpdates = data?.content || [];
       setFollowedPublications(followedPublicationsWithUpdates);
       setProfileTabBadge(
-        followedPublicationsWithUpdates.some((publication) => publication.hasNewUpdates)
+        followedPublicationsWithUpdates.some(
+          (publication) => publication.hasNewUpdates,
+        ),
       );
     } catch (err) {
       console.warn("Error cargando publicaciones seguidas:", err);
@@ -53,7 +59,7 @@ export default function ProfileScreen() {
     } catch (err) {
       Alert.alert(
         "Error",
-        err?.message || "No se pudo cargar el perfil. Revisa tu conexión."
+        err?.message || "No se pudo cargar el perfil. Revisa tu conexión.",
       );
     } finally {
       setLoading(false);
@@ -64,7 +70,7 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       loadProfile();
-    }, [loadProfile])
+    }, [loadProfile]),
   );
 
   const onRefresh = () => {
@@ -80,11 +86,11 @@ export default function ProfileScreen() {
         console.warn("Error marcando publicación como vista:", error);
       }
       const updatedFollowedPublications = followedPublications.map((item) =>
-        item.id === publication.id ? { ...item, hasNewUpdates: false } : item
+        item.id === publication.id ? { ...item, hasNewUpdates: false } : item,
       );
       setFollowedPublications(updatedFollowedPublications);
       setProfileTabBadge(
-        updatedFollowedPublications.some((item) => item.hasNewUpdates)
+        updatedFollowedPublications.some((item) => item.hasNewUpdates),
       );
     }
 
@@ -105,7 +111,10 @@ export default function ProfileScreen() {
     } catch (err) {
       // Revert if error
       setProfile({ ...profile, telefonoVisible: previousState });
-      Alert.alert("Error", "No se pudo actualizar la visibilidad del teléfono.");
+      Alert.alert(
+        "Error",
+        "No se pudo actualizar la visibilidad del teléfono.",
+      );
     } finally {
       setUpdatingPhoneVisibility(false);
     }
@@ -141,7 +150,11 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[Colors.primary]}
+        />
       }
     >
       {/* Header Banner */}
@@ -156,7 +169,10 @@ export default function ProfileScreen() {
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
           {profile?.profileImageUrl ? (
-            <Image source={{ uri: profile.profileImageUrl }} style={styles.avatarImage} />
+            <Image
+              source={{ uri: profile.profileImageUrl }}
+              style={styles.avatarImage}
+            />
           ) : (
             <View style={styles.avatarBadge}>
               <Text style={styles.avatarText}>{initials}</Text>
@@ -189,13 +205,21 @@ export default function ProfileScreen() {
           onPress={() => setFollowedPublicationsExpanded((prev) => !prev)}
         >
           <View style={styles.sectionHeader}>
-            <Ionicons name="bookmark-outline" size={20} color={Colors.primary} />
+            <Ionicons
+              name="bookmark-outline"
+              size={20}
+              color={Colors.primary}
+            />
             <Text style={styles.sectionTitle}>Publicaciones Seguidas</Text>
           </View>
           <View style={styles.accordionMeta}>
-            <Text style={styles.accordionCount}>{followedPublications.length}</Text>
+            <Text style={styles.accordionCount}>
+              {followedPublications.length}
+            </Text>
             <Ionicons
-              name={followedPublicationsExpanded ? "chevron-up" : "chevron-down"}
+              name={
+                followedPublicationsExpanded ? "chevron-up" : "chevron-down"
+              }
               size={18}
               color={Colors.textSecondary}
             />
@@ -205,7 +229,9 @@ export default function ProfileScreen() {
         {followedPublicationsExpanded && (
           <>
             {followedPublications.length === 0 ? (
-              <Text style={styles.emptyFollowedText}>Todavía no seguís ninguna publicación.</Text>
+              <Text style={styles.emptyFollowedText}>
+                Todavía no seguís ninguna publicación.
+              </Text>
             ) : (
               followedPublications.map((publication) => (
                 <Pressable
@@ -214,7 +240,12 @@ export default function ProfileScreen() {
                   onPress={() => handleOpenFollowedPublication(publication)}
                 >
                   <View style={styles.followedPublicationHeader}>
-                    <Text style={styles.followedPublicationTitle} numberOfLines={1}>{publication.title}</Text>
+                    <Text
+                      style={styles.followedPublicationTitle}
+                      numberOfLines={1}
+                    >
+                      {publication.title}
+                    </Text>
                     {publication.hasNewUpdates && (
                       <View style={styles.newBadge}>
                         <Text style={styles.newBadgeText}>Novedad</Text>
@@ -222,8 +253,12 @@ export default function ProfileScreen() {
                     )}
                   </View>
                   <View style={styles.followedPublicationSubRow}>
-                    <Text style={styles.followedPublicationType}>{getPublicationTypeLabel(publication.type)}</Text>
-                    <Text style={styles.followedPublicationMeta}>{publication.barrio}</Text>
+                    <Text style={styles.followedPublicationType}>
+                      {getPublicationTypeLabel(publication.type)}
+                    </Text>
+                    <Text style={styles.followedPublicationMeta}>
+                      {publication.barrio}
+                    </Text>
                   </View>
                 </Pressable>
               ))
@@ -250,7 +285,8 @@ export default function ProfileScreen() {
           <View style={styles.toggleInfo}>
             <Text style={styles.toggleLabel}>Mostrar teléfono en reclamos</Text>
             <Text style={styles.toggleSublabel}>
-              Permite que la otra parte vea tu número cuando se acepte un reclamo de objeto.
+              Permite que la otra parte vea tu número cuando se acepte un
+              reclamo de objeto.
             </Text>
           </View>
           <Switch
@@ -258,7 +294,9 @@ export default function ProfileScreen() {
             onValueChange={handleTogglePhoneVisibility}
             disabled={updatingPhoneVisibility}
             trackColor={{ false: Colors.disabled, true: Colors.primaryLight }}
-            thumbColor={profile?.telefonoVisible ? Colors.primary : Colors.surface}
+            thumbColor={
+              profile?.telefonoVisible ? Colors.primary : Colors.surface
+            }
           />
         </View>
       </View>
@@ -272,14 +310,29 @@ export default function ProfileScreen() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{profile?.devolucionesConcretadas ?? 0}</Text>
+            <Text style={styles.statNumber}>
+              {profile?.devolucionesConcretadas ?? 0}
+            </Text>
             <Text style={styles.statLabel}>Devoluciones Concretadas</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{profile?.porcentajePositivo ?? 0}%</Text>
+            <Text style={styles.statNumber}>
+              {profile?.porcentajePositivo ?? 0}%
+            </Text>
             <Text style={styles.statLabel}>Valoración Positiva</Text>
           </View>
         </View>
+
+        <Pressable
+          style={styles.historyButton}
+          onPress={() => router.push("/profile/resolved-history")}
+        >
+          <Ionicons name="time-outline" size={18} color={Colors.primary} />
+          <Text style={styles.historyButtonText}>
+            Historial de casos resueltos
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+        </Pressable>
 
         {/* Insignias */}
         <Text style={styles.insigniasTitle}>Insignias Obtenidas:</Text>
@@ -293,13 +346,18 @@ export default function ProfileScreen() {
             ))
           ) : (
             <Text style={styles.noInsigniasText}>
-              Completa 5 devoluciones para obtener la insignia "Vecino solidario".
+              Completa 5 devoluciones para obtener la insignia "Vecino
+              solidario".
             </Text>
           )}
         </View>
 
         <View style={styles.antiguedadRow}>
-          <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={Colors.textSecondary}
+          />
           <Text style={styles.antiguedadText}>
             Miembro desde: {profile?.miembroDesde || "Reciente"}
           </Text>
@@ -316,11 +374,16 @@ export default function ProfileScreen() {
         }}
       >
         <Ionicons name="eye-outline" size={20} color={Colors.surface} />
-        <Text style={styles.publicProfileButtonText}>Ver mi Perfil Público</Text>
+        <Text style={styles.publicProfileButtonText}>
+          Ver mi Perfil Público
+        </Text>
       </Pressable>
 
       <Pressable
-        style={[styles.publicProfileButton, { backgroundColor: '#EF4444', marginTop: 12 }]}
+        style={[
+          styles.publicProfileButton,
+          { backgroundColor: "#EF4444", marginTop: 12 },
+        ]}
         onPress={async () => {
           await logout();
         }}
@@ -509,6 +572,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  historyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  historyButtonText: {
+    flex: 1,
+    color: Colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: "700",
+  },
   followedPublicationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -576,6 +656,7 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     gap: Spacing.md,
+    marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
   statBox: {

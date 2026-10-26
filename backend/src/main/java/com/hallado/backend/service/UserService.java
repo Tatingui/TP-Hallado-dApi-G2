@@ -6,6 +6,7 @@ import com.hallado.backend.dto.UserProfileUpdateRequest;
 import com.hallado.backend.exception.ResourceNotFoundException;
 import com.hallado.backend.model.User;
 import com.hallado.backend.repository.UserRepository;
+import com.hallado.backend.repository.ClaimRatingRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,11 @@ import java.util.Locale;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ClaimRatingRepository claimRatingRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, ClaimRatingRepository claimRatingRepository) {
         this.userRepository = userRepository;
+        this.claimRatingRepository = claimRatingRepository;
     }
 
     @Transactional(readOnly = true)
@@ -74,6 +77,9 @@ public class UserService {
         dto.setValoracionesNegativas(user.getValoracionesNegativas());
         dto.setPorcentajePositivo(calcularPorcentajePositivo(user));
         dto.setInsignias(calcularInsignias(user));
+        dto.setAgradecimientos(claimRatingRepository.findByRatedUserAndPublicThanksIsNotNullOrderByCreatedAtDesc(user)
+                .stream().map(r -> new PublicProfileDTO.PublicThanksDTO(
+                        r.getAuthor().getNombre(), r.getPublicThanks(), r.getCreatedAt())).toList());
 
         return dto;
     }

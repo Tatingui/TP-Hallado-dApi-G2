@@ -2,6 +2,7 @@ package com.hallado.backend.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * DTO para el perfil público de un usuario (GET /usuarios/{id}/publico).
@@ -20,6 +21,19 @@ public class PublicProfileDTO {
     private int valoracionesNegativas;
     private double porcentajePositivo;
     private List<String> insignias = new ArrayList<>();
+    private List<PublicThanksDTO> agradecimientos = new ArrayList<>();
+
+    public static class PublicThanksDTO {
+        private String authorName;
+        private String message;
+        private LocalDateTime createdAt;
+        public PublicThanksDTO(String authorName, String message, LocalDateTime createdAt) {
+            this.authorName = authorName; this.message = message; this.createdAt = createdAt;
+        }
+        public String getAuthorName() { return authorName; }
+        public String getMessage() { return message; }
+        public LocalDateTime getCreatedAt() { return createdAt; }
+    }
 
     public PublicProfileDTO() {
     }
@@ -53,4 +67,6 @@ public class PublicProfileDTO {
 
     public List<String> getInsignias() { return insignias; }
     public void setInsignias(List<String> insignias) { this.insignias = insignias != null ? insignias : new ArrayList<>(); }
+    public List<PublicThanksDTO> getAgradecimientos() { return agradecimientos; }
+    public void setAgradecimientos(List<PublicThanksDTO> agradecimientos) { this.agradecimientos = agradecimientos; }
 }

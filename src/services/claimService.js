@@ -1,4 +1,4 @@
-import { apiGet, apiPostMultipart } from "./api";
+import { apiGet, apiPost, apiPostMultipart } from "./api";
 import { getToken } from "../storage/authStorage";
 
 /**
@@ -66,4 +66,18 @@ export const respondToClaimApi = async (claimId, status, tokenParam) => {
     throw { status: response.status, ...(data || {}) };
   }
   return data;
+};
+
+export const getResolvedHistoryApi = async (filters = {}, tokenParam) => {
+  const token = tokenParam || (await getToken());
+  const params = new URLSearchParams();
+  if (filters.from) params.append("from", filters.from);
+  if (filters.to) params.append("to", filters.to);
+  if (filters.type && filters.type !== "ALL") params.append("type", filters.type);
+  return apiGet(`/claims/resolved-history?${params.toString()}`, token);
+};
+
+export const rateResolvedCaseApi = async (claimId, rating, tokenParam) => {
+  const token = tokenParam || (await getToken());
+  return apiPost(`/claims/${claimId}/rating`, rating, token);
 };

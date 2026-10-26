@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import com.hallado.backend.model.PublicationType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,4 +31,11 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     // Obtener el resto de los reclamos pendientes de una publicación (para rechazarlos si acepto uno)
     List<Claim> findByPublicationAndStatusAndIdNot(Publication publication, ClaimStatus status, Long idToExclude);
+
+    @Query("select c from Claim c where c.status = com.hallado.backend.model.ClaimStatus.ACCEPTED " +
+           "and (c.claimant = :user or c.publication.user = :user) " +
+           "and (:fromDate is null or c.resolvedAt >= :fromDate) " +
+           "and (:toDate is null or c.resolvedAt < :toDate) " +
+           "and (:type is null or c.publication.type = :type) order by c.resolvedAt desc")
+    List<Claim> findResolvedHistory(User user, LocalDateTime fromDate, LocalDateTime toDate, PublicationType type);
 }
