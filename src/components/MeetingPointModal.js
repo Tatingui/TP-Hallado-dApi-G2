@@ -72,11 +72,15 @@ export default function MeetingPointModal({
               Dirección del punto de encuentro <Text style={styles.asterisk}>*</Text>
             </Text>
             <Text style={styles.hint}>
-              Elegí un lugar público y fácil de encontrar.
+              Elegí un lugar público y escribí calle y altura (o una esquina) y el barrio,
+              para que "Cómo llegar" lo encuentre bien en el mapa.
+            </Text>
+            <Text style={styles.hint}>
+              Ej: "Av. Rivadavia 6500, Flores" o "Av. Corrientes y Callao, Balvanera"
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Ej: Av. Santa Fe 3253, Palermo"
+              placeholder="Calle y altura, barrio"
               value={address}
               onChangeText={setAddress}
               maxLength={255}
