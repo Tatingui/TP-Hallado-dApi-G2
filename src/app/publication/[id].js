@@ -1,31 +1,37 @@
-import { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  Dimensions,
-  Alert,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Colors } from "../../constants/theme";
-import { IMAGE_BASE_URL } from "../../services/api";
-import { getPublicationByIdApi } from "../../services/publicationService";
-import { createClaimApi } from "../../services/claimService";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  getTypeLabel,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CreateClaimModal from "../../components/CreateClaimModal";
+import {
   getCategoryLabel,
   getStatusLabel,
+  getTypeLabel,
   PublicationStatus,
   PublicationType,
 } from "../../constants/publicationConstants";
-import CreateClaimModal from "../../components/CreateClaimModal";
+import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
+import { IMAGE_BASE_URL } from "../../services/api";
+import { createClaimApi } from "../../services/claimService";
+import {
+  followPublicationApi,
+  getPublicationByIdApi,
+  getPublicationFollowStatusApi,
+  markPublicationAsSeenApi,
+  unfollowPublicationApi,
+} from "../../services/publicationService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -33,11 +39,13 @@ export default function PublicationDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { email } = useAuth(); // User autenticado
+  const { user, isAuthenticated } = useAuth();
 
   const [publication, setPublication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
 
   // States for Claim Modal
   const [claimModalVisible, setClaimModalVisible] = useState(false);
@@ -49,6 +57,12 @@ export default function PublicationDetailScreen() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (publication?.id) {
+      loadFollowState(publication.id);
+    }
+  }, [publication?.id, user]);
+
   const loadPublication = async (pubId) => {
     try {
       setLoading(true);
@@ -58,6 +72,55 @@ export default function PublicationDetailScreen() {
       console.warn("Error cargando publicación:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFollowState = async (pubId) => {
+    if (!user || !isAuthenticated) {
+      setIsFollowing(false);
+      return;
+    }
+
+    try {
+      const followStatus = await getPublicationFollowStatusApi(pubId);
+      const followed = Boolean(followStatus?.followed);
+      setIsFollowing(followed);
+
+      if (followed) {
+        try {
+          await markPublicationAsSeenApi(pubId);
+        } catch (error) {
+          console.warn("No se pudo marcar como vista la publicación:", error);
+        }
+      }
+    } catch (error) {
+      console.warn("Error cargando estado de seguimiento:", error);
+      setIsFollowing(false);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    if (!user || !isAuthenticated) {
+      Alert.alert("Iniciá sesión", "Necesitás iniciar sesión para seguir esta publicación.");
+      return;
+    }
+
+    try {
+      setIsUpdatingFollow(true);
+      const nextState = isFollowing ? await unfollowPublicationApi(publication.id) : await followPublicationApi(publication.id);
+      setIsFollowing(Boolean(nextState?.followed));
+
+      Alert.alert(
+        Boolean(nextState?.followed) ? "Publicación seguida" : "Seguimiento cancelado",
+        Boolean(nextState?.followed)
+          ? "Te avisaremos cuando haya novedades de esta publicación."
+          : "Ya no recibís novedades de esta publicación."
+      );
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "No se pudo actualizar el seguimiento de la publicación.");
+    } finally {
+      setIsUpdatingFollow(false);
     }
   };
 
@@ -129,7 +192,10 @@ export default function PublicationDetailScreen() {
   const images = publication.imageUrls || [];
   const hasImages = images.length > 0;
 
-  const isMyPublication = publication.publisher?.email === email || publication.publisher?.nombre === email;
+  const normalizedUserEmail = typeof user === "string" ? user.toLowerCase() : "";
+  const isMyPublication =
+    publication.publisher?.email?.toLowerCase() === normalizedUserEmail ||
+    publication.publisher?.nombre === user;
   const isFound = publication.type === PublicationType.FOUND;
   const isLost = publication.type === PublicationType.LOST;
   const canInteract = !isMyPublication && publication.status === PublicationStatus.OPEN;
@@ -143,9 +209,19 @@ export default function PublicationDetailScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           Detalle
         </Text>
-        <TouchableOpacity style={styles.backButton}>
-           {/* Placeholder for Follow button */}
-           <Ionicons name="bookmark-outline" size={24} color={Colors.primary} />
+        <TouchableOpacity
+          style={[styles.followButton, isFollowing && styles.followButtonActive]}
+          onPress={handleToggleFollow}
+          disabled={isUpdatingFollow}
+        >
+          <Ionicons
+            name={isFollowing ? "bookmark" : "bookmark-outline"}
+            size={18}
+            color={isFollowing ? Colors.surface : Colors.primary}
+          />
+          <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+            {isFollowing ? "Siguiendo" : "Seguir"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -339,6 +415,29 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 17, fontWeight: "600", color: Colors.text },
+  followButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 999,
+    backgroundColor: Colors.surface,
+  },
+  followButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  followButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
+  followButtonTextActive: {
+    color: Colors.surface,
+  },
 
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 32 },

@@ -1,8 +1,17 @@
-import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { useEffect, useState } from "react";
 import { Colors } from "../../constants/theme";
+import { getProfileTabBadge, subscribeToProfileTabBadge } from "../../storage/profileTabBadge";
 
 export default function TabsLayout() {
+  const [profileTabBadge, setProfileTabBadge] = useState(getProfileTabBadge());
+
+  useEffect(() => {
+    const unsubscribe = subscribeToProfileTabBadge(setProfileTabBadge);
+    return unsubscribe;
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
@@ -57,6 +66,15 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Perfil",
+          tabBarBadge: profileTabBadge ? " " : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: "#ef4444",
+            minWidth: 8,
+            height: 8,
+            borderRadius: 8,
+            marginLeft: 6,
+            marginTop: 4,
+          },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

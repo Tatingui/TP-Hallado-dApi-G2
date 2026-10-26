@@ -1,7 +1,20 @@
 package com.hallado.backend.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "publications")
@@ -51,17 +64,11 @@ public class Publication {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.expiresAt == null) {
-            this.expiresAt = this.createdAt.plusDays(30); // Publications expire in 30 days
-        }
-    }
 
     public Publication() {}
 
@@ -81,55 +88,73 @@ public class Publication {
         this.user = user;
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public PublicationType getType() { return type; }
-    public void setType(PublicationType type) { this.type = type; }
-
-    public CategoryEnum getCategory() { return category; }
-    public void setCategory(CategoryEnum category) { this.category = category; }
+    public String getAddress() { return address; }
 
     public String getBarrio() { return barrio; }
-    public void setBarrio(String barrio) { this.barrio = barrio; }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public CategoryEnum getCategory() { return category; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
-
-    public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
-
+    public String getDescription() { return description; }
     public LocalDateTime getEventDate() { return eventDate; }
-    public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
-
-    public PublicationStatus getStatus() { return status; }
-    public void setStatus(PublicationStatus status) { this.status = status; }
-
-    public String getImageUrls() { return imageUrls; }
-    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
-
-    public String getVerificationQuestion() { return verificationQuestion; }
-    public void setVerificationQuestion(String verificationQuestion) { this.verificationQuestion = verificationQuestion; }
-
-    public String getVerificationAnswer() { return verificationAnswer; }
-    public void setVerificationAnswer(String verificationAnswer) { this.verificationAnswer = verificationAnswer; }
 
     public LocalDateTime getExpiresAt() { return expiresAt; }
-    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    // Getters and Setters
+    public Long getId() { return id; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getImageUrls() { return imageUrls; }
+    public Double getLatitude() { return latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public PublicationStatus getStatus() { return status; }
+
+    public String getTitle() { return title; }
+    public PublicationType getType() { return type; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public User getUser() { return user; }
+
+    public String getVerificationAnswer() { return verificationAnswer; }
+    public String getVerificationQuestion() { return verificationQuestion; }
+
+    public void setAddress(String address) { this.address = address; }
+    public void setBarrio(String barrio) { this.barrio = barrio; }
+
+    public void setCategory(CategoryEnum category) { this.category = category; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public User getUser() { return user; }
+    public void setDescription(String description) { this.description = description; }
+    public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
+
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public void setId(Long id) { this.id = id; }
+
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public void setStatus(PublicationStatus status) { this.status = status; }
+
+    public void setTitle(String title) { this.title = title; }
+    public void setType(PublicationType type) { this.type = type; }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setUser(User user) { this.user = user; }
+
+    public void setVerificationAnswer(String verificationAnswer) { this.verificationAnswer = verificationAnswer; }
+    public void setVerificationQuestion(String verificationQuestion) { this.verificationQuestion = verificationQuestion; }
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+        if (this.expiresAt == null) {
+            this.expiresAt = this.createdAt.plusDays(30); // Publications expire in 30 days
+        }
+    }
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
