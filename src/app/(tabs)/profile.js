@@ -1,35 +1,55 @@
-import { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Switch,
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { getMyProfile, updateMyProfile } from "../../services/userService";
-import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import { Colors, FontSize, Spacing } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
+import { getFollowedPublicationsApi, markPublicationAsSeenApi } from "../../services/publicationService";
+import { getMyProfile, updateMyProfile } from "../../services/userService";
+import { setProfileTabBadge } from "../../storage/profileTabBadge";
 
 export default function ProfileScreen() {
   const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [followedPublications, setFollowedPublications] = useState([]);
+  const [followedPublicationsExpanded, setFollowedPublicationsExpanded] = useState(true);
   const [updatingPhoneVisibility, setUpdatingPhoneVisibility] = useState(false);
+
+  const loadFollowedPublications = useCallback(async () => {
+    try {
+      const data = await getFollowedPublicationsApi(0, 3);
+      const followedPublicationsWithUpdates = data?.content || [];
+      setFollowedPublications(followedPublicationsWithUpdates);
+      setProfileTabBadge(
+        followedPublicationsWithUpdates.some((publication) => publication.hasNewUpdates)
+      );
+    } catch (err) {
+      console.warn("Error cargando publicaciones seguidas:", err);
+      setFollowedPublications([]);
+      setProfileTabBadge(false);
+    }
+  }, []);
 
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getMyProfile();
       setProfile(data);
+      await loadFollowedPublications();
     } catch (err) {
       Alert.alert(
         "Error",
@@ -39,7 +59,7 @@ export default function ProfileScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [loadFollowedPublications]);
 
   useFocusEffect(
     useCallback(() => {
@@ -50,6 +70,25 @@ export default function ProfileScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     loadProfile();
+  };
+
+  const handleOpenFollowedPublication = async (publication) => {
+    if (publication?.hasNewUpdates) {
+      try {
+        await markPublicationAsSeenApi(publication.id);
+      } catch (error) {
+        console.warn("Error marcando publicación como vista:", error);
+      }
+      const updatedFollowedPublications = followedPublications.map((item) =>
+        item.id === publication.id ? { ...item, hasNewUpdates: false } : item
+      );
+      setFollowedPublications(updatedFollowedPublications);
+      setProfileTabBadge(
+        updatedFollowedPublications.some((item) => item.hasNewUpdates)
+      );
+    }
+
+    router.push(`/publication/${publication.id}`);
   };
 
   const handleTogglePhoneVisibility = async (value) => {
@@ -89,6 +128,13 @@ export default function ProfileScreen() {
         .toUpperCase()
         .substring(0, 2)
     : "U";
+
+  const getPublicationTypeLabel = (type) => {
+    const normalized = String(type || "").toUpperCase();
+    if (normalized === "FOUND") return "Encontrado";
+    if (normalized === "LOST") return "Perdido";
+    return normalized || "Publicación";
+  };
 
   return (
     <ScrollView
@@ -134,6 +180,56 @@ export default function ProfileScreen() {
           <Ionicons name="create-outline" size={18} color={Colors.primary} />
           <Text style={styles.editButtonText}>Editar Perfil</Text>
         </Pressable>
+      </View>
+
+      {/* Publicaciones Seguidas */}
+      <View style={styles.sectionCard}>
+        <Pressable
+          style={styles.accordionHeader}
+          onPress={() => setFollowedPublicationsExpanded((prev) => !prev)}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="bookmark-outline" size={20} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Publicaciones Seguidas</Text>
+          </View>
+          <View style={styles.accordionMeta}>
+            <Text style={styles.accordionCount}>{followedPublications.length}</Text>
+            <Ionicons
+              name={followedPublicationsExpanded ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={Colors.textSecondary}
+            />
+          </View>
+        </Pressable>
+
+        {followedPublicationsExpanded && (
+          <>
+            {followedPublications.length === 0 ? (
+              <Text style={styles.emptyFollowedText}>Todavía no seguís ninguna publicación.</Text>
+            ) : (
+              followedPublications.map((publication) => (
+                <Pressable
+                  key={publication.id}
+                  style={styles.followedPublicationItem}
+                  onPress={() => handleOpenFollowedPublication(publication)}
+                >
+                  <View style={styles.followedPublicationHeader}>
+                    <Text style={styles.followedPublicationTitle} numberOfLines={1}>{publication.title}</Text>
+                    {publication.hasNewUpdates && (
+                      <View style={styles.newBadge}>
+                        <Text style={styles.newBadgeText}>Novedad</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.followedPublicationSubRow}>
+                    <Text style={styles.followedPublicationType}>{getPublicationTypeLabel(publication.type)}</Text>
+                    <Text style={styles.followedPublicationMeta}>{publication.barrio}</Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </>
+        )}
       </View>
 
       {/* Visibilidad de Teléfono */}
@@ -353,14 +449,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: Spacing.sm,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: Spacing.md,
+    flex: 1,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     paddingBottom: Spacing.xs,
+  },
+  accordionMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingLeft: Spacing.sm,
+  },
+  accordionCount: {
+    fontSize: FontSize.sm,
+    fontWeight: "700",
+    color: Colors.primary,
   },
   sectionTitle: {
     fontSize: FontSize.md,
@@ -380,6 +494,61 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: "600",
     color: Colors.text,
+  },
+  emptyFollowedText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  followedPublicationItem: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    marginTop: Spacing.xs,
+    borderRadius: 8,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  followedPublicationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  followedPublicationTitle: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  newBadge: {
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  newBadgeText: {
+    color: "#ffffff",
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  followedPublicationSubRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  followedPublicationType: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: Colors.primary,
+    textTransform: "uppercase",
+  },
+  followedPublicationMeta: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
   },
   toggleRow: {
     flexDirection: "row",

@@ -1,17 +1,5 @@
 package com.hallado.backend.service;
 
-import com.hallado.backend.dto.CreatePublicationRequest;
-import com.hallado.backend.dto.PageResponseDTO;
-import com.hallado.backend.dto.PublicationResponseDTO;
-import com.hallado.backend.model.*;
-import com.hallado.backend.repository.PublicationRepository;
-import com.hallado.backend.repository.PublicationSpecification;
-import com.hallado.backend.repository.UserRepository;
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,22 +7,53 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.hallado.backend.dto.CreatePublicationRequest;
+import com.hallado.backend.dto.PageResponseDTO;
+import com.hallado.backend.dto.PublicationResponseDTO;
+import com.hallado.backend.model.CategoryEnum;
+import com.hallado.backend.model.Publication;
+import com.hallado.backend.model.PublicationFollow;
+import com.hallado.backend.model.PublicationStatus;
+import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.model.User;
+import com.hallado.backend.repository.PublicationFollowRepository;
+import com.hallado.backend.repository.PublicationRepository;
+import com.hallado.backend.repository.PublicationSpecification;
+import com.hallado.backend.repository.UserRepository;
 
 @Service
 public class PublicationService {
 
+    // Directorio donde se guardan las imágenes subidas
+    private static final String UPLOAD_DIR = "uploads/publications/";
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
 
-    // Directorio donde se guardan las imágenes subidas
-    private static final String UPLOAD_DIR = "uploads/publications/";
+    private final PublicationFollowRepository publicationFollowRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              PublicationFollowRepository publicationFollowRepository) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
+        this.publicationFollowRepository = publicationFollowRepository;
     }
 
     // ─── Punto 5: Crear publicación ───────────────────────────────────
@@ -99,32 +118,71 @@ public class PublicationService {
         return PublicationResponseDTO.fromEntity(saved);
     }
 
-    /**
-     * Guarda una imagen en el filesystem y devuelve la ruta relativa.
-     */
-    private String saveImage(MultipartFile file) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+    public Map<String, Object> followPublication(String userEmail, Long publicationId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            String originalName = file.getOriginalFilename();
-            String extension = "";
-            if (originalName != null && originalName.contains(".")) {
-                extension = originalName.substring(originalName.lastIndexOf("."));
-            }
-            String fileName = UUID.randomUUID() + extension;
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
 
-            return "/uploads/publications/" + fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("Error al guardar imagen: " + e.getMessage());
+        if (publicationFollowRepository.existsByUserAndPublication(user, publication)) {
+            return getFollowStatus(userEmail, publicationId);
         }
+
+        publicationFollowRepository.save(new PublicationFollow(user, publication));
+        return getFollowStatus(userEmail, publicationId);
     }
 
     // ─── Punto 5: Mis publicaciones ──────────────────────────────────
+
+    public PageResponseDTO<PublicationResponseDTO> getFollowedPublications(String userEmail, int page, int size) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PublicationFollow> followPage = publicationFollowRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+
+        List<PublicationResponseDTO> dtos = followPage.getContent().stream()
+                .map(follow -> {
+                    Publication publication = follow.getPublication();
+                    PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(publication);
+                    boolean hasNewUpdates = publication.getUpdatedAt() != null &&
+                            (follow.getLastSeenAt() == null || publication.getUpdatedAt().isAfter(follow.getLastSeenAt()));
+                    dto.setHasNewUpdates(hasNewUpdates);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtos, pageable, followPage.getTotalElements());
+        return PageResponseDTO.fromPage(dtoPage);
+    }
+
+    /**
+     * Devuelve si un usuario sigue la publicación y cuántos seguidores tiene.
+     */
+    public Map<String, Object> getFollowStatus(String userEmail, Long publicationId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+
+        boolean followed = publicationFollowRepository.existsByUserAndPublication(user, publication);
+        long followersCount = publicationFollowRepository.countByPublication(publication);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("followed", followed);
+        payload.put("followersCount", followersCount);
+        if (followed) {
+            publicationFollowRepository.findByUserAndPublication(user, publication)
+                    .ifPresent(follow -> payload.put("hasNewUpdates",
+                            publication.getUpdatedAt() != null &&
+                                    (follow.getLastSeenAt() == null || publication.getUpdatedAt().isAfter(follow.getLastSeenAt()))));
+        } else {
+            payload.put("hasNewUpdates", false);
+        }
+        return payload;
+    }
 
     /**
      * Obtiene las publicaciones del usuario autenticado, con filtro opcional por estado.
@@ -163,7 +221,31 @@ public class PublicationService {
         return PublicationResponseDTO.fromEntity(pub);
     }
 
-    // ─── Punto 3: Búsqueda (existente) ──────────────────────────────
+    public Map<String, Object> markPublicationAsSeen(String userEmail, Long publicationId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+
+        PublicationFollow follow = publicationFollowRepository.findByUserAndPublication(user, publication)
+                .orElse(null);
+
+        if (follow == null) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("seen", false);
+            payload.put("message", "La publicación no está siendo seguida por este usuario.");
+            return payload;
+        }
+
+        follow.setLastSeenAt(publication.getUpdatedAt() != null ? publication.getUpdatedAt() : LocalDateTime.now());
+        publicationFollowRepository.save(follow);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("seen", true);
+        payload.put("lastSeenAt", follow.getLastSeenAt());
+        return payload;
+    }
 
     public PageResponseDTO<PublicationResponseDTO> searchPublications(
             PublicationType userActionType,
@@ -242,6 +324,21 @@ public class PublicationService {
         return PageResponseDTO.fromPage(dtoPage);
     }
 
+    public Map<String, Object> unfollowPublication(String userEmail, Long publicationId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+
+        publicationFollowRepository.findByUserAndPublication(user, publication)
+                .ifPresent(publicationFollowRepository::delete);
+
+        return getFollowStatus(userEmail, publicationId);
+    }
+
+    // ─── Punto 3: Búsqueda (existente) ──────────────────────────────
+
     private double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371;
         double latDistance = Math.toRadians(lat2 - lat1);
@@ -251,5 +348,30 @@ public class PublicationService {
                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
+    }
+
+    /**
+     * Guarda una imagen en el filesystem y devuelve la ruta relativa.
+     */
+    private String saveImage(MultipartFile file) {
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalName = file.getOriginalFilename();
+            String extension = "";
+            if (originalName != null && originalName.contains(".")) {
+                extension = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String fileName = UUID.randomUUID() + extension;
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath);
+
+            return "/uploads/publications/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar imagen: " + e.getMessage());
+        }
     }
 }

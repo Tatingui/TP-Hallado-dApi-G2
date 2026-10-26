@@ -76,6 +76,33 @@ export async function apiGet(endpoint, token = null) {
 }
 
 /**
+ * Realiza un DELETE al backend.
+ */
+export async function apiDelete(endpoint, token = null) {
+  const headers = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    throw { status: response.status, ...(data || {}) };
+  }
+
+  return data;
+}
+
+/**
  * Realiza un PUT al backend.
  */
 export async function apiPut(endpoint, body, token = null) {

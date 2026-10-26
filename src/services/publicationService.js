@@ -1,5 +1,5 @@
-import { apiGet, apiPostMultipart } from "./api";
 import { getToken } from "../storage/authStorage";
+import { apiDelete, apiGet, apiPost, apiPostMultipart } from "./api";
 
 /**
  * Busca publicaciones en el backend (endpoint de Agus).
@@ -101,6 +101,15 @@ export const getMyPublicationsApi = async (page = 0, size = 10, status = null) =
   return data;
 };
 
+export const getFollowedPublicationsApi = async (page = 0, size = 3) => {
+  const token = await getToken();
+  const params = new URLSearchParams();
+  params.append("page", String(page));
+  params.append("size", String(size));
+
+  return apiGet(`/publications/followed?${params.toString()}`, token);
+};
+
 /**
  * Obtiene una publicación por su ID.
  *
@@ -110,4 +119,24 @@ export const getPublicationByIdApi = async (id) => {
   const token = await getToken();
   const data = await apiGet(`/publications/${id}`, token);
   return data;
+};
+
+export const getPublicationFollowStatusApi = async (id) => {
+  const token = await getToken();
+  return apiGet(`/publications/${id}/follow`, token);
+};
+
+export const markPublicationAsSeenApi = async (id) => {
+  const token = await getToken();
+  return apiPost(`/publications/${id}/seen`, {}, token);
+};
+
+export const followPublicationApi = async (id) => {
+  const token = await getToken();
+  return apiPost(`/publications/${id}/follow`, {}, token);
+};
+
+export const unfollowPublicationApi = async (id) => {
+  const token = await getToken();
+  return apiDelete(`/publications/${id}/follow`, token);
 };
