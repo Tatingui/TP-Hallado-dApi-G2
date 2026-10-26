@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPostMultipart } from "./api";
+import { apiGet, apiPost, apiPut, apiPostMultipart } from "./api";
 import { getToken } from "../storage/authStorage";
 
 /**
@@ -66,6 +66,22 @@ export const respondToClaimApi = async (claimId, status, tokenParam) => {
     throw { status: response.status, ...(data || {}) };
   }
   return data;
+};
+
+/**
+ * Punto 8: Propone un punto de encuentro o sugiere uno alternativo.
+ */
+export const proposeMeetingPointApi = async (claimId, address, tokenParam) => {
+  const token = tokenParam || (await getToken());
+  return apiPut(`/claims/${claimId}/meeting-point`, { address }, token);
+};
+
+/**
+ * Punto 8: Acepta el punto de encuentro propuesto por la otra parte.
+ */
+export const acceptMeetingPointApi = async (claimId, tokenParam) => {
+  const token = tokenParam || (await getToken());
+  return apiPost(`/claims/${claimId}/meeting-point/accept`, {}, token);
 };
 
 export const getResolvedHistoryApi = async (filters = {}, tokenParam) => {

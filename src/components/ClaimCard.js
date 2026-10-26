@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { IMAGE_BASE_URL } from '../services/api';
 
-export default function ClaimCard({ claim, type, onAccept, onReject, isProcessing }) {
+export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing }) {
   if (!claim) return null;
 
   const isReceived = type === 'RECEIVED';
+  const counterpartName = (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
   const isAccepted = claim.status === 'ACCEPTED';
   const isPending = claim.status === 'PENDING';
   const isRejected = claim.status === 'REJECTED';
@@ -25,6 +26,12 @@ export default function ClaimCard({ claim, type, onAccept, onReject, isProcessin
     if (isRejected) return 'Rechazado';
     if (isExpired) return 'Vencido';
     return 'Pendiente';
+  };
+
+  const getMeetingStatusText = () => {
+    if (claim.meetingStatus === 'ACCEPTED') return 'Confirmado por ambas partes';
+    if (claim.meetingProposedByMe) return `Esperando respuesta de ${counterpartName}`;
+    return `${counterpartName} propuso este lugar`;
   };
 
   const buildImageUrl = (url) => {
@@ -123,13 +130,65 @@ export default function ClaimCard({ claim, type, onAccept, onReject, isProcessin
         </View>
       )}
 
-      {/* Botón sugerir punto de encuentro (Preview Punto 8) */}
+      {/* Punto de encuentro (Punto 8) */}
       {isAccepted && (
-        <View style={styles.actionsFooter}>
-          <TouchableOpacity style={[styles.actionBtn, styles.mapBtn]}>
-            <Ionicons name="map-outline" size={16} color={Colors.primary} />
-            <Text style={styles.mapBtnText}>Punto de encuentro / Cómo llegar</Text>
-          </TouchableOpacity>
+        <View style={styles.meetingBox}>
+          <View style={styles.meetingHeader}>
+            <Ionicons name="location" size={16} color={Colors.primary} />
+            <Text style={styles.meetingTitle}>Punto de encuentro</Text>
+          </View>
+
+          {claim.meetingAddress ? (
+            <>
+              <Text style={styles.meetingAddress}>{claim.meetingAddress}</Text>
+              <Text style={[
+                styles.meetingStatusText,
+                claim.meetingStatus === 'ACCEPTED' && styles.meetingStatusConfirmed
+              ]}>
+                {getMeetingStatusText()}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.meetingStatusText}>
+              {claim.canProposeMeeting
+                ? 'Como tenés el objeto, proponé dónde encontrarse.'
+                : `Esperando que ${counterpartName} proponga un lugar.`}
+            </Text>
+          )}
+
+          {claim.canProposeMeeting && (
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.acceptBtn, styles.meetingBtn]}
+              onPress={() => onProposeMeeting(claim)}
+              disabled={isProcessing}
+            >
+              <Text style={styles.acceptBtnText}>Proponer punto de encuentro</Text>
+            </TouchableOpacity>
+          )}
+
+          {claim.canRespondMeeting && (
+            <View style={styles.meetingActions}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.suggestBtn]}
+                onPress={() => onProposeMeeting(claim)}
+                disabled={isProcessing}
+              >
+                <Text style={styles.suggestBtnText}>Sugerir otro</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.acceptBtn]}
+                onPress={() => onAcceptMeeting(claim.id)}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.acceptBtnText}>Aceptar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -272,14 +331,57 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
-  mapBtn: {
-    backgroundColor: '#F3E8FF',
+  meetingBox: {
+    marginHorizontal: 14,
+    marginBottom: 14,
+    backgroundColor: '#F5F3FF',
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    borderRadius: 8,
+    padding: 10,
+  },
+  meetingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  meetingTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary || '#6D28D9',
+  },
+  meetingAddress: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  meetingStatusText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  meetingStatusConfirmed: {
+    color: '#15803D',
+    fontWeight: '600',
+  },
+  meetingBtn: {
+    flex: 0,
+    marginTop: 10,
+  },
+  meetingActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  suggestBtn: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DDD6FE',
   },
-  mapBtnText: {
+  suggestBtnText: {
     color: Colors.primary || '#6D28D9',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 14,
   }
 });
