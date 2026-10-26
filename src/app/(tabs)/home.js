@@ -16,6 +16,7 @@ import LogoHallado from '../../components/LogoHallado';
 import PublicationCard from '../../components/PublicationCard';
 import GuidedSearchModal from '../../components/GuidedSearchModal';
 import EmptySearchResults from '../../components/EmptySearchResults';
+import OfflineBanner from '../../components/OfflineBanner';
 import {
   PublicationType,
   CATEGORY_OPTIONS,
@@ -180,12 +181,7 @@ export default function HomeScreen() {
 
       {/* Offline Warning Banner */}
       {isOfflineMode && (
-        <View style={styles.offlineBanner}>
-          <MaterialCommunityIcons name="wifi-off" size={16} color="#B45309" />
-          <Text style={styles.offlineBannerText}>
-            Sin conexión: Mostrando últimos resultados guardados
-          </Text>
-        </View>
+        <OfflineBanner message="Sin conexión: Mostrando últimos resultados cargados exitosamente (La información podría no estar actualizada)" />
       )}
 
       {/* Filter Refinement Bar */}
