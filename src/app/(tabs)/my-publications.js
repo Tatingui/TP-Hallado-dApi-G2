@@ -7,18 +7,20 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
 import { getMyPublicationsApi } from "../../services/publicationService";
+import { getPendingPublications } from "../../storage/pendingSyncStorage";
+import { syncPendingPublications } from "../../services/offlineSyncService";
 import {
   PublicationStatus,
   getStatusLabel,
   getTypeLabel,
   getCategoryLabel,
-  getCategoryIcon,
 } from "../../constants/publicationConstants";
 
 const STATUS_FILTERS = [
@@ -33,6 +35,7 @@ export default function MyPublicationsScreen() {
   const router = useRouter();
   const { token } = useAuth();
   const [publications, setPublications] = useState([]);
+  const [pendingPublications, setPendingPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState(null);
@@ -43,13 +46,24 @@ export default function MyPublicationsScreen() {
   const fetchPublications = useCallback(
     async (pageNum = 0, append = false) => {
       try {
+        // Cargar pendientes guardados offline
+        const pending = await getPendingPublications();
+        setPendingPublications(pending || []);
+
+        // Intentar sincronizar si hay pendientes
+        if (pending && pending.length > 0) {
+          await syncPendingPublications();
+          const updatedPending = await getPendingPublications();
+          setPendingPublications(updatedPending || []);
+        }
+
         const data = await getMyPublicationsApi(pageNum, 10, statusFilter);
         const items = data.content || [];
         setPublications(append ? (prev) => [...prev, ...items] : items);
         setIsLastPage(data.last ?? true);
         setPage(pageNum);
       } catch (err) {
-        console.warn("Error cargando mis publicaciones:", err);
+        console.warn("Error cargando mis publicaciones o modo offline:", err);
         if (!append) setPublications([]);
       } finally {
         setLoading(false);
@@ -80,6 +94,7 @@ export default function MyPublicationsScreen() {
   };
 
   const getStatusColor = (status) => {
+    if (status === "PENDIENTE_ENVIO") return "#D97706";
     switch (status) {
       case PublicationStatus.OPEN:
         return Colors.primary;
@@ -94,37 +109,92 @@ export default function MyPublicationsScreen() {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
-        </View>
-        <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
-      </View>
+  // Combinar publicaciones pendientes offline con las remotas
+  const formattedPendingList = pendingPublications.map((p) => ({
+    id: p.offlineId,
+    title: p.payload?.title || "Sin título",
+    category: p.payload?.category,
+    barrio: p.payload?.barrio,
+    type: p.payload?.type,
+    status: "PENDIENTE_ENVIO",
+    createdAt: p.createdAt,
+    isPending: true,
+  }));
 
-      <Text style={styles.cardTitle} numberOfLines={2}>
-        {item.title}
-      </Text>
+  const combinedData = [...formattedPendingList, ...publications];
 
-      <View style={styles.cardMeta}>
-        <View style={styles.metaItem}>
-          <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
-          <Text style={styles.metaText}>{getCategoryLabel(item.category)}</Text>
-        </View>
-        <View style={styles.metaItem}>
-          <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-          <Text style={styles.metaText}>{item.barrio}</Text>
-        </View>
-      </View>
+  const renderItem = ({ item }) => {
+    if (item.isPending) {
+      return (
+        <TouchableOpacity
+          style={[styles.card, styles.pendingCard]}
+          activeOpacity={0.8}
+          onPress={() =>
+            Alert.alert(
+              "Publicación Pendiente",
+              "Esta publicación fue creada sin conexión. Se enviará automáticamente cuando el dispositivo recupere internet."
+            )
+          }
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor("PENDIENTE_ENVIO") }]}>
+              <Text style={styles.statusText}>Pendiente de envío ⏳</Text>
+            </View>
+            <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
+          </View>
 
-      {item.createdAt && (
-        <Text style={styles.dateText}>
-          {new Date(item.createdAt).toLocaleDateString("es-AR")}
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+
+          <View style={styles.cardMeta}>
+            <View style={styles.metaItem}>
+              <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
+              <Text style={styles.metaText}>{getCategoryLabel(item.category)}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+              <Text style={styles.metaText}>{item.barrio || "Sin barrio"}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.pendingHint}>Guardada localmente (esperando conexión)</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+          </View>
+          <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
+        </View>
+
+        <Text style={styles.cardTitle} numberOfLines={2}>
+          {item.title}
         </Text>
-      )}
-    </TouchableOpacity>
-  );
+
+        <View style={styles.cardMeta}>
+          <View style={styles.metaItem}>
+            <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
+            <Text style={styles.metaText}>{getCategoryLabel(item.category)}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+            <Text style={styles.metaText}>{item.barrio}</Text>
+          </View>
+        </View>
+
+        {item.createdAt && (
+          <Text style={styles.dateText}>
+            {new Date(item.createdAt).toLocaleDateString("es-AR")}
+          </Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmpty = () => {
     if (loading) return null;
@@ -164,17 +234,26 @@ export default function MyPublicationsScreen() {
         ))}
       </View>
 
+      {pendingPublications.length > 0 && (
+        <View style={styles.pendingNotice}>
+          <MaterialCommunityIcons name="cloud-upload-outline" size={18} color="#92400E" />
+          <Text style={styles.pendingNoticeText}>
+            Tenés {pendingPublications.length} publicación(es) pendiente(s) de envío
+          </Text>
+        </View>
+      )}
+
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       ) : (
         <FlatList
-          data={publications}
+          data={combinedData}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           ListEmptyComponent={renderEmpty}
-          contentContainerStyle={publications.length === 0 ? { flex: 1 } : { padding: 16 }}
+          contentContainerStyle={combinedData.length === 0 ? { flex: 1 } : { padding: 16 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
           }
@@ -223,6 +302,22 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 12, color: Colors.text },
   filterTextActive: { color: Colors.surface, fontWeight: "600" },
 
+  pendingNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FDE68A",
+  },
+  pendingNoticeText: {
+    fontSize: 13,
+    color: "#92400E",
+    fontWeight: "600",
+  },
+
   // Cards
   card: {
     backgroundColor: Colors.surface,
@@ -231,6 +326,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  pendingCard: {
+    borderColor: "#F59E0B",
+    backgroundColor: "#FFFBEB",
+    borderStyle: "dashed",
+  },
+  pendingHint: {
+    fontSize: 12,
+    color: "#D97706",
+    fontStyle: "italic",
+    marginTop: 6,
   },
   cardHeader: {
     flexDirection: "row",
