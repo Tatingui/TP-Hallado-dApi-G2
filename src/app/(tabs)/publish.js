@@ -27,6 +27,8 @@ import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
 import { createPublicationApi } from "../../services/publicationService";
 import { clearDraft, loadDraft, saveDraft } from "../../storage/draftStorage";
+import { savePendingPublication } from "../../storage/pendingSyncStorage";
+import { checkNetworkConnection } from "../../hooks/useNetworkStatus";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -159,22 +161,28 @@ export default function PublishScreen() {
   // ─── Enviar publicación ───
   const handleSubmit = async () => {
     setSubmitting(true);
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      type: form.type,
+      category: form.category,
+      barrio: form.barrio,
+      address: form.address.trim() || null,
+      latitude: form.latitude,
+      longitude: form.longitude,
+      eventDate: form.eventDate || new Date().toISOString(),
+    };
+    if (form.type === PublicationType.FOUND) {
+      payload.verificationQuestion = form.verificationQuestion.trim() || null;
+      payload.verificationAnswer = form.verificationAnswer.trim() || null;
+    }
+
     try {
-      const payload = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        type: form.type,
-        category: form.category,
-        barrio: form.barrio,
-        address: form.address.trim() || null,
-        latitude: form.latitude,
-        longitude: form.longitude,
-        eventDate: form.eventDate || new Date().toISOString(),
-      };
-      if (form.type === PublicationType.FOUND) {
-        payload.verificationQuestion = form.verificationQuestion.trim() || null;
-        payload.verificationAnswer = form.verificationAnswer.trim() || null;
+      const isOnline = await checkNetworkConnection();
+      if (!isOnline) {
+        throw { status: 0, message: "Sin conexión a internet" };
       }
+
       await createPublicationApi(payload, form.images);
       await clearDraft();
       Alert.alert(
@@ -191,10 +199,29 @@ export default function PublishScreen() {
       setForm(INITIAL_FORM);
       setStep(0);
     } catch (err) {
-      Alert.alert(
-        "Error",
-        err?.message || "No se pudo crear la publicación. Intentá de nuevo.",
-      );
+      console.warn("Fallo en envío de publicación, intentando guardado offline...", err);
+      try {
+        await savePendingPublication(payload, form.images);
+        await clearDraft();
+        Alert.alert(
+          "Publicación guardada (Modo Sin Conexión)",
+          "No tenés conexión a internet en este momento. La publicación quedó marcada como 'Pendiente de envío' y se subirá automáticamente cuando recuperes la red.",
+          [
+            {
+              text: "Ver mis publicaciones",
+              onPress: () => router.replace("/(tabs)/my-publications"),
+            },
+            { text: "Entendido" },
+          ],
+        );
+        setForm(INITIAL_FORM);
+        setStep(0);
+      } catch (saveError) {
+        Alert.alert(
+          "Error",
+          err?.message || "No se pudo crear ni guardar la publicación.",
+        );
+      }
     } finally {
       setSubmitting(false);
     }
