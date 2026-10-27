@@ -17,9 +17,12 @@ import OfflineBanner from '../../components/OfflineBanner';
 import {
   getMySentClaimsApi,
   getMyReceivedClaimsApi,
-  respondToClaimApi
+  respondToClaimApi,
+  proposeMeetingPointApi,
+  acceptMeetingPointApi
 } from '../../services/claimService';
 import ClaimCard from '../../components/ClaimCard';
+import MeetingPointModal from '../../components/MeetingPointModal';
 
 export default function ClaimsScreen() {
   const { token } = useAuth();
@@ -33,6 +36,10 @@ export default function ClaimsScreen() {
   const [isLastPage, setIsLastPage] = useState(false);
   const [processingId, setProcessingId] = useState(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // Punto 8: reclamo sobre el que se está proponiendo un punto de encuentro
+  const [meetingClaim, setMeetingClaim] = useState(null);
+  const [isSubmittingMeeting, setIsSubmittingMeeting] = useState(false);
 
   useEffect(() => {
     fetchClaims(0, true);
@@ -105,6 +112,44 @@ export default function ClaimsScreen() {
               fetchClaims(0, true);
             } catch (err) {
               Alert.alert("Error", err.message || "No se pudo actualizar el estado del reclamo.");
+            } finally {
+              setProcessingId(null);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSubmitMeeting = async (address) => {
+    try {
+      setIsSubmittingMeeting(true);
+      await proposeMeetingPointApi(meetingClaim.id, address, token);
+      setMeetingClaim(null);
+      Alert.alert("Propuesta enviada", "La otra parte puede aceptarla o sugerir otro lugar.");
+      fetchClaims(0, true);
+    } catch (err) {
+      Alert.alert("Error", err.message || "No se pudo enviar la propuesta.");
+    } finally {
+      setIsSubmittingMeeting(false);
+    }
+  };
+
+  const handleAcceptMeeting = (claimId) => {
+    Alert.alert(
+      "Confirmar punto de encuentro",
+      "¿Aceptás este lugar? Una vez confirmado no se puede cambiar.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Aceptar",
+          onPress: async () => {
+            try {
+              setProcessingId(claimId);
+              await acceptMeetingPointApi(claimId, token);
+              fetchClaims(0, true);
+            } catch (err) {
+              Alert.alert("Error", err.message || "No se pudo aceptar el punto de encuentro.");
             } finally {
               setProcessingId(null);
             }
@@ -187,6 +232,15 @@ export default function ClaimsScreen() {
           }
         />
       )}
+
+      {/* Modal Punto de encuentro (Punto 8) */}
+      <MeetingPointModal
+        visible={!!meetingClaim}
+        onClose={() => setMeetingClaim(null)}
+        onSubmit={handleSubmitMeeting}
+        isSubmitting={isSubmittingMeeting}
+        currentAddress={meetingClaim?.meetingAddress}
+      />
     </View>
   );
 }

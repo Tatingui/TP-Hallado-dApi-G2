@@ -70,6 +70,31 @@ public class ClaimController {
     }
 
     /**
+     * Punto 8: Proponer un punto de encuentro o sugerir uno alternativo
+     */
+    @PutMapping("/{claimId}/meeting-point")
+    public ResponseEntity<ClaimResponseDTO> proposeMeetingPoint(
+            @PathVariable Long claimId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+        ClaimResponseDTO updated = claimService.proposeMeetingPoint(claimId, body.get("address"), authentication.getName());
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Punto 8: Aceptar el punto de encuentro propuesto por la otra parte
+     */
+    @PostMapping("/{claimId}/meeting-point/accept")
+    public ResponseEntity<ClaimResponseDTO> acceptMeetingPoint(
+            @PathVariable Long claimId,
+            Authentication authentication
+    ) {
+        ClaimResponseDTO updated = claimService.acceptMeetingPoint(claimId, authentication.getName());
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
      * Punto 7: Ver mis reclamos ENVIADOS
      */
     @GetMapping("/my-sent")

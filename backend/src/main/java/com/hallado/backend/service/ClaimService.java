@@ -150,6 +150,81 @@ public class ClaimService {
         return ClaimResponseDTO.fromEntity(claim, true);
     }
 
+    /**
+     * Punto 8: Proponer un punto de encuentro o sugerir uno alternativo.
+     * La primera propuesta la hace quien tiene el objeto; después solo la otra parte puede reemplazarla.
+     */
+    @Transactional
+    public ClaimResponseDTO proposeMeetingPoint(Long claimId, String address, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED) {
+            throw new BadRequestException("Solo se puede acordar un punto de encuentro en reclamos aceptados.");
+        }
+        if (claim.getMeetingStatus() == MeetingPointStatus.ACCEPTED) {
+            throw new BadRequestException("El punto de encuentro ya fue confirmado.");
+        }
+
+        String trimmed = address == null ? "" : address.trim();
+        if (trimmed.isEmpty()) {
+            throw new BadRequestException("Debes indicar la dirección del punto de encuentro.");
+        }
+        if (trimmed.length() > 255) {
+            throw new BadRequestException("La dirección no puede superar los 255 caracteres.");
+        }
+
+        if (claim.getMeetingStatus() == null) {
+            // Si se encontró algo, el objeto lo tiene el publicador; si se perdió, lo tiene quien reclamó
+            boolean publisherHasObject = claim.getPublication().getType() == PublicationType.FOUND;
+            if (isPublisher != publisherHasObject) {
+                throw new ForbiddenException("Solo quien tiene el objeto puede proponer el punto de encuentro.");
+            }
+        } else if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
+            throw new BadRequestException("Ya propusiste un punto de encuentro. Esperá la respuesta de la otra parte.");
+        }
+
+        claim.setMeetingAddress(trimmed);
+        claim.setMeetingProposedBy(user);
+        claim.setMeetingStatus(MeetingPointStatus.PROPOSED);
+        claimRepository.save(claim);
+
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
+    }
+
+    /**
+     * Punto 8: Aceptar el punto de encuentro propuesto por la otra parte.
+     */
+    @Transactional
+    public ClaimResponseDTO acceptMeetingPoint(Long claimId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getMeetingStatus() != MeetingPointStatus.PROPOSED) {
+            throw new BadRequestException("No hay un punto de encuentro pendiente de respuesta.");
+        }
+        if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
+            throw new BadRequestException("No podés aceptar tu propia propuesta.");
+        }
+
+        claim.setMeetingStatus(MeetingPointStatus.ACCEPTED);
+        claimRepository.save(claim);
+
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
+    }
+
     @Transactional(readOnly = true)
     public List<ResolvedCaseDTO> getResolvedHistory(String email, LocalDate from, LocalDate to, PublicationType type) {
         User user = userRepository.findByEmail(email)
