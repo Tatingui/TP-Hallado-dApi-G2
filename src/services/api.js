@@ -1,3 +1,6 @@
+import { clearSession } from '../storage/authStorage';
+import { router } from 'expo-router';
+
 import Constants from 'expo-constants';
 
 // Obtiene dinámicamente la IP de la PC en la red local cuando se ejecuta desde un celular físico con Expo Go
@@ -16,6 +19,24 @@ const BASE_URL = `http://${HOST_IP}:8081/api`;
 
 // URL base del servidor (sin /api) para construir URLs de imágenes
 export const IMAGE_BASE_URL = `http://${HOST_IP}:8081`;
+
+/**
+ * Maneja token expirado o inválido: limpia la sesión y redirige al login.
+ * Se invoca automáticamente cuando el backend responde 401 o 403.
+ */
+let _isRedirecting = false;
+async function handleSessionExpired() {
+  if (_isRedirecting) return; // Evitar múltiples redirecciones simultáneas
+  _isRedirecting = true;
+  try {
+    await clearSession();
+    router.replace("/(auth)/login");
+  } catch (e) {
+    console.error("Error cerrando sesión expirada:", e);
+  } finally {
+    setTimeout(() => { _isRedirecting = false; }, 2000);
+  }
+}
 
 /**
  * Realiza un POST al backend.
@@ -42,6 +63,9 @@ export async function apiPost(endpoint, body, token = null) {
     : null;
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
     throw { status: response.status, ...(data || {}) };
   }
 
@@ -69,6 +93,9 @@ export async function apiGet(endpoint, token = null) {
     : null;
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
     throw { status: response.status, ...(data || {}) };
   }
 
@@ -96,6 +123,9 @@ export async function apiDelete(endpoint, token = null) {
     : null;
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
     throw { status: response.status, ...(data || {}) };
   }
 
@@ -126,6 +156,9 @@ export async function apiPut(endpoint, body, token = null) {
     : null;
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
     throw { status: response.status, ...(data || {}) };
   }
 
@@ -157,6 +190,7 @@ export function apiPostMultipart(endpoint, formData, token = null) {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(data);
       } else {
+        (xhr.status === 401 || xhr.status === 403) && handleSessionExpired();
         reject({ status: xhr.status, ...(data || {}) });
       }
     };
