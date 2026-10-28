@@ -15,6 +15,14 @@ public class AlertResponseDTO {
     private String query;
     private boolean active;
     private LocalDateTime createdAt;
+    private LocalDateTime lastSeenAt;
+    private long newCount; // Publicaciones nuevas que coinciden desde la última vez que se vio
+
+    public static AlertResponseDTO fromEntity(SearchAlert alert, long newCount) {
+        AlertResponseDTO dto = fromEntity(alert);
+        dto.setNewCount(newCount);
+        return dto;
+    }
 
     public static AlertResponseDTO fromEntity(SearchAlert alert) {
         AlertResponseDTO dto = new AlertResponseDTO();
@@ -25,6 +33,7 @@ public class AlertResponseDTO {
         dto.setQuery(alert.getQuery());
         dto.setActive(alert.isActive());
         dto.setCreatedAt(alert.getCreatedAt());
+        dto.setLastSeenAt(alert.getLastSeenAt());
         return dto;
     }
 
@@ -42,4 +51,8 @@ public class AlertResponseDTO {
     public void setActive(boolean active) { this.active = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getLastSeenAt() { return lastSeenAt; }
+    public void setLastSeenAt(LocalDateTime lastSeenAt) { this.lastSeenAt = lastSeenAt; }
+    public long getNewCount() { return newCount; }
+    public void setNewCount(long newCount) { this.newCount = newCount; }
 }
