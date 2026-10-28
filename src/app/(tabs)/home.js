@@ -169,6 +169,27 @@ export default function HomeScreen() {
     }
   };
 
+  // Volver a la búsqueda por defecto (sin filtros), manteniendo el tipo elegido
+  const hasActiveFilters = !!(
+    searchCriteria.category ||
+    searchCriteria.query ||
+    searchCriteria.barrio ||
+    (searchCriteria.dateFilter && searchCriteria.dateFilter !== 'ALL') ||
+    searchCriteria.lat != null
+  );
+
+  const handleClearFilters = () => {
+    setSearchCriteria((prev) => ({
+      type: prev.type,
+      category: null,
+      query: '',
+      barrio: '',
+      dateFilter: 'ALL',
+      lat: null,
+      lng: null,
+    }));
+  };
+
   const targetTypeLabel =
     searchCriteria.type === PublicationType.LOST ? 'HALLAZGOS' : 'PÉRDIDAS';
 
@@ -233,6 +254,14 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRefineScroll}
         >
+          {/* Limpiar filtros: solo si hay alguno aplicado */}
+          {hasActiveFilters && (
+            <Pressable style={styles.filterChip} onPress={handleClearFilters}>
+              <MaterialCommunityIcons name="filter-remove" size={14} color="#EF4444" />
+              <Text style={[styles.filterChipText, { color: '#EF4444' }]}>Limpiar</Text>
+            </Pressable>
+          )}
+
           {/* Guardar búsqueda como alerta (Punto 9) */}
           <Pressable
             style={styles.filterChip}

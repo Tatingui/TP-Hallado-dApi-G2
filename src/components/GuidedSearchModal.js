@@ -48,6 +48,17 @@ export default function GuidedSearchModal({
   useEffect(() => {
     if (visible) {
       loadRecentSearches();
+      // Mostrar los criterios aplicados en Inicio (pueden haber cambiado con los chips o "Limpiar")
+      setType(initialCriteria.type || PublicationType.LOST);
+      setCategory(initialCriteria.category || null);
+      setQuery(initialCriteria.query || '');
+      setBarrio(initialCriteria.barrio || 'Todos los barrios');
+      setDateFilter(initialCriteria.dateFilter || 'ALL');
+      setUserLocation(
+        initialCriteria.lat != null
+          ? { latitude: initialCriteria.lat, longitude: initialCriteria.lng }
+          : null
+      );
     }
   }, [visible]);
 
