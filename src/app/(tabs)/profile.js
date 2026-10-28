@@ -21,6 +21,7 @@ import {
   markPublicationAsSeenApi,
 } from "../../services/publicationService";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
+import { getMyAlertsApi } from "../../services/alertService";
 import { setProfileTabBadge } from "../../storage/profileTabBadge";
 
 export default function ProfileScreen() {
@@ -32,21 +33,40 @@ export default function ProfileScreen() {
   const [followedPublicationsExpanded, setFollowedPublicationsExpanded] =
     useState(true);
   const [updatingPhoneVisibility, setUpdatingPhoneVisibility] = useState(false);
+  // Punto 9: cantidad de alertas y total de publicaciones nuevas en ellas
+  const [alertsCount, setAlertsCount] = useState(0);
+  const [alertsNewCount, setAlertsNewCount] = useState(0);
+
+  const loadAlertsSummary = useCallback(async () => {
+    try {
+      const alerts = (await getMyAlertsApi()) || [];
+      const totalNew = alerts.reduce((sum, alert) => sum + (alert.newCount || 0), 0);
+      setAlertsCount(alerts.length);
+      setAlertsNewCount(totalNew);
+      return totalNew;
+    } catch (err) {
+      console.warn("Error cargando alertas:", err);
+      setAlertsCount(0);
+      setAlertsNewCount(0);
+      return 0;
+    }
+  }, []);
 
   const loadFollowedPublications = useCallback(async () => {
     try {
       const data = await getFollowedPublicationsApi(0, 3);
       const followedPublicationsWithUpdates = data?.content || [];
       setFollowedPublications(followedPublicationsWithUpdates);
-      setProfileTabBadge(
-        followedPublicationsWithUpdates.some(
-          (publication) => publication.hasNewUpdates,
-        ),
+      const hasUpdates = followedPublicationsWithUpdates.some(
+        (publication) => publication.hasNewUpdates,
       );
+      setProfileTabBadge(hasUpdates);
+      return hasUpdates;
     } catch (err) {
       console.warn("Error cargando publicaciones seguidas:", err);
       setFollowedPublications([]);
       setProfileTabBadge(false);
+      return false;
     }
   }, []);
 
@@ -55,7 +75,10 @@ export default function ProfileScreen() {
       setLoading(true);
       const data = await getMyProfile();
       setProfile(data);
-      await loadFollowedPublications();
+      const followedHaveUpdates = await loadFollowedPublications();
+      const alertsNew = await loadAlertsSummary();
+      // El indicador de la pestaña se enciende con novedades en seguidas o en alertas
+      setProfileTabBadge(followedHaveUpdates || alertsNew > 0);
     } catch (err) {
       Alert.alert(
         "Error",
@@ -65,7 +88,7 @@ export default function ProfileScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [loadFollowedPublications]);
+  }, [loadFollowedPublications, loadAlertsSummary]);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,7 +113,8 @@ export default function ProfileScreen() {
       );
       setFollowedPublications(updatedFollowedPublications);
       setProfileTabBadge(
-        updatedFollowedPublications.some((item) => item.hasNewUpdates),
+        updatedFollowedPublications.some((item) => item.hasNewUpdates) ||
+          alertsNewCount > 0,
       );
     }
 
@@ -197,6 +221,43 @@ export default function ProfileScreen() {
           <Text style={styles.editButtonText}>Editar Perfil</Text>
         </Pressable>
       </View>
+
+      {/* Mis alertas (Punto 9) */}
+      <Pressable
+        style={styles.sectionCard}
+        onPress={() => router.push("/profile/alerts")}
+      >
+        <View style={styles.accordionHeader}>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="notifications-outline"
+              size={20}
+              color={Colors.primary}
+            />
+            <Text style={styles.sectionTitle}>Mis alertas</Text>
+          </View>
+          <View style={styles.accordionMeta}>
+            {alertsNewCount > 0 && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>
+                  {alertsNewCount === 1 ? "1 nueva" : `${alertsNewCount} nuevas`}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.accordionCount}>{alertsCount}</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={Colors.textSecondary}
+            />
+          </View>
+        </View>
+        <Text style={styles.emptyFollowedText}>
+          {alertsCount === 0
+            ? "Guardá una búsqueda como alerta para enterarte de publicaciones nuevas."
+            : "Ver, pausar o eliminar tus búsquedas guardadas."}
+        </Text>
+      </Pressable>
 
       {/* Publicaciones Seguidas */}
       <View style={styles.sectionCard}>
