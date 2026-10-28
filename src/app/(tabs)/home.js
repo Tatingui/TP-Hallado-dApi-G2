@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,8 @@ import {
   getTypeLabel,
 } from '../../constants/publicationConstants';
 import { searchPublicationsApi } from '../../services/publicationService';
+import { createAlertApi } from '../../services/alertService';
+import { checkNetworkConnection } from '../../hooks/useNetworkStatus';
 import {
   saveSearchCacheOffline,
   getOfflineSearchCache,
@@ -53,6 +56,7 @@ export default function HomeScreen() {
   const [isLastPage, setIsLastPage] = useState(false);
   const [sortBy, setSortBy] = useState('recent'); // recent or distance
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [savingAlert, setSavingAlert] = useState(false);
 
   useEffect(() => {
     fetchResults(0, true);
@@ -127,6 +131,44 @@ export default function HomeScreen() {
     }));
   };
 
+  // Punto 9: Guardar una búsqueda como alerta (la actual o la armada en el Buscador Guiado)
+  const handleSaveAlert = async (criteria = searchCriteria) => {
+    if (savingAlert) return;
+
+    if (!criteria.category && !criteria.barrio && !criteria.query) {
+      Alert.alert(
+        'Faltan criterios',
+        'Elegí al menos una categoría, un barrio o palabras clave para guardar la alerta.'
+      );
+      return;
+    }
+
+    const isConnected = await checkNetworkConnection();
+    if (!isConnected) {
+      Alert.alert('Sin conexión', 'Necesitás conexión a internet para guardar una alerta.');
+      return;
+    }
+
+    try {
+      setSavingAlert(true);
+      await createAlertApi(criteria);
+      const summary = [
+        criteria.type === PublicationType.LOST ? 'Hallazgos' : 'Pérdidas',
+        criteria.category ? getCategoryLabel(criteria.category) : null,
+        criteria.barrio ? `en ${criteria.barrio}` : null,
+        criteria.query ? `"${criteria.query}"` : null,
+      ].filter(Boolean).join(' • ');
+      Alert.alert(
+        'Alerta guardada',
+        `${summary}\n\nTe avisaremos cuando aparezcan publicaciones nuevas que coincidan.`
+      );
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudo guardar la alerta.');
+    } finally {
+      setSavingAlert(false);
+    }
+  };
+
   const targetTypeLabel =
     searchCriteria.type === PublicationType.LOST ? 'HALLAZGOS' : 'PÉRDIDAS';
 
@@ -191,6 +233,20 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRefineScroll}
         >
+          {/* Guardar búsqueda como alerta (Punto 9) */}
+          <Pressable
+            style={styles.filterChip}
+            onPress={() => handleSaveAlert()}
+            disabled={savingAlert}
+          >
+            {savingAlert ? (
+              <ActivityIndicator size="small" color={Colors.primary || '#6D28D9'} />
+            ) : (
+              <MaterialCommunityIcons name="bell-plus" size={14} color={Colors.primary || '#6D28D9'} />
+            )}
+            <Text style={styles.filterChipText}>Guardar alerta</Text>
+          </Pressable>
+
           {/* Sort Option Toggle */}
           <Pressable
             style={[
@@ -277,7 +333,7 @@ export default function HomeScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
-            <EmptySearchResults searchCriteria={searchCriteria} />
+            <EmptySearchResults searchCriteria={searchCriteria} onSaveAlert={handleSaveAlert} />
           }
           ListFooterComponent={
             loadingMore ? (
@@ -295,6 +351,8 @@ export default function HomeScreen() {
         onClose={() => setSearchModalVisible(false)}
         initialCriteria={searchCriteria}
         onApplySearch={(newCriteria) => setSearchCriteria(newCriteria)}
+        onSaveAlert={handleSaveAlert}
+        isSavingAlert={savingAlert}
       />
     </View>
   );

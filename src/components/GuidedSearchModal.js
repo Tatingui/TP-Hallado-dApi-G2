@@ -30,6 +30,8 @@ export default function GuidedSearchModal({
   visible,
   onClose,
   onApplySearch,
+  onSaveAlert, // Punto 9 (opcional): guardar los criterios elegidos como alerta
+  isSavingAlert = false,
   initialCriteria = {},
 }) {
   const [type, setType] = useState(initialCriteria.type || PublicationType.LOST);
@@ -101,16 +103,18 @@ export default function GuidedSearchModal({
     setRecentSearches([]);
   };
 
+  const buildSearchParams = () => ({
+    type,
+    category,
+    query: query.trim(),
+    barrio: barrio === 'Todos los barrios' ? '' : barrio,
+    dateFilter,
+    lat: userLocation ? userLocation.latitude : null,
+    lng: userLocation ? userLocation.longitude : null,
+  });
+
   const handleSubmitSearch = async () => {
-    const searchParams = {
-      type,
-      category,
-      query: query.trim(),
-      barrio: barrio === 'Todos los barrios' ? '' : barrio,
-      dateFilter,
-      lat: userLocation ? userLocation.latitude : null,
-      lng: userLocation ? userLocation.longitude : null,
-    };
+    const searchParams = buildSearchParams();
 
     // Save search to recent searches AsyncStorage
     await saveRecentSearch(searchParams);
@@ -375,6 +379,24 @@ export default function GuidedSearchModal({
 
         {/* Search Submit Footer */}
         <View style={styles.footer}>
+          {onSaveAlert && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveAlertButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => onSaveAlert(buildSearchParams())}
+              disabled={isSavingAlert}
+            >
+              {isSavingAlert ? (
+                <ActivityIndicator size="small" color={COLORS.primary || '#6D28D9'} />
+              ) : (
+                <MaterialCommunityIcons name="bell-plus" size={20} color={COLORS.primary || '#6D28D9'} />
+              )}
+              <Text style={styles.saveAlertButtonText}>Guardar como alerta</Text>
+            </Pressable>
+          )}
+
           <Pressable
             style={({ pressed }) => [
               styles.submitButton,
@@ -655,5 +677,22 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.9,
+  },
+  saveAlertButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.primary || '#6D28D9',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 10,
+    gap: 8,
+  },
+  saveAlertButtonText: {
+    color: COLORS.primary || '#6D28D9',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
