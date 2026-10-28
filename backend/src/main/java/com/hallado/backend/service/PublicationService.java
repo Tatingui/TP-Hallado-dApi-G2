@@ -152,15 +152,30 @@ public class PublicationService {
                 .map(follow -> {
                     Publication publication = follow.getPublication();
                     PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(publication);
-                    boolean hasNewUpdates = publication.getUpdatedAt() != null &&
-                            (follow.getLastSeenAt() == null || publication.getUpdatedAt().isAfter(follow.getLastSeenAt()));
-                    dto.setHasNewUpdates(hasNewUpdates);
+                    dto.setHasNewUpdates(hasStatusChangedSinceSeen(publication, follow));
                     return dto;
                 })
                 .collect(Collectors.toList());
 
         Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtos, pageable, followPage.getTotalElements());
         return PageResponseDTO.fromPage(dtoPage);
+    }
+
+    /**
+     * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado desde la última vez que se vieron.
+     */
+    public long countFollowedWithUpdates(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return publicationFollowRepository.findByUser(user).stream()
+                .filter(follow -> hasStatusChangedSinceSeen(follow.getPublication(), follow))
+                .count();
+    }
+
+    // Punto 9: hay novedad solo cuando la publicación cambió de estado (no por ediciones de texto)
+    private boolean hasStatusChangedSinceSeen(Publication publication, PublicationFollow follow) {
+        return publication.getStatusChangedAt() != null &&
+                (follow.getLastSeenAt() == null || publication.getStatusChangedAt().isAfter(follow.getLastSeenAt()));
     }
 
     /**
@@ -181,9 +196,7 @@ public class PublicationService {
         payload.put("followersCount", followersCount);
         if (followed) {
             publicationFollowRepository.findByUserAndPublication(user, publication)
-                    .ifPresent(follow -> payload.put("hasNewUpdates",
-                            publication.getUpdatedAt() != null &&
-                                    (follow.getLastSeenAt() == null || publication.getUpdatedAt().isAfter(follow.getLastSeenAt()))));
+                    .ifPresent(follow -> payload.put("hasNewUpdates", hasStatusChangedSinceSeen(publication, follow)));
         } else {
             payload.put("hasNewUpdates", false);
         }

@@ -124,6 +124,14 @@ public class PublicationController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado (para el indicador de novedad)
+     */
+    @GetMapping("/followed/updates-count")
+    public ResponseEntity<Map<String, Long>> getFollowedUpdatesCount(Authentication authentication) {
+        return ResponseEntity.ok(Map.of("count", publicationService.countFollowedWithUpdates(authentication.getName())));
+    }
+
     @GetMapping("/{id}/follow")
     public ResponseEntity<Map<String, Object>> getFollowStatus(
             @PathVariable Long id,
