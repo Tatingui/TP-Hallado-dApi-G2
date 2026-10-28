@@ -111,6 +111,14 @@ export const getFollowedPublicationsApi = async (page = 0, size = 3) => {
 };
 
 /**
+ * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado desde la última vez que se vieron.
+ */
+export const getFollowedUpdatesCountApi = async () => {
+  const token = await getToken();
+  return apiGet("/publications/followed/updates-count", token);
+};
+
+/**
  * Obtiene una publicación por su ID.
  *
  * @param {number} id

@@ -18,6 +18,7 @@ import { Colors, FontSize, Spacing } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
 import {
   getFollowedPublicationsApi,
+  getFollowedUpdatesCountApi,
   markPublicationAsSeenApi,
 } from "../../services/publicationService";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
@@ -32,6 +33,9 @@ export default function ProfileScreen() {
   const [followedPublications, setFollowedPublications] = useState([]);
   const [followedPublicationsExpanded, setFollowedPublicationsExpanded] =
     useState(true);
+  // Punto 9: total de seguidas y cuántas cambiaron de estado (no solo las 3 que se muestran)
+  const [followedTotal, setFollowedTotal] = useState(0);
+  const [followedUpdatesCount, setFollowedUpdatesCount] = useState(0);
   const [updatingPhoneVisibility, setUpdatingPhoneVisibility] = useState(false);
   // Punto 9: cantidad de alertas y total de publicaciones nuevas en ellas
   const [alertsCount, setAlertsCount] = useState(0);
@@ -57,14 +61,18 @@ export default function ProfileScreen() {
       const data = await getFollowedPublicationsApi(0, 3);
       const followedPublicationsWithUpdates = data?.content || [];
       setFollowedPublications(followedPublicationsWithUpdates);
-      const hasUpdates = followedPublicationsWithUpdates.some(
-        (publication) => publication.hasNewUpdates,
-      );
+      setFollowedTotal(data?.totalElements ?? followedPublicationsWithUpdates.length);
+      const updates = await getFollowedUpdatesCountApi();
+      const updatesCount = updates?.count || 0;
+      setFollowedUpdatesCount(updatesCount);
+      const hasUpdates = updatesCount > 0;
       setProfileTabBadge(hasUpdates);
       return hasUpdates;
     } catch (err) {
       console.warn("Error cargando publicaciones seguidas:", err);
       setFollowedPublications([]);
+      setFollowedTotal(0);
+      setFollowedUpdatesCount(0);
       setProfileTabBadge(false);
       return false;
     }
@@ -112,10 +120,9 @@ export default function ProfileScreen() {
         item.id === publication.id ? { ...item, hasNewUpdates: false } : item,
       );
       setFollowedPublications(updatedFollowedPublications);
-      setProfileTabBadge(
-        updatedFollowedPublications.some((item) => item.hasNewUpdates) ||
-          alertsNewCount > 0,
-      );
+      const remainingUpdates = Math.max(followedUpdatesCount - 1, 0);
+      setFollowedUpdatesCount(remainingUpdates);
+      setProfileTabBadge(remainingUpdates > 0 || alertsNewCount > 0);
     }
 
     router.push(`/publication/${publication.id}`);
@@ -274,9 +281,16 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>Publicaciones Seguidas</Text>
           </View>
           <View style={styles.accordionMeta}>
-            <Text style={styles.accordionCount}>
-              {followedPublications.length}
-            </Text>
+            {followedUpdatesCount > 0 && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>
+                  {followedUpdatesCount === 1
+                    ? "1 novedad"
+                    : `${followedUpdatesCount} novedades`}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.accordionCount}>{followedTotal}</Text>
             <Ionicons
               name={
                 followedPublicationsExpanded ? "chevron-up" : "chevron-down"
@@ -323,6 +337,20 @@ export default function ProfileScreen() {
                   </View>
                 </Pressable>
               ))
+            )}
+
+            {/* Punto 9: sección Seguidas completa */}
+            {followedTotal > 0 && (
+              <Pressable
+                style={styles.historyButton}
+                onPress={() => router.push("/profile/followed")}
+              >
+                <Ionicons name="list-outline" size={18} color={Colors.primary} />
+                <Text style={styles.historyButtonText}>
+                  Ver todas las seguidas ({followedTotal})
+                </Text>
+                <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+              </Pressable>
             )}
           </>
         )}
