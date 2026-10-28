@@ -1,5 +1,6 @@
 package com.hallado.backend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -19,4 +20,7 @@ public interface PublicationFollowRepository extends JpaRepository<PublicationFo
     Optional<PublicationFollow> findByUserAndPublication(User user, Publication publication);
 
     Page<PublicationFollow> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+
+    // Punto 9: para contar las seguidas con novedades
+    List<PublicationFollow> findByUser(User user);
 }

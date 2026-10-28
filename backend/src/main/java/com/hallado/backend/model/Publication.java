@@ -66,6 +66,9 @@ public class Publication {
 
     private LocalDateTime updatedAt;
 
+    // Punto 9: última vez que cambió el estado (abierta, en reclamo, resuelta, vencida)
+    private LocalDateTime statusChangedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -112,6 +115,7 @@ public class Publication {
     public PublicationType getType() { return type; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getStatusChangedAt() { return statusChangedAt; }
     public User getUser() { return user; }
 
     public String getVerificationAnswer() { return verificationAnswer; }
@@ -133,7 +137,13 @@ public class Publication {
     public void setLatitude(Double latitude) { this.latitude = latitude; }
 
     public void setLongitude(Double longitude) { this.longitude = longitude; }
-    public void setStatus(PublicationStatus status) { this.status = status; }
+    public void setStatus(PublicationStatus status) {
+        // Punto 9: registrar cuándo cambia el estado, para la novedad de las publicaciones seguidas
+        if (this.status != status) {
+            this.statusChangedAt = LocalDateTime.now();
+        }
+        this.status = status;
+    }
 
     public void setTitle(String title) { this.title = title; }
     public void setType(PublicationType type) { this.type = type; }

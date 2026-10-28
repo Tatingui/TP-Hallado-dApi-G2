@@ -199,9 +199,12 @@ export default function ClaimsScreen() {
           renderItem={({ item }) => (
             <ClaimCard
               claim={item}
-              isReceived={activeTab === 'RECEIVED'}
-              onRespond={handleRespond}
+              type={activeTab}
               isProcessing={processingId === item.id}
+              onAccept={(id) => handleRespond(id, 'ACCEPTED')}
+              onReject={(id) => handleRespond(id, 'REJECTED')}
+              onProposeMeeting={(claim) => setMeetingClaim(claim)}
+              onAcceptMeeting={handleAcceptMeeting}
             />
           )}
           contentContainerStyle={claims.length === 0 ? { flex: 1 } : { padding: 16 }}
