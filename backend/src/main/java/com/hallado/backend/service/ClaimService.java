@@ -218,6 +218,11 @@ public class ClaimService {
         }
 
         claim.setMeetingStatus(MeetingPointStatus.ACCEPTED);
+
+        // La devolución se concretó: marcar la publicación como resuelta
+        Publication publication = claim.getPublication();
+        publication.setStatus(PublicationStatus.RESOLVED);
+        publicationRepository.save(publication);
         claimRepository.save(claim);
 
         return ClaimResponseDTO.fromEntity(claim, isPublisher);
