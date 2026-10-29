@@ -51,7 +51,7 @@ export const getMyReceivedClaimsApi = async (page = 0, size = 10, tokenParam) =>
  */
 export const respondToClaimApi = async (claimId, status, tokenParam) => {
   const token = tokenParam || (await getToken());
-  const BASE_URL = require("./api").IMAGE_BASE_URL + "/api";
+  const { IMAGE_BASE_URL } = require("./api"); const BASE_URL = IMAGE_BASE_URL;
   const response = await fetch(`${BASE_URL}/claims/${claimId}/respond`, {
     method: "PATCH",
     headers: {

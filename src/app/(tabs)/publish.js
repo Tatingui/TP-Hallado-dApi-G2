@@ -550,7 +550,7 @@ export default function PublishScreen() {
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 maximumDate={new Date()}
-                onChange={(event, selectedDate) => {
+                onValueChange={(event, selectedDate) => {
                   setShowDatePicker(Platform.OS === "ios");
                   if (selectedDate) {
                     updateField("eventDate", selectedDate.toISOString());

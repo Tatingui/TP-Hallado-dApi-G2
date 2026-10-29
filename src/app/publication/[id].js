@@ -423,14 +423,23 @@ export default function PublicationDetailScreen() {
         </View>
       )}
 
-      {isMyPublication && publication.status === PublicationStatus.OPEN && (
-        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      {isMyPublication && (
+        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16), gap: 10 }]}>
+          {publication.status === PublicationStatus.OPEN && (
+            <TouchableOpacity
+              style={[styles.mainActionBtn, { backgroundColor: "#374151", flex: 1 }, isOfflineMode && styles.disabledActionBtn]}
+              onPress={handlePressEdit}
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFF" />
+              <Text style={styles.mainActionText}>Gestionar</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={[styles.mainActionBtn, { backgroundColor: "#374151" }, isOfflineMode && styles.disabledActionBtn]}
-            onPress={handlePressEdit}
+            style={[styles.mainActionBtn, { backgroundColor: Colors.primary, flex: 1 }]}
+            onPress={() => router.push({ pathname: "/(tabs)/claims", params: { tab: "received" } })}
           >
-            <Ionicons name="settings-outline" size={20} color="#FFF" />
-            <Text style={styles.mainActionText}>Gestionar Publicación</Text>
+            <Ionicons name="mail-open-outline" size={20} color="#FFF" />
+            <Text style={styles.mainActionText}>Ver reclamos</Text>
           </TouchableOpacity>
         </View>
       )}
