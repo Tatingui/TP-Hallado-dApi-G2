@@ -143,7 +143,7 @@ export default function PublicProfileScreen() {
                   key={`${thanks.createdAt}-${index}`}
                   style={styles.thanksCard}
                 >
-                  <Ionicons name="heart" size={16} color="#EF4444" />
+                  <Ionicons name="heart" size={16} color=Colors.error />
                   <View style={styles.thanksContent}>
                     <Text style={styles.thanksText}>“{thanks.message}”</Text>
                     <Text style={styles.thanksAuthor}>

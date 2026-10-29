@@ -322,7 +322,7 @@ export default function PublicationDetailScreen() {
             {isMyPublication ? (
                <Text style={styles.infoValue}>{publication.address || "No especificada"}</Text>
             ) : (
-               <Text style={[styles.infoValue, { fontStyle: "italic", color: "#9CA3AF" }]}>
+               <Text style={[styles.infoValue, { fontStyle: "italic", color: Colors.gray400 }]}>
                  🔒 Oculta hasta aceptar reclamo
                </Text>
             )}
@@ -386,7 +386,7 @@ export default function PublicationDetailScreen() {
           <TouchableOpacity
             style={[
               styles.mainActionBtn,
-              { backgroundColor: isFound ? Colors.primary : "#10B981" },
+              { backgroundColor: isFound ? Colors.primary : Colors.success },
               isOfflineMode && styles.disabledActionBtn
             ]}
             onPress={handlePressClaim}
@@ -394,7 +394,7 @@ export default function PublicationDetailScreen() {
             <MaterialCommunityIcons
               name={isFound ? "hand-heart" : "hand-back-right"}
               size={20}
-              color="#FFF"
+              color=Colors.surface
             />
             <Text style={styles.mainActionText}>
               {isFound ? "¡Es mío!" : "¡Lo encontré!"}
@@ -407,10 +407,10 @@ export default function PublicationDetailScreen() {
         <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16), gap: 10 }]}>
           {publication.status === PublicationStatus.OPEN && (
             <TouchableOpacity
-              style={[styles.mainActionBtn, { backgroundColor: "#374151", flex: 1 }, isOfflineMode && styles.disabledActionBtn]}
+              style={[styles.mainActionBtn, { backgroundColor: Colors.gray700, flex: 1 }, isOfflineMode && styles.disabledActionBtn]}
               onPress={handlePressEdit}
             >
-              <Ionicons name="settings-outline" size={20} color="#FFF" />
+              <Ionicons name="settings-outline" size={20} color=Colors.surface />
               <Text style={styles.mainActionText}>Gestionar</Text>
             </TouchableOpacity>
           )}
@@ -418,7 +418,7 @@ export default function PublicationDetailScreen() {
             style={[styles.mainActionBtn, { backgroundColor: Colors.primary, flex: 1 }]}
             onPress={() => router.push({ pathname: "/(tabs)/claims", params: { tab: "received" } })}
           >
-            <Ionicons name="mail-open-outline" size={20} color="#FFF" />
+            <Ionicons name="mail-open-outline" size={20} color=Colors.surface />
             <Text style={styles.mainActionText}>Ver reclamos</Text>
           </TouchableOpacity>
         </View>
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   mainActionText: {
-    color: "#FFF",
+    color: Colors.surface,
     fontSize: 16,
     fontWeight: "700",
   }

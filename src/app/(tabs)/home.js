@@ -198,7 +198,7 @@ export default function HomeScreen() {
       {/* App Top Bar */}
       <View style={styles.appHeader}>
         <View style={styles.brandContainer}>
-          <LogoHallado size={28} color="#FFFFFF" />
+          <LogoHallado size={28} color=Colors.surface />
           <Text style={styles.brandTitle}>Hallado</Text>
         </View>
 
@@ -206,7 +206,7 @@ export default function HomeScreen() {
           style={styles.guidedSearchButtonHeader}
           onPress={() => setSearchModalVisible(true)}
         >
-          <MaterialCommunityIcons name="tune-variant" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="tune-variant" size={18} color=Colors.surface />
           <Text style={styles.guidedSearchButtonText}>Buscador Guiado</Text>
         </Pressable>
       </View>
@@ -224,7 +224,7 @@ export default function HomeScreen() {
                 : 'hand-heart'
             }
             size={22}
-            color={Colors.primary || '#6D28D9'}
+            color={Colors.primary}
           />
         </View>
 
@@ -239,7 +239,7 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <MaterialCommunityIcons name="chevron-right" size={22} color="#9CA3AF" />
+        <MaterialCommunityIcons name="chevron-right" size={22} color=Colors.gray400 />
       </Pressable>
 
       {/* Offline Warning Banner */}
@@ -257,8 +257,8 @@ export default function HomeScreen() {
           {/* Limpiar filtros: solo si hay alguno aplicado */}
           {hasActiveFilters && (
             <Pressable style={styles.filterChip} onPress={handleClearFilters}>
-              <MaterialCommunityIcons name="filter-remove" size={14} color="#EF4444" />
-              <Text style={[styles.filterChipText, { color: '#EF4444' }]}>Limpiar</Text>
+              <MaterialCommunityIcons name="filter-remove" size={14} color=Colors.error />
+              <Text style={[styles.filterChipText, { color: Colors.error }]}>Limpiar</Text>
             </Pressable>
           )}
 
@@ -269,9 +269,9 @@ export default function HomeScreen() {
             disabled={savingAlert}
           >
             {savingAlert ? (
-              <ActivityIndicator size="small" color={Colors.primary || '#6D28D9'} />
+              <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
-              <MaterialCommunityIcons name="bell-plus" size={14} color={Colors.primary || '#6D28D9'} />
+              <MaterialCommunityIcons name="bell-plus" size={14} color={Colors.primary} />
             )}
             <Text style={styles.filterChipText}>Guardar alerta</Text>
           </Pressable>
@@ -287,7 +287,7 @@ export default function HomeScreen() {
             <MaterialCommunityIcons
               name={sortBy === 'distance' ? 'map-marker-distance' : 'clock-outline'}
               size={14}
-              color={sortBy === 'distance' ? '#FFFFFF' : '#374151'}
+              color={sortBy === 'distance' ? Colors.surface : Colors.gray700}
             />
             <Text
               style={[
@@ -314,8 +314,8 @@ export default function HomeScreen() {
                 size={14}
                 color={
                   searchCriteria.category === cat.id
-                    ? '#FFFFFF'
-                    : Colors.primary || '#6D28D9'
+                    ? Colors.surface
+                    : Colors.primary
                 }
               />
               <Text
@@ -334,7 +334,7 @@ export default function HomeScreen() {
       {/* Results List or Loading */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary || '#6D28D9'} />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>Buscando publicaciones...</Text>
         </View>
       ) : (
@@ -356,7 +356,7 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={[Colors.primary || '#6D28D9']}
+              colors={[Colors.primary]}
             />
           }
           onEndReached={handleLoadMore}
@@ -367,7 +367,7 @@ export default function HomeScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.footerLoading}>
-                <ActivityIndicator size="small" color={Colors.primary || '#6D28D9'} />
+                <ActivityIndicator size="small" color={Colors.primary} />
               </View>
             ) : null
           }
@@ -390,13 +390,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
   },
   appHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.primary || '#6D28D9',
+    backgroundColor: Colors.primary,
     paddingTop: 50,
     paddingBottom: 14,
     paddingHorizontal: 20,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.surface,
     letterSpacing: 0.5,
   },
   guidedSearchButtonHeader: {
@@ -422,21 +422,21 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   guidedSearchButtonText: {
-    color: '#FFFFFF',
+    color: Colors.surface,
     fontSize: 12,
     fontWeight: '600',
   },
   searchBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -458,11 +458,11 @@ const styles = StyleSheet.create({
   searchBannerTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111827',
+    color: Colors.gray900,
   },
   searchBannerSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.gray500,
     marginTop: 2,
   },
   offlineBanner: {
@@ -494,22 +494,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     gap: 6,
   },
   filterChipActive: {
-    backgroundColor: Colors.primary || '#6D28D9',
-    borderColor: Colors.primary || '#6D28D9',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   filterChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
   },
   textWhite: {
-    color: '#FFFFFF',
+    color: Colors.surface,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.gray500,
     fontWeight: '500',
   },
   footerLoading: {

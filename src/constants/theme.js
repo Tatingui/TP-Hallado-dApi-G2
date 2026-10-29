@@ -18,6 +18,30 @@ export const Colors = {
   badgeBorder: '#F3D89D',
   badgeText: '#B47100',
   badgeStar: '#E5A93C',
+
+  // Grises (escala Tailwind para consistencia)
+  gray50: '#F9FAFB',
+  gray100: '#F3F4F6',
+  gray200: '#E5E7EB',
+  gray300: '#D1D5DB',
+  gray400: '#9CA3AF',
+  gray500: '#6B7280',
+  gray600: '#4B5563',
+  gray700: '#374151',
+  gray800: '#1F2937',
+  gray900: '#111827',
+
+  // Semánticos extra
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  successDark: '#15803D',
+  errorDark: '#B91C1C',
+
+  // Claim / encuentro (violeta)
+  purple50: '#F5F3FF',
+  purple100: '#F3E8FF',
+  purple200: '#DDD6FE',
+  purple700: '#6D28D9',
 };
 
 export const Spacing = {

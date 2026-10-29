@@ -472,7 +472,7 @@ export default function ProfileScreen() {
       <Pressable
         style={[
           styles.publicProfileButton,
-          { backgroundColor: "#EF4444", marginTop: 12 },
+          { backgroundColor: Colors.error, marginTop: 12 },
         ]}
         onPress={async () => {
           await logout();

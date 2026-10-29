@@ -94,7 +94,7 @@ export default function MeetingPointModal({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFF" />
+                <ActivityIndicator color=Colors.surface />
               ) : (
                 <Text style={styles.submitBtnText}>
                   {isAlternative ? 'Enviar alternativa' : 'Enviar propuesta'}
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: Colors.surface || '#FFF',
+    backgroundColor: Colors.surface || Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border || '#E5E7EB',
+    borderBottomColor: Colors.border || Colors.gray200,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.text || '#111827',
+    color: Colors.text || Colors.gray900,
   },
   closeBtn: {
     padding: 4,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   currentBox: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     padding: 10,
     borderRadius: 8,
     marginBottom: 16,
@@ -147,44 +147,44 @@ const styles = StyleSheet.create({
   currentLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
     marginBottom: 2,
   },
   currentValue: {
     fontSize: 14,
-    color: Colors.primary || '#6D28D9',
+    color: Colors.primary,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text || '#111827',
+    color: Colors.text || Colors.gray900,
     marginBottom: 8,
   },
   asterisk: {
-    color: '#EF4444',
+    color: Colors.error,
   },
   hint: {
     fontSize: 12,
-    color: Colors.textSecondary || '#6B7280',
+    color: Colors.textSecondary || Colors.gray500,
     marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.border || '#D1D5DB',
+    borderColor: Colors.border || Colors.gray300,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    backgroundColor: '#F9FAFB',
-    color: Colors.text || '#111827',
+    backgroundColor: Colors.gray50,
+    color: Colors.text || Colors.gray900,
   },
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: Colors.border || '#E5E7EB',
-    backgroundColor: Colors.surface || '#FFF',
+    borderTopColor: Colors.border || Colors.gray200,
+    backgroundColor: Colors.surface || Colors.surface,
   },
   submitBtn: {
-    backgroundColor: Colors.primary || '#6D28D9',
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitBtnText: {
-    color: '#FFF',
+    color: Colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },

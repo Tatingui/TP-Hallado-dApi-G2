@@ -64,7 +64,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           <Image source={{ uri: resolveImageUrl(claim.proofImageUrl) }} style={styles.proofImage} />
         ) : (
           <View style={styles.noImageContainer}>
-            <Ionicons name="image-outline" size={32} color="#9CA3AF" />
+            <Ionicons name="image-outline" size={32} color=Colors.gray400 />
             <Text style={styles.noImageText}>Sin foto</Text>
           </View>
         )}
@@ -81,7 +81,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           {isReceived && claim.verificationQuestion && (
             <View style={styles.verificationBox}>
               <Text style={styles.verificationLabel}>
-                <Ionicons name="shield-checkmark-outline" size={14} color="#6D28D9" /> Verificación
+                <Ionicons name="shield-checkmark-outline" size={14} color=Colors.purple700 /> Verificación
               </Text>
               <Text style={styles.verificationQuestion}>
                 {claim.verificationQuestion}
@@ -143,7 +143,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
             disabled={isProcessing}
           >
             {isProcessing ? (
-               <ActivityIndicator color="#FFF" size="small" />
+               <ActivityIndicator color=Colors.surface size="small" />
             ) : (
                <Text style={styles.acceptBtnText}>Aceptar Reclamo</Text>
             )}
@@ -208,7 +208,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
                 disabled={isProcessing}
               >
                 {isProcessing ? (
-                  <ActivityIndicator color="#FFF" size="small" />
+                  <ActivityIndicator color=Colors.surface size="small" />
                 ) : (
                   <Text style={styles.acceptBtnText}>Aceptar</Text>
                 )}
@@ -223,12 +223,12 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: Colors.gray100,
   },
   headerTitleContainer: {
     flex: 1,
@@ -251,12 +251,12 @@ const styles = StyleSheet.create({
   pubTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: Colors.gray900,
     marginBottom: 2,
   },
   dateText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.gray500,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusText: {
-    color: '#FFF',
+    color: Colors.surface,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -277,21 +277,21 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.gray100,
   },
   noImageContainer: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     justifyContent: 'center',
     alignItems: 'center',
   },
   noImageText: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: Colors.gray400,
     marginTop: 4,
   },
   detailsContainer: {
@@ -300,12 +300,12 @@ const styles = StyleSheet.create({
   messageLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
     marginBottom: 4,
   },
   messageText: {
     fontSize: 13,
-    color: '#4B5563',
+    color: Colors.gray600,
     lineHeight: 18,
   },
   contactBox: {
@@ -319,12 +319,12 @@ const styles = StyleSheet.create({
   contactLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#166534',
+    color: Colors.successDark,
     marginBottom: 4,
   },
   contactValue: {
     fontSize: 12,
-    color: '#15803D',
+    color: Colors.successDark,
   },
   actionsFooter: {
     flexDirection: 'row',
@@ -345,24 +345,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
   },
   rejectBtnText: {
-    color: '#EF4444',
+    color: Colors.error,
     fontWeight: '600',
     fontSize: 14,
   },
   acceptBtn: {
-    backgroundColor: Colors.primary || '#6D28D9',
+    backgroundColor: Colors.primary,
   },
   acceptBtnText: {
-    color: '#FFF',
+    color: Colors.surface,
     fontWeight: '700',
     fontSize: 14,
   },
   meetingBox: {
     marginHorizontal: 14,
     marginBottom: 14,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: Colors.purple50,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
     borderRadius: 8,
     padding: 10,
   },
@@ -375,20 +375,20 @@ const styles = StyleSheet.create({
   meetingTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.primary || '#6D28D9',
+    color: Colors.primary,
   },
   meetingAddress: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: Colors.gray900,
     marginBottom: 2,
   },
   meetingStatusText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.gray500,
   },
   meetingStatusConfirmed: {
-    color: '#15803D',
+    color: Colors.successDark,
     fontWeight: '600',
   },
   meetingBtn: {
@@ -401,41 +401,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   suggestBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
   },
   directionsBtn: {
     flex: 0,
     marginTop: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
   },
   suggestBtnText: {
-    color: Colors.primary || '#6D28D9',
+    color: Colors.primary,
     fontWeight: '600',
     fontSize: 14,
   },
 
   verificationBox: {
     marginTop: 10,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: Colors.purple50,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
     borderRadius: 8,
     padding: 10,
   },
   verificationLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#6D28D9',
+    color: Colors.purple700,
     marginBottom: 4,
   },
   verificationQuestion: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
     fontStyle: 'italic',
     marginBottom: 8,
   },
@@ -449,17 +449,17 @@ const styles = StyleSheet.create({
   verificationSubLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
+    color: Colors.gray500,
     marginBottom: 2,
   },
   verificationValue: {
     fontSize: 13,
-    color: '#111827',
+    color: Colors.gray900,
     fontWeight: '600',
   },
   verificationExpected: {
     fontSize: 13,
-    color: '#15803D',
+    color: Colors.successDark,
     fontWeight: '600',
   },
 });

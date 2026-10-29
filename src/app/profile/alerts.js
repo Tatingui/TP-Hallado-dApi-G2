@@ -165,7 +165,7 @@ export default function MyAlertsScreen() {
             onPress={() => handleDelete(item)}
             disabled={isProcessing}
           >
-            <Ionicons name="trash-outline" size={16} color="#EF4444" />
+            <Ionicons name="trash-outline" size={16} color=Colors.error />
             <Text style={styles.deleteText}>Eliminar</Text>
           </Pressable>
         </View>
@@ -217,7 +217,7 @@ export default function MyAlertsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.gray50,
   },
   header: {
     paddingTop: 50,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: Colors.gray200,
     padding: 14,
     marginBottom: 12,
   },
@@ -264,10 +264,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: "700",
-    color: "#111827",
+    color: Colors.gray900,
   },
   newBadge: {
-    backgroundColor: "#EF4444",
+    backgroundColor: Colors.error,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
@@ -278,19 +278,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   pausedBadge: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: Colors.gray200,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
   },
   pausedBadgeText: {
-    color: "#4B5563",
+    color: Colors.gray600,
     fontSize: 11,
     fontWeight: "700",
   },
   hint: {
     fontSize: 12,
-    color: "#6B7280",
+    color: Colors.gray500,
     marginTop: 6,
   },
   actions: {
@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#DDD6FE",
-    backgroundColor: "#F5F3FF",
+    borderColor: Colors.purple200,
+    backgroundColor: Colors.purple50,
   },
   actionDisabled: {
     opacity: 0.5,
@@ -323,18 +323,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF2F2",
   },
   deleteText: {
-    color: "#EF4444",
+    color: Colors.error,
     fontWeight: "600",
     fontSize: 13,
   },
   emptyTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#374151",
+    color: Colors.gray700,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: Colors.gray500,
     textAlign: "center",
   },
 });

@@ -206,7 +206,7 @@ export default function MyPublicationsScreen() {
               onPress={(e) => { e.stopPropagation(); handleDelete(item); }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Ionicons name="trash-outline" size={20} color=Colors.error />
             </TouchableOpacity>
           )}
         </View>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   pendingCard: {
-    borderColor: "#F59E0B",
+    borderColor: Colors.warning,
     backgroundColor: "#FFFBEB",
     borderStyle: "dashed",
   },

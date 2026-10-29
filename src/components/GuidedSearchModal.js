@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { COLORS } from '../constants/theme';
+import { Colors, COLORS } from '../constants/theme';
 import {
   PublicationType,
   CATEGORY_OPTIONS,
@@ -141,7 +141,7 @@ export default function GuidedSearchModal({
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Buscador Guiado</Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color="#374151" />
+            <MaterialCommunityIcons name="close" size={24} color=Colors.gray700 />
           </Pressable>
         </View>
 
@@ -160,7 +160,7 @@ export default function GuidedSearchModal({
                 <MaterialCommunityIcons
                   name="help-circle-outline"
                   size={20}
-                  color={type === PublicationType.LOST ? '#FFFFFF' : '#374151'}
+                  color={type === PublicationType.LOST ? Colors.surface : Colors.gray700}
                 />
                 <Text
                   style={[
@@ -182,7 +182,7 @@ export default function GuidedSearchModal({
                 <MaterialCommunityIcons
                   name="hand-heart-outline"
                   size={20}
-                  color={type === PublicationType.FOUND ? '#FFFFFF' : '#374151'}
+                  color={type === PublicationType.FOUND ? Colors.surface : Colors.gray700}
                 />
                 <Text
                   style={[
@@ -233,7 +233,7 @@ export default function GuidedSearchModal({
                   <MaterialCommunityIcons
                     name={cat.icon}
                     size={16}
-                    color={category === cat.id ? '#FFFFFF' : COLORS.primary || '#6D28D9'}
+                    color={category === cat.id ? Colors.surface : COLORS.primary || Colors.purple700}
                   />
                   <Text style={[styles.chipText, category === cat.id && styles.textWhite]}>
                     {cat.label}
@@ -245,7 +245,7 @@ export default function GuidedSearchModal({
             {/* Keyword Input */}
             <Text style={[styles.label, { marginTop: 12 }]}>Palabras clave (opcional):</Text>
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="magnify" size={20} color="#9CA3AF" />
+              <MaterialCommunityIcons name="magnify" size={20} color=Colors.gray400 />
               <TextInput
                 style={styles.input}
                 placeholder="Ej. Mochila Nike, Caniche, Llave de auto..."
@@ -254,7 +254,7 @@ export default function GuidedSearchModal({
               />
               {query ? (
                 <Pressable onPress={() => setQuery('')}>
-                  <MaterialCommunityIcons name="close-circle" size={18} color="#9CA3AF" />
+                  <MaterialCommunityIcons name="close-circle" size={18} color=Colors.gray400 />
                 </Pressable>
               ) : null}
             </View>
@@ -269,13 +269,13 @@ export default function GuidedSearchModal({
               onPress={() => setShowBarrioPicker(!showBarrioPicker)}
             >
               <View style={styles.pickerSelectorLeft}>
-                <MaterialCommunityIcons name="map-marker" size={20} color={COLORS.primary || '#6D28D9'} />
+                <MaterialCommunityIcons name="map-marker" size={20} color={COLORS.primary || Colors.purple700} />
                 <Text style={styles.pickerSelectorText}>{barrio}</Text>
               </View>
               <MaterialCommunityIcons
                 name={showBarrioPicker ? 'chevron-up' : 'chevron-down'}
                 size={20}
-                color="#6B7280"
+                color=Colors.gray500
               />
             </Pressable>
 
@@ -312,13 +312,13 @@ export default function GuidedSearchModal({
               disabled={loadingLocation}
             >
               {loadingLocation ? (
-                <ActivityIndicator size="small" color={COLORS.primary || '#6D28D9'} />
+                <ActivityIndicator size="small" color={COLORS.primary || Colors.purple700} />
               ) : (
                 <>
                   <MaterialCommunityIcons
                     name={userLocation ? 'crosshairs-gps' : 'navigation'}
                     size={18}
-                    color={COLORS.primary || '#6D28D9'}
+                    color={COLORS.primary || Colors.purple700}
                   />
                   <Text style={styles.gpsButtonText}>
                     {userLocation
@@ -373,14 +373,14 @@ export default function GuidedSearchModal({
                     style={styles.recentItem}
                     onPress={() => handleSelectRecentSearch(item)}
                   >
-                    <MaterialCommunityIcons name="history" size={16} color="#6B7280" />
+                    <MaterialCommunityIcons name="history" size={16} color=Colors.gray500 />
                     <Text style={styles.recentText} numberOfLines={1}>
                       {item.type === PublicationType.LOST ? 'Perdí ' : 'Encontré '}
                       {item.category ? `${getCategoryLabel(item.category)} ` : ''}
                       {item.query ? `"${item.query}" ` : ''}
                       {item.barrio ? `en ${item.barrio}` : ''}
                     </Text>
-                    <MaterialCommunityIcons name="arrow-top-left" size={16} color="#9CA3AF" />
+                    <MaterialCommunityIcons name="arrow-top-left" size={16} color=Colors.gray400 />
                   </Pressable>
                 ))}
               </View>
@@ -400,9 +400,9 @@ export default function GuidedSearchModal({
               disabled={isSavingAlert}
             >
               {isSavingAlert ? (
-                <ActivityIndicator size="small" color={COLORS.primary || '#6D28D9'} />
+                <ActivityIndicator size="small" color={COLORS.primary || Colors.purple700} />
               ) : (
-                <MaterialCommunityIcons name="bell-plus" size={20} color={COLORS.primary || '#6D28D9'} />
+                <MaterialCommunityIcons name="bell-plus" size={20} color={COLORS.primary || Colors.purple700} />
               )}
               <Text style={styles.saveAlertButtonText}>Guardar como alerta</Text>
             </Pressable>
@@ -415,7 +415,7 @@ export default function GuidedSearchModal({
             ]}
             onPress={handleSubmitSearch}
           >
-            <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+            <MaterialCommunityIcons name="magnify" size={22} color=Colors.surface />
             <Text style={styles.submitButtonText}>Buscar Publicaciones</Text>
           </Pressable>
         </View>
@@ -427,7 +427,7 @@ export default function GuidedSearchModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
   },
   header: {
     flexDirection: 'row',
@@ -436,14 +436,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: Colors.gray200,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#111827',
+    color: Colors.gray900,
   },
   closeButton: {
     padding: 6,
@@ -454,16 +454,16 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: Colors.gray900,
     marginBottom: 12,
   },
   typeToggleContainer: {
@@ -478,36 +478,36 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#F9FAFB',
+    borderColor: Colors.gray300,
+    backgroundColor: Colors.gray50,
     gap: 8,
   },
   typeOptionActiveLost: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
+    backgroundColor: Colors.error,
+    borderColor: Colors.error,
   },
   typeOptionActiveFound: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
   },
   typeOptionText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#374151',
+    color: Colors.gray700,
   },
   textWhite: {
-    color: '#FFFFFF',
+    color: Colors.surface,
   },
   typeHint: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.gray500,
     marginTop: 10,
     fontStyle: 'italic',
   },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#4B5563',
+    color: Colors.gray600,
     marginBottom: 8,
   },
   chipsScroll: {
@@ -521,26 +521,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
-    backgroundColor: '#F3E8FF',
+    borderColor: Colors.purple200,
+    backgroundColor: Colors.purple100,
     marginRight: 8,
     gap: 6,
   },
   chipActive: {
-    backgroundColor: COLORS.primary || '#6D28D9',
-    borderColor: COLORS.primary || '#6D28D9',
+    backgroundColor: COLORS.primary || Colors.purple700,
+    borderColor: COLORS.primary || Colors.purple700,
   },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.gray300,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -549,15 +549,15 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
+    color: Colors.gray900,
   },
   pickerSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.gray300,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -570,32 +570,32 @@ const styles = StyleSheet.create({
   pickerSelectorText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: Colors.gray900,
   },
   barriosListContainer: {
     maxHeight: 180,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     borderRadius: 12,
     marginTop: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
   },
   barrioItem: {
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: Colors.gray100,
   },
   barrioItemActive: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
   },
   barrioItemText: {
     fontSize: 13,
-    color: '#374151',
+    color: Colors.gray700,
   },
   barrioItemTextActive: {
     fontWeight: '700',
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
   },
   gpsButton: {
     flexDirection: 'row',
@@ -604,15 +604,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 12,
     borderRadius: 12,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
     gap: 8,
   },
   gpsButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
   },
   dateOptionsGrid: {
     flexDirection: 'row',
@@ -624,17 +624,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: Colors.gray200,
+    backgroundColor: Colors.gray50,
   },
   dateOptionActive: {
-    backgroundColor: COLORS.primary || '#6D28D9',
-    borderColor: COLORS.primary || '#6D28D9',
+    backgroundColor: COLORS.primary || Colors.purple700,
+    borderColor: COLORS.primary || Colors.purple700,
   },
   dateOptionText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
   },
   recentHeader: {
     flexDirection: 'row',
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: 12,
-    color: '#EF4444',
+    color: Colors.error,
     fontWeight: '600',
   },
   recentList: {
@@ -655,25 +655,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: Colors.gray100,
     gap: 8,
   },
   recentText: {
     flex: 1,
     fontSize: 12,
-    color: '#4B5563',
+    color: Colors.gray600,
   },
   footer: {
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: Colors.gray200,
   },
   submitButton: {
-    backgroundColor: COLORS.primary || '#6D28D9',
+    backgroundColor: COLORS.primary || Colors.purple700,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: Colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -696,13 +696,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.primary || '#6D28D9',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.primary || Colors.purple700,
+    backgroundColor: Colors.surface,
     marginBottom: 10,
     gap: 8,
   },
   saveAlertButtonText: {
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
     fontSize: 15,
     fontWeight: '700',
   },
