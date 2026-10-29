@@ -9,12 +9,14 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getMyProfile, updateMyProfile } from "../../services/userService";
+import * as ImagePicker from "expo-image-picker";
+import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
+import { IMAGE_BASE_URL } from "../../services/api";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
-import { checkNetworkConnection } from "../../hooks/useNetworkStatus";
 
 export default function EditProfileScreen() {
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,8 @@ export default function EditProfileScreen() {
   const [telefono, setTelefono] = useState("");
   const [barrio, setBarrio] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [telefonoVisible, setTelefonoVisible] = useState(true);
 
   useEffect(() => {
@@ -48,13 +52,29 @@ export default function EditProfileScreen() {
     }
   }
 
-  async function handleSave() {
-    const isOnline = await checkNetworkConnection();
-    if (!isOnline) {
-      Alert.alert("Sin conexión", "Se requiere conexión a internet para actualizar la información de tu perfil.");
+  async function pickImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permiso necesario", "Necesitamos acceso a tu galería para elegir una foto.");
       return;
     }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      const asset = result.assets[0];
+      setSelectedImage({
+        uri: asset.uri,
+        type: asset.mimeType || "image/jpeg",
+        fileName: asset.fileName || `profile_${Date.now()}.jpg`,
+      });
+    }
+  }
 
+  async function handleSave() {
     if (!nombre.trim()) {
       Alert.alert("Campo Requerido", "El nombre no puede estar vacío.");
       return;
@@ -62,11 +82,25 @@ export default function EditProfileScreen() {
 
     try {
       setSaving(true);
+
+      // Si el usuario eligió una nueva foto, subirla primero
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          const updatedProfile = await uploadProfileImage(selectedImage);
+          setProfileImageUrl(updatedProfile.profileImageUrl || "");
+          setSelectedImage(null);
+        } catch (imgErr) {
+          Alert.alert("Error", "No se pudo subir la imagen. Se guardarán los demás cambios.");
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       await updateMyProfile({
         nombre: nombre.trim(),
         telefono: telefono.trim(),
         barrio: barrio.trim(),
-        profileImageUrl: profileImageUrl.trim(),
         telefonoVisible,
       });
 
@@ -136,17 +170,42 @@ export default function EditProfileScreen() {
           />
         </View>
 
-        {/* URL Imagen de Perfil */}
+        {/* Foto de perfil */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>URL Imagen de Perfil (Opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={profileImageUrl}
-            onChangeText={setProfileImageUrl}
-            placeholder="https://..."
-            autoCapitalize="none"
-            placeholderTextColor={Colors.disabled}
-          />
+          <Text style={styles.label}>Foto de perfil (opcional)</Text>
+          <View style={styles.imagePickerRow}>
+            {selectedImage ? (
+              <Image source={{ uri: selectedImage.uri }} style={styles.profilePreview} />
+            ) : profileImageUrl ? (
+              <Image
+                source={{ uri: profileImageUrl.startsWith("http") ? profileImageUrl : `${IMAGE_BASE_URL}${profileImageUrl}` }}
+                style={styles.profilePreview}
+              />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Ionicons name="person-outline" size={32} color={Colors.disabled} />
+              </View>
+            )}
+            <View style={styles.imagePickerActions}>
+              <Pressable style={styles.pickImageBtn} onPress={pickImage} disabled={uploadingImage}>
+                <Ionicons name="image-outline" size={18} color={Colors.textOnPrimary} />
+                <Text style={styles.pickImageBtnText}>
+                  {profileImageUrl || selectedImage ? "Cambiar foto" : "Elegir foto"}
+                </Text>
+              </Pressable>
+              {(profileImageUrl || selectedImage) && (
+                <Pressable
+                  style={styles.removeImageBtn}
+                  onPress={() => {
+                    setSelectedImage(null);
+                    setProfileImageUrl("");
+                  }}
+                >
+                  <Text style={styles.removeImageText}>Quitar</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
         </View>
 
         {/* Visibilidad de teléfono */}
@@ -234,6 +293,56 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     fontSize: FontSize.md,
     color: Colors.text,
+  },
+  imagePickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  profilePreview: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.border,
+  },
+  profilePlaceholder: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imagePickerActions: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  pickImageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  pickImageBtnText: {
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: "600",
+  },
+  removeImageBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 4,
+  },
+  removeImageText: {
+    color: Colors.error,
+    fontSize: FontSize.sm,
+    fontWeight: "500",
   },
   switchGroup: {
     flexDirection: "row",

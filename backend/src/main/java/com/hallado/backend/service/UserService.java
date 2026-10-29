@@ -18,6 +18,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
 @Service
 public class UserService {
 
@@ -154,4 +162,38 @@ public class UserService {
             return createdAt.format(DateTimeFormatter.ofPattern("MM/yyyy"));
         }
     }
+
+    private static final String PROFILE_UPLOAD_DIR = "uploads/profile/";
+
+    /**
+     * Sube una imagen de perfil al filesystem y actualiza la URL del usuario.
+     */
+    @Transactional
+    public UserProfileResponse updateProfileImage(String email, MultipartFile image) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + email));
+
+        try {
+            Path uploadPath = Paths.get(PROFILE_UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalName = image.getOriginalFilename();
+            String extension = "";
+            if (originalName != null && originalName.contains(".")) {
+                extension = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String fileName = UUID.randomUUID() + extension;
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath);
+
+            user.setProfileImageUrl("/uploads/profile/" + fileName);
+            User updatedUser = userRepository.save(user);
+            return buildUserProfileResponse(updatedUser);
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar imagen de perfil: " + e.getMessage());
+        }
+    }
+
 }
