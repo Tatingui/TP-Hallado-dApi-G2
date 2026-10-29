@@ -3,16 +3,22 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../hooks/useAuth";
 import { isBiometricEnabled } from "../services/biometricService";
+import { isTokenExpired } from "../storage/authStorage";
 import { Colors } from "../constants/theme";
 
 export default function Index() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, token, loading, logout } = useAuth();
 
   useEffect(() => {
     if (loading) return; // Esperar a que AuthContext termine de restaurar
 
     if (isAuthenticated) {
-      checkBiometricAndRedirect();
+      if (isTokenExpired(token)) {
+        // Token vencido: limpiar sesion y mandar al login
+        logout();
+      } else {
+        checkBiometricAndRedirect();
+      }
     } else {
       router.replace("/(auth)/login");
     }

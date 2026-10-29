@@ -44,3 +44,16 @@ export async function isLoggedIn() {
   const token = await SecureStore.getItemAsync(TOKEN_KEY);
   return token !== null;
 }
+
+/**
+ * Decodifica el payload del JWT y compara el campo `exp` con la hora actual.
+ * Devuelve true si el token ya venció o no se puede leer.
+ */
+export function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
