@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { Colors, COLORS } from '../constants/theme';
 import { useRouter } from 'expo-router';
 
 export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
@@ -26,7 +26,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>
-        <MaterialCommunityIcons name="magnify-remove-outline" size={48} color={COLORS.primary || '#6D28D9'} />
+        <MaterialCommunityIcons name="magnify-remove-outline" size={48} color={COLORS.primary || Colors.purple700} />
       </View>
 
       <Text style={styles.title}>No encontramos publicaciones</Text>
@@ -42,7 +42,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
           ]}
           onPress={handlePublish}
         >
-          <MaterialCommunityIcons name="plus-circle" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="plus-circle" size={18} color=Colors.surface />
           <Text style={styles.primaryButtonText}>Publicar mi pérdida o hallazgo</Text>
         </Pressable>
 
@@ -53,7 +53,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
           ]}
           onPress={handleSaveAlert}
         >
-          <MaterialCommunityIcons name="bell-plus" size={18} color={COLORS.primary || '#6D28D9'} />
+          <MaterialCommunityIcons name="bell-plus" size={18} color={COLORS.primary || Colors.purple700} />
           <Text style={styles.secondaryButtonText}>Guardar búsqueda como alerta</Text>
         </Pressable>
       </View>
@@ -66,18 +66,18 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     marginTop: 20,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
   },
   iconCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: Colors.gray900,
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 13,
-    color: '#6B7280',
+    color: Colors.gray500,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 24,
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary || '#6D28D9',
+    backgroundColor: COLORS.primary || Colors.purple700,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -112,14 +112,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: Colors.surface,
     fontSize: 14,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: Colors.purple200,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryButtonText: {
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
     fontSize: 14,
     fontWeight: '600',
   },

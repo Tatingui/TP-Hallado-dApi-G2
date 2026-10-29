@@ -1,6 +1,7 @@
 import Svg, { Path } from "react-native-svg";
+import { Colors } from "../constants/theme";
 
-export default function LogoHallado({ size = 80, color = "#FFFFFF" }) {
+export default function LogoHallado({ size = 80, color = Colors.surface }) {
   return (
     <Svg viewBox="0 0 300 300" width={size} height={size}>
       <Path

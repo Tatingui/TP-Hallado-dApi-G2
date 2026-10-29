@@ -147,7 +147,7 @@ export default function FollowedPublicationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.gray50,
   },
   header: {
     paddingTop: 50,
@@ -184,10 +184,10 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#4B5563",
+    color: Colors.gray600,
   },
   newBadge: {
-    backgroundColor: "#EF4444",
+    backgroundColor: Colors.error,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
@@ -200,12 +200,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#374151",
+    color: Colors.gray700,
     textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: Colors.gray500,
     textAlign: "center",
   },
   retryButton: {

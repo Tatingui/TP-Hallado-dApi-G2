@@ -139,7 +139,7 @@ export default function AlertResultsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.gray50,
   },
   header: {
     paddingTop: 50,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
     gap: 4,
-    backgroundColor: "#EF4444",
+    backgroundColor: Colors.error,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#374151",
+    color: Colors.gray700,
     textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: Colors.gray500,
     textAlign: "center",
   },
   retryButton: {

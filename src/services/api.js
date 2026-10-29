@@ -166,6 +166,39 @@ export async function apiPut(endpoint, body, token = null) {
 }
 
 /**
+ * Realiza un PATCH al backend.
+ */
+export async function apiPatch(endpoint, body, token = null) {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  const contentType = response.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
+    throw { status: response.status, ...(data || {}) };
+  }
+
+  return data;
+}
+
+/**
  * Realiza un POST multipart/form-data al backend.
  * Usa XMLHttpRequest en lugar de fetch para mejor compatibilidad
  * con uploads de archivos en React Native.

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
-import { IMAGE_BASE_URL } from '../services/api';
+import { Colors, COLORS } from '../constants/theme';
+import { resolveImageUrl } from '../utils/imageUrl';
 import {
   getCategoryLabel,
   getCategoryIcon,
@@ -31,7 +31,7 @@ export default function PublicationCard({ publication, onPress }) {
       ? publication.imageUrls[0]
       : null;
   const imageUrl = rawUrl
-    ? (rawUrl.startsWith('http') ? rawUrl : IMAGE_BASE_URL + rawUrl)
+    ? (resolveImageUrl(rawUrl))
     : null;
 
   return (
@@ -52,13 +52,13 @@ export default function PublicationCard({ publication, onPress }) {
         <View
           style={[
             styles.typeBadge,
-            { backgroundColor: isFound ? '#10B981' : '#EF4444' },
+            { backgroundColor: isFound ? Colors.success : Colors.error },
           ]}
         >
           <MaterialCommunityIcons
             name={isFound ? 'hand-heart' : 'help-circle'}
             size={12}
-            color="#FFF"
+            color=Colors.surface
           />
           <Text style={styles.typeBadgeText}>
             {isFound ? 'ENCONTRADO' : 'PERDIDO'}
@@ -68,7 +68,7 @@ export default function PublicationCard({ publication, onPress }) {
         {/* Distance Badge if available */}
         {publication.distanceKm != null && (
           <View style={styles.distanceBadge}>
-            <MaterialCommunityIcons name="map-marker-distance" size={12} color="#FFF" />
+            <MaterialCommunityIcons name="map-marker-distance" size={12} color=Colors.surface />
             <Text style={styles.distanceBadgeText}>
               {publication.distanceKm} km
             </Text>
@@ -91,7 +91,7 @@ export default function PublicationCard({ publication, onPress }) {
             <MaterialCommunityIcons
               name="calendar"
               size={12}
-              color={COLORS.subtext || '#6B7280'}
+              color={COLORS.subtext || Colors.gray500}
             />
             <Text style={styles.dateText}>{formattedDate}</Text>
           </View>
@@ -121,13 +121,13 @@ export default function PublicationCard({ publication, onPress }) {
 
           {publication.publisher && (
             <View style={styles.publisherContainer}>
-              <MaterialCommunityIcons name="account-circle" size={14} color="#6B7280" />
+              <MaterialCommunityIcons name="account-circle" size={14} color=Colors.gray500 />
               <Text style={styles.publisherName} numberOfLines={1}>
                 {publication.publisher.nombre}
               </Text>
               {publication.publisher.devolucionesConcretadas >= 5 && (
                 <View style={styles.badgeSolidario} title="Vecino Solidario">
-                  <MaterialCommunityIcons name="star-circle" size={14} color="#F59E0B" />
+                  <MaterialCommunityIcons name="star-circle" size={14} color=Colors.warning />
                 </View>
               )}
             </View>
@@ -140,12 +140,12 @@ export default function PublicationCard({ publication, onPress }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.gray200,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     height: 160,
     width: '100%',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.gray100,
     position: 'relative',
   },
   image: {
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   typeBadgeText: {
-    color: '#FFFFFF',
+    color: Colors.surface,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   distanceBadgeText: {
-    color: '#FFFFFF',
+    color: Colors.surface,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -212,14 +212,14 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     gap: 4,
   },
   categoryText: {
-    color: COLORS.primary || '#6D28D9',
+    color: COLORS.primary || Colors.purple700,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -230,18 +230,18 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11,
-    color: '#6B7280',
+    color: Colors.gray500,
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: Colors.gray900,
     lineHeight: 20,
     marginBottom: 4,
   },
   description: {
     fontSize: 12,
-    color: '#4B5563',
+    color: Colors.gray600,
     lineHeight: 16,
     marginBottom: 10,
   },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Colors.gray100,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray700,
   },
   publisherContainer: {
     flexDirection: 'row',
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   publisherName: {
     fontSize: 11,
-    color: '#6B7280',
+    color: Colors.gray500,
     maxWidth: 100,
   },
   badgeSolidario: {

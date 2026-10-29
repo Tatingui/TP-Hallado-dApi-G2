@@ -179,7 +179,7 @@ export default function CreateClaimModal({
                     style={styles.removeImageBtn}
                     onPress={() => setImageUri(null)}
                   >
-                    <Ionicons name="trash" size={16} color="#FFF" />
+                    <Ionicons name="trash" size={16} color=Colors.surface />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -198,7 +198,7 @@ export default function CreateClaimModal({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFF" />
+                <ActivityIndicator color=Colors.surface />
               ) : (
                 <Text style={styles.submitBtnText}>Enviar Reclamo</Text>
               )}
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: Colors.surface || '#FFF',
+    backgroundColor: Colors.surface || Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
@@ -228,12 +228,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border || '#E5E7EB',
+    borderBottomColor: Colors.border || Colors.gray200,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.text || '#111827',
+    color: Colors.text || Colors.gray900,
   },
   closeBtn: {
     padding: 4,
@@ -264,34 +264,34 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text || '#111827',
+    color: Colors.text || Colors.gray900,
     marginBottom: 8,
   },
   asterisk: {
-    color: '#EF4444',
+    color: Colors.error,
   },
   hint: {
     fontSize: 12,
-    color: Colors.textSecondary || '#6B7280',
+    color: Colors.textSecondary || Colors.gray500,
     marginBottom: 10,
   },
   questionText: {
     fontSize: 15,
     fontStyle: 'italic',
-    color: Colors.primary || '#6D28D9',
+    color: Colors.primary,
     marginBottom: 10,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: Colors.purple100,
     padding: 10,
     borderRadius: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.border || '#D1D5DB',
+    borderColor: Colors.border || Colors.gray300,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    backgroundColor: '#F9FAFB',
-    color: Colors.text || '#111827',
+    backgroundColor: Colors.gray50,
+    color: Colors.text || Colors.gray900,
   },
   textArea: {
     minHeight: 80,
@@ -299,18 +299,18 @@ const styles = StyleSheet.create({
   },
   uploadBtn: {
     borderWidth: 2,
-    borderColor: Colors.border || '#E5E7EB',
+    borderColor: Colors.border || Colors.gray200,
     borderStyle: 'dashed',
     borderRadius: 12,
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray50,
   },
   uploadBtnText: {
     marginTop: 8,
     fontSize: 14,
-    color: Colors.primary || '#6D28D9',
+    color: Colors.primary,
     fontWeight: '600',
   },
   imagePreviewContainer: {
@@ -338,11 +338,11 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: Colors.border || '#E5E7EB',
-    backgroundColor: Colors.surface || '#FFF',
+    borderTopColor: Colors.border || Colors.gray200,
+    backgroundColor: Colors.surface || Colors.surface,
   },
   submitBtn: {
-    backgroundColor: Colors.primary || '#6D28D9',
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitBtnText: {
-    color: '#FFF',
+    color: Colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },

@@ -259,7 +259,7 @@ export default function ResolvedHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.gray50,
   },
   header: {
     paddingTop: 50,
@@ -279,17 +279,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
     borderBottomWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: Colors.gray200,
   },
   filterLabel: {
     fontWeight: "700",
     marginBottom: 8,
-    color: "#374151",
+    color: Colors.gray700,
   },
   segment: {
     flexDirection: "row",
     gap: 6,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: Colors.gray100,
     padding: 4,
     borderRadius: 8,
   },
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: Colors.gray200,
   },
   cardHeader: {
     flexDirection: "row",
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontWeight: "800",
-    color: "#111827",
+    color: Colors.gray900,
   },
   meta: {
     color: Colors.primary,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   counterpart: {
-    color: "#6B7280",
+    color: Colors.gray500,
     marginTop: 5,
   },
   ratingMessage: {
@@ -359,11 +359,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 10,
     borderRadius: 8,
-    backgroundColor: "#F5F3FF",
+    backgroundColor: Colors.purple50,
   },
   ratingMessageText: {
     flex: 1,
-    color: "#4B5563",
+    color: Colors.gray600,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -381,14 +381,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   rated: {
-    color: "#6B7280",
+    color: Colors.gray500,
     marginTop: 12,
     fontSize: 12,
   },
   empty: {
     textAlign: "center",
     marginTop: 60,
-    color: "#6B7280",
+    color: Colors.gray500,
   },
   overlay: {
     flex: 1,
