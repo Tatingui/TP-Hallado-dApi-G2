@@ -254,6 +254,24 @@ export default function EditProfileScreen() {
           />
         </View>
 
+        {/* Bloqueo biométrico */}
+        {biometricAvailable && (
+          <View style={styles.switchGroup}>
+            <View style={styles.switchTextContainer}>
+              <Text style={styles.switchLabel}>Bloqueo con {biometricLabel}</Text>
+              <Text style={styles.switchSublabel}>
+                Al abrir la app se pedirá {biometricLabel} para acceder.
+              </Text>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={toggleBiometric}
+              trackColor={{ false: Colors.disabled, true: Colors.primaryLight }}
+              thumbColor={biometricEnabled ? Colors.primary : Colors.surface}
+            />
+          </View>
+        )}
+
         {/* Save Button */}
         <Pressable
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
