@@ -22,6 +22,7 @@ import {
   markPublicationAsSeenApi,
 } from "../../services/publicationService";
 import { getMyProfile, updateMyProfile } from "../../services/userService";
+import { IMAGE_BASE_URL } from "../../services/api";
 import { getMyAlertsApi } from "../../services/alertService";
 import { setProfileTabBadge } from "../../storage/profileTabBadge";
 
@@ -201,7 +202,7 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           {profile?.profileImageUrl ? (
             <Image
-              source={{ uri: profile.profileImageUrl }}
+              source={{ uri: profile.profileImageUrl.startsWith("http") ? profile.profileImageUrl : `${IMAGE_BASE_URL}${profile.profileImageUrl}` }}
               style={styles.avatarImage}
             />
           ) : (
