@@ -12,10 +12,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -46,6 +49,18 @@ public class UserController {
             @Valid @RequestBody UserProfileUpdateRequest request) {
         String email = getEmailFromToken();
         return ResponseEntity.ok(userService.updateProfile(email, request));
+    }
+
+    /**
+     * PUT /api/usuarios/me/imagen
+     * Sube una imagen de perfil desde la galería del usuario.
+     * Recibe multipart/form-data con un campo "image".
+     */
+    @PostMapping("/me/imagen")
+    public ResponseEntity<UserProfileResponse> updateProfileImage(
+            @RequestParam("image") MultipartFile image) {
+        String email = getEmailFromToken();
+        return ResponseEntity.ok(userService.updateProfileImage(email, image));
     }
 
     /**

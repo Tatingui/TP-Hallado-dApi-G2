@@ -18,7 +18,7 @@ const HOST_IP = getHostIp();
 const BASE_URL = `http://${HOST_IP}:8081/api`;
 
 // URL base del servidor (sin /api) para construir URLs de imágenes
-export const IMAGE_BASE_URL = `http://${HOST_IP}:8081`;
+export const IMAGE_BASE_URL = `http://${HOST_IP}:8081/api`;
 
 /**
  * Maneja token expirado o inválido: limpia la sesión y redirige al login.
