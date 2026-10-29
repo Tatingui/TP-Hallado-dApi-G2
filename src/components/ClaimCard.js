@@ -94,6 +94,32 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
             {claim.proofMessage || 'Sin descripción adicional.'}
           </Text>
 
+          {/* Verificación: el publicador ve la respuesta del reclamante vs la esperada */}
+          {isReceived && claim.verificationQuestion && (
+            <View style={styles.verificationBox}>
+              <Text style={styles.verificationLabel}>
+                <Ionicons name="shield-checkmark-outline" size={14} color="#6D28D9" /> Verificación
+              </Text>
+              <Text style={styles.verificationQuestion}>
+                {claim.verificationQuestion}
+              </Text>
+              <View style={styles.verificationRow}>
+                <View style={styles.verificationCol}>
+                  <Text style={styles.verificationSubLabel}>Respondió:</Text>
+                  <Text style={styles.verificationValue}>
+                    {claim.verificationAnswer || '(sin respuesta)'}
+                  </Text>
+                </View>
+                <View style={styles.verificationCol}>
+                  <Text style={styles.verificationSubLabel}>Esperada:</Text>
+                  <Text style={styles.verificationExpected}>
+                    {claim.expectedVerificationAnswer || '—'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Si fue aceptado, mostrar datos de contacto (Punto 7 / 8) */}
           {isAccepted && (
             <View style={styles.contactBox}>
@@ -407,5 +433,50 @@ const styles = StyleSheet.create({
     color: Colors.primary || '#6D28D9',
     fontWeight: '600',
     fontSize: 14,
-  }
+  },
+
+  verificationBox: {
+    marginTop: 10,
+    backgroundColor: '#F5F3FF',
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    borderRadius: 8,
+    padding: 10,
+  },
+  verificationLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6D28D9',
+    marginBottom: 4,
+  },
+  verificationQuestion: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  verificationRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  verificationCol: {
+    flex: 1,
+  },
+  verificationSubLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  verificationValue: {
+    fontSize: 13,
+    color: '#111827',
+    fontWeight: '600',
+  },
+  verificationExpected: {
+    fontSize: 13,
+    color: '#15803D',
+    fontWeight: '600',
+  },
 });

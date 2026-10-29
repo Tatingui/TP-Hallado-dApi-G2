@@ -550,7 +550,7 @@ export default function PublishScreen() {
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 maximumDate={new Date()}
-                onChange={(event, selectedDate) => {
+                onValueChange={(event, selectedDate) => {
                   setShowDatePicker(Platform.OS === "ios");
                   if (selectedDate) {
                     updateField("eventDate", selectedDate.toISOString());
@@ -604,7 +604,7 @@ export default function PublishScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Revisá tu publicación</Text>
             <View style={styles.reviewCard}>
-              <Text style={styles.reviewLabel}>Tipo</Text>
+              <Text style={styles.reviewLabel}>Publicación</Text>
               <Text style={styles.reviewValue}>{getTypeLabel(form.type)}</Text>
               <Text style={styles.reviewLabel}>Categoría</Text>
               <Text style={styles.reviewValue}>

@@ -28,6 +28,9 @@ public class Claim {
 
     private String proofImageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String verificationAnswer;
+
     @Column(nullable = false)
     private LocalDateTime claimDate;
 
@@ -87,4 +90,8 @@ public class Claim {
 
     public MeetingPointStatus getMeetingStatus() { return meetingStatus; }
     public void setMeetingStatus(MeetingPointStatus meetingStatus) { this.meetingStatus = meetingStatus; }
+
+    public String getVerificationAnswer() { return verificationAnswer; }
+    public void setVerificationAnswer(String verificationAnswer) { this.verificationAnswer = verificationAnswer; }
+
 }

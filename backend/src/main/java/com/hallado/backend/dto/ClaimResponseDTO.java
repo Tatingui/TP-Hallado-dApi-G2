@@ -15,6 +15,11 @@ public class ClaimResponseDTO {
     private String proofImageUrl;
     private LocalDateTime claimDate;
 
+    // Verificación: respuesta del reclamante y pregunta/respuesta esperada (solo para el publicador)
+    private String verificationAnswer;
+    private String verificationQuestion;
+    private String expectedVerificationAnswer;
+
     // Minimal info of the publication
     private Long publicationId;
     private String publicationTitle;
@@ -76,6 +81,14 @@ public class ClaimResponseDTO {
         dto.setProofMessage(claim.getProofMessage());
         dto.setProofImageUrl(claim.getProofImageUrl());
         dto.setClaimDate(claim.getClaimDate());
+
+        // Verificación: la respuesta del reclamante siempre se muestra.
+        // La pregunta y respuesta esperada solo al publicador (para que compare y decida).
+        dto.setVerificationAnswer(claim.getVerificationAnswer());
+        if (isPublisher && claim.getPublication().getVerificationQuestion() != null) {
+            dto.setVerificationQuestion(claim.getPublication().getVerificationQuestion());
+            dto.setExpectedVerificationAnswer(claim.getPublication().getVerificationAnswer());
+        }
 
         dto.setPublicationId(claim.getPublication().getId());
         dto.setPublicationTitle(claim.getPublication().getTitle());
@@ -170,4 +183,12 @@ public class ClaimResponseDTO {
     public void setCanProposeMeeting(boolean canProposeMeeting) { this.canProposeMeeting = canProposeMeeting; }
     public boolean isCanRespondMeeting() { return canRespondMeeting; }
     public void setCanRespondMeeting(boolean canRespondMeeting) { this.canRespondMeeting = canRespondMeeting; }
+
+    public String getVerificationAnswer() { return verificationAnswer; }
+    public void setVerificationAnswer(String verificationAnswer) { this.verificationAnswer = verificationAnswer; }
+    public String getVerificationQuestion() { return verificationQuestion; }
+    public void setVerificationQuestion(String verificationQuestion) { this.verificationQuestion = verificationQuestion; }
+    public String getExpectedVerificationAnswer() { return expectedVerificationAnswer; }
+    public void setExpectedVerificationAnswer(String expectedVerificationAnswer) { this.expectedVerificationAnswer = expectedVerificationAnswer; }
+
 }

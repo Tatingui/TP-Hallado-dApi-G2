@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hallado.backend.dto.CreatePublicationRequest;
 import com.hallado.backend.dto.UpdatePublicationRequest;
@@ -39,6 +40,9 @@ import com.hallado.backend.repository.PublicationFollowRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
 import com.hallado.backend.repository.UserRepository;
+import com.hallado.backend.exception.BadRequestException;
+import com.hallado.backend.exception.ForbiddenException;
+import com.hallado.backend.exception.ResourceNotFoundException;
 
 @Service
 public class PublicationService {
@@ -420,6 +424,24 @@ public class PublicationService {
                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
+    }
+
+    /**
+     * Elimina una publicación propia (solo si está abierta y sin reclamos aceptados).
+     */
+    @Transactional
+    public void deletePublication(Long publicationId, String ownerEmail) {
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
+        if (!publication.getUser().getId().equals(owner.getId())) {
+            throw new ForbiddenException("No tenés permiso para eliminar esta publicación.");
+        }
+        if (publication.getStatus() != PublicationStatus.OPEN) {
+            throw new BadRequestException("Solo se pueden eliminar publicaciones abiertas.");
+        }
+        publicationRepository.delete(publication);
     }
 
     /**
