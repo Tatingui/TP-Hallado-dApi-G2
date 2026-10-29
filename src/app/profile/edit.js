@@ -15,7 +15,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
-import { IMAGE_BASE_URL } from "../../services/api";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import {
   hasBiometricHardware,
@@ -208,7 +208,7 @@ export default function EditProfileScreen() {
               <Image source={{ uri: selectedImage.uri }} style={styles.profilePreview} />
             ) : profileImageUrl ? (
               <Image
-                source={{ uri: profileImageUrl.startsWith("http") ? profileImageUrl : `${IMAGE_BASE_URL}${profileImageUrl}` }}
+                source={{ uri: resolveImageUrl(profileImageUrl) }}
                 style={styles.profilePreview}
               />
             ) : (

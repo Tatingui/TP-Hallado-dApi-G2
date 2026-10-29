@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
-import { IMAGE_BASE_URL } from '../services/api';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing }) {
   if (!claim) return null;
@@ -46,12 +46,6 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
     }
   };
 
-  const buildImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    return `${IMAGE_BASE_URL}${url}`;
-  };
-
   const formattedDate = new Date(claim.claimDate).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: 'short',
@@ -78,7 +72,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
       <View style={styles.body}>
         {/* Foto Adjunta o Placeholder */}
         {claim.proofImageUrl ? (
-          <Image source={{ uri: buildImageUrl(claim.proofImageUrl) }} style={styles.proofImage} />
+          <Image source={{ uri: resolveImageUrl(claim.proofImageUrl) }} style={styles.proofImage} />
         ) : (
           <View style={styles.noImageContainer}>
             <Ionicons name="image-outline" size={32} color="#9CA3AF" />

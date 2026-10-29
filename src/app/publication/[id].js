@@ -24,7 +24,7 @@ import {
 } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
-import { IMAGE_BASE_URL } from "../../services/api";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import { createClaimApi } from "../../services/claimService";
 import {
   followPublicationApi,
@@ -201,12 +201,6 @@ export default function PublicationDetailScreen() {
     }
   };
 
-  const buildImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith("http") || url.startsWith("file://") || url.startsWith("data:")) return url;
-    return `${IMAGE_BASE_URL}${url}`;
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -282,7 +276,7 @@ export default function PublicationDetailScreen() {
               {images.map((url, i) => (
                 <Image
                   key={i}
-                  source={{ uri: buildImageUrl(typeof url === 'string' ? url : url.uri) }}
+                  source={{ uri: resolveImageUrl(typeof url === 'string' ? url : url.uri) }}
                   style={styles.carouselImage}
                   resizeMode="cover"
                 />
@@ -375,7 +369,7 @@ export default function PublicationDetailScreen() {
             <View style={styles.publisherAvatar}>
               {publication.publisher.profileImageUrl ? (
                 <Image
-                  source={{ uri: buildImageUrl(publication.publisher.profileImageUrl) }}
+                  source={{ uri: resolveImageUrl(publication.publisher.profileImageUrl) }}
                   style={styles.avatarImage}
                 />
               ) : (

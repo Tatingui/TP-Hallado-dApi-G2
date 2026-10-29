@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Colors, FontSize, Spacing } from "../../../constants/theme";
 import { getPublicProfile } from "../../../services/userService";
-import { IMAGE_BASE_URL } from "../../../services/api";
+import { resolveImageUrl } from "../../../utils/imageUrl";
 
 export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -75,7 +75,7 @@ export default function PublicProfileScreen() {
           <View style={styles.avatarContainer}>
             {publicData?.profileImageUrl ? (
               <Image
-                source={{ uri: publicData.profileImageUrl.startsWith("http") ? publicData.profileImageUrl : `${IMAGE_BASE_URL}${publicData.profileImageUrl}` }}
+                source={{ uri: resolveImageUrl(publicData.profileImageUrl) }}
                 style={styles.avatarImage}
               />
             ) : (

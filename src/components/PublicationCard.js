@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { IMAGE_BASE_URL } from '../services/api';
+import { resolveImageUrl } from '../utils/imageUrl';
 import {
   getCategoryLabel,
   getCategoryIcon,
@@ -31,7 +31,7 @@ export default function PublicationCard({ publication, onPress }) {
       ? publication.imageUrls[0]
       : null;
   const imageUrl = rawUrl
-    ? (rawUrl.startsWith('http') ? rawUrl : IMAGE_BASE_URL + rawUrl)
+    ? (resolveImageUrl(rawUrl))
     : null;
 
   return (
