@@ -75,18 +75,13 @@ public class ClaimService {
             throw new ForbiddenException("Has alcanzado el límite de 3 intentos de reclamo para esta publicación.");
         }
 
-        // Validaciones según el tipo (LOST / FOUND)
+        // Para publicaciones FOUND, el reclamante debe responder la pregunta de verificación.
+        // La respuesta se guarda en el reclamo para que el publicador la revise manualmente.
         if (publication.getType() == PublicationType.FOUND) {
-            if (publication.getVerificationAnswer() != null && !publication.getVerificationAnswer().trim().isEmpty()) {
-                String expected = publication.getVerificationAnswer().trim().toLowerCase();
-                String received = request.getVerificationAnswer() != null ? request.getVerificationAnswer().trim().toLowerCase() : "";
-
-                if (!expected.equals(received)) {
-                    // Registrar intento fallido
-                    Claim failedClaim = new Claim(publication, claimant, request.getProofMessage(), null);
-                    failedClaim.setStatus(ClaimStatus.REJECTED);
-                    claimRepository.save(failedClaim);
-                    throw new BadRequestException("Respuesta de verificación incorrecta.");
+            if (publication.getVerificationQuestion() != null && !publication.getVerificationQuestion().trim().isEmpty()) {
+                String answer = request.getVerificationAnswer();
+                if (answer == null || answer.trim().isEmpty()) {
+                    throw new BadRequestException("Debes responder la pregunta de verificación.");
                 }
             }
         }
@@ -99,6 +94,9 @@ public class ClaimService {
         }
 
         Claim newClaim = new Claim(publication, claimant, request.getProofMessage(), imageUrl);
+        if (request.getVerificationAnswer() != null) {
+            newClaim.setVerificationAnswer(request.getVerificationAnswer().trim());
+        }
         claimRepository.save(newClaim);
 
         return ClaimResponseDTO.fromEntity(newClaim, false);
