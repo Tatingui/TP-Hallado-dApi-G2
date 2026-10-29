@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiPostMultipart } from "./api";
+import { apiGet, apiPatch, apiPost, apiPostMultipart, apiPut } from "./api";
 import { getToken } from "../storage/authStorage";
 
 /**
@@ -51,21 +51,7 @@ export const getMyReceivedClaimsApi = async (page = 0, size = 10, tokenParam) =>
  */
 export const respondToClaimApi = async (claimId, status, tokenParam) => {
   const token = tokenParam || (await getToken());
-  const { IMAGE_BASE_URL } = require("./api"); const BASE_URL = IMAGE_BASE_URL;
-  const response = await fetch(`${BASE_URL}/claims/${claimId}/respond`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ status }),
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw { status: response.status, ...(data || {}) };
-  }
-  return data;
+  return apiPatch(`/claims/${claimId}/respond`, { status }, token);
 };
 
 /**
