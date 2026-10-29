@@ -13,7 +13,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
-import { getMyPublicationsApi } from "../../services/publicationService";
+import { getMyPublicationsApi, deletePublicationApi } from "../../services/publicationService";
 import { getPendingPublications } from "../../storage/pendingSyncStorage";
 import { syncPendingPublications } from "../../services/offlineSyncService";
 import {
@@ -123,6 +123,28 @@ export default function MyPublicationsScreen() {
 
   const combinedData = [...formattedPendingList, ...publications];
 
+  const handleDelete = (pub) => {
+    Alert.alert(
+      "Eliminar publicación",
+      `¿Seguro que querés eliminar "${pub.title}"? Esta acción no se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deletePublicationApi(pub.id);
+              fetchPublications(0);
+            } catch (err) {
+              Alert.alert("Error", err?.message || "No se pudo eliminar la publicación.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }) => {
     if (item.isPending) {
       return (
@@ -187,11 +209,21 @@ export default function MyPublicationsScreen() {
           </View>
         </View>
 
-        {item.createdAt && (
-          <Text style={styles.dateText}>
-            {new Date(item.createdAt).toLocaleDateString("es-AR")}
-          </Text>
-        )}
+        <View style={styles.cardFooter}>
+          {item.createdAt && (
+            <Text style={styles.dateText}>
+              {new Date(item.createdAt).toLocaleDateString("es-AR")}
+            </Text>
+          )}
+          {item.status === "OPEN" && (
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation(); handleDelete(item); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </TouchableOpacity>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -351,6 +383,12 @@ const styles = StyleSheet.create({
   cardMeta: { flexDirection: "row", gap: 16, marginBottom: 4 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, color: Colors.textSecondary },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   dateText: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
 
   // Empty

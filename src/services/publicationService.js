@@ -158,3 +158,8 @@ export const unfollowPublicationApi = async (id) => {
   const token = await getToken();
   return apiDelete(`/publications/${id}/follow`, token);
 };
+
+export const deletePublicationApi = async (id) => {
+  const token = await getToken();
+  return apiDelete(`/publications/${id}`, token);
+};

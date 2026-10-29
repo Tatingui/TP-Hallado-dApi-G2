@@ -224,4 +224,15 @@ public class PublicationController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    /**
+     * DELETE /api/publications/{id}
+     * Elimina una publicación propia (solo si está OPEN).
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePublication(@PathVariable Long id, Authentication authentication) {
+        publicationService.deletePublication(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
 }
