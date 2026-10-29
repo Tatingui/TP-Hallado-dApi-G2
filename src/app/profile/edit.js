@@ -17,6 +17,12 @@ import * as ImagePicker from "expo-image-picker";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
 import { IMAGE_BASE_URL } from "../../services/api";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import {
+  hasBiometricHardware,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  getBiometricType,
+} from "../../services/biometricService";
 
 export default function EditProfileScreen() {
   const [loading, setLoading] = useState(true);
@@ -29,9 +35,13 @@ export default function EditProfileScreen() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [telefonoVisible, setTelefonoVisible] = useState(true);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState("Biometría");
 
   useEffect(() => {
     loadProfileData();
+    loadBiometricState();
   }, []);
 
   async function loadProfileData() {
@@ -50,6 +60,26 @@ export default function EditProfileScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadBiometricState() {
+    try {
+      const available = await hasBiometricHardware();
+      setBiometricAvailable(available);
+      if (available) {
+        const enabled = await isBiometricEnabled();
+        setBiometricEnabledState(enabled);
+        const type = await getBiometricType();
+        setBiometricLabel(type);
+      }
+    } catch {
+      setBiometricAvailable(false);
+    }
+  }
+
+  async function toggleBiometric(value) {
+    setBiometricEnabledState(value);
+    await setBiometricEnabled(value);
   }
 
   async function pickImage() {
