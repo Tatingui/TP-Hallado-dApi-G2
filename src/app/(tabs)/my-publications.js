@@ -14,6 +14,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
 import { getMyPublicationsApi, deletePublicationApi } from "../../services/publicationService";
+import { getPublicationStatusColor } from "../../constants/publicationConstants";
 import { getPendingPublications } from "../../storage/pendingSyncStorage";
 import { syncPendingPublications } from "../../services/offlineSyncService";
 import {
@@ -93,21 +94,6 @@ export default function MyPublicationsScreen() {
     fetchPublications(page + 1, true);
   };
 
-  const getStatusColor = (status) => {
-    if (status === "PENDIENTE_ENVIO") return "#D97706";
-    switch (status) {
-      case PublicationStatus.OPEN:
-        return Colors.primary;
-      case PublicationStatus.IN_CLAIM:
-        return "#f59e0b";
-      case PublicationStatus.RESOLVED:
-        return Colors.success || "#22c55e";
-      case PublicationStatus.EXPIRED:
-        return Colors.textSecondary;
-      default:
-        return Colors.text;
-    }
-  };
 
   // Combinar publicaciones pendientes offline con las remotas
   const formattedPendingList = pendingPublications.map((p) => ({
@@ -159,7 +145,7 @@ export default function MyPublicationsScreen() {
           }
         >
           <View style={styles.cardHeader}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor("PENDIENTE_ENVIO") }]}>
+            <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor("PENDIENTE_ENVIO") }]}>
               <Text style={styles.statusText}>Pendiente de envío ⏳</Text>
             </View>
             <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
@@ -188,7 +174,7 @@ export default function MyPublicationsScreen() {
     return (
       <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
         <View style={styles.cardHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor(item.status) }]}>
             <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
           </View>
           <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>

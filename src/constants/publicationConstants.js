@@ -92,3 +92,52 @@ export const getStatusLabel = (status) => {
       return status;
   }
 };
+
+// --- Colores de estado de publicación ---
+
+export const getPublicationStatusColor = (status) => {
+  switch (status) {
+    case 'PENDIENTE_ENVIO':
+      return '#D97706';
+    case PublicationStatus.OPEN:
+      return '#1A56DB'; // Colors.primary
+    case PublicationStatus.IN_CLAIM:
+      return '#F59E0B';
+    case PublicationStatus.RESOLVED:
+      return '#16A34A'; // Colors.success
+    case PublicationStatus.EXPIRED:
+      return '#64748B'; // Colors.textSecondary
+    default:
+      return '#1E293B'; // Colors.text
+  }
+};
+
+// --- Colores y etiquetas de estado de reclamo ---
+
+export const getClaimStatusColor = (status) => {
+  switch (status) {
+    case 'ACCEPTED':
+      return '#16A34A';
+    case 'REJECTED':
+      return '#EF4444';
+    case 'EXPIRED':
+      return '#6B7280';
+    case 'PENDING':
+    default:
+      return '#F59E0B';
+  }
+};
+
+export const getClaimStatusLabel = (status) => {
+  switch (status) {
+    case 'ACCEPTED':
+      return 'Aceptado';
+    case 'REJECTED':
+      return 'Rechazado';
+    case 'EXPIRED':
+      return 'Vencido';
+    case 'PENDING':
+    default:
+      return 'Pendiente';
+  }
+};

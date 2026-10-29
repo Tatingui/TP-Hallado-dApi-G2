@@ -21,7 +21,7 @@ import {
   getTypeLabel,
   PublicationStatus,
   PublicationType,
-} from "../../constants/publicationConstants";
+, getPublicationStatusColor } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../hooks/useAuth";
 import { resolveImageUrl } from "../../utils/imageUrl";
@@ -186,20 +186,6 @@ export default function PublicationDetailScreen() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case PublicationStatus.OPEN:
-        return Colors.primary;
-      case PublicationStatus.IN_CLAIM:
-        return "#f59e0b";
-      case PublicationStatus.RESOLVED:
-        return Colors.success || "#22c55e";
-      case PublicationStatus.EXPIRED:
-        return Colors.textSecondary;
-      default:
-        return Colors.text;
-    }
-  };
 
   if (loading) {
     return (
@@ -306,7 +292,7 @@ export default function PublicationDetailScreen() {
             />
             <Text style={styles.badgeText}>{getTypeLabel(publication.type)}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(publication.status) }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor(publication.status) }]}>
             <Text style={styles.badgeText}>{getStatusLabel(publication.status)}</Text>
           </View>
         </View>

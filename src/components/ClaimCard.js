@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
+import { getClaimStatusColor, getClaimStatusLabel } from '../constants/publicationConstants';
 import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing }) {
@@ -14,19 +15,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
   const isRejected = claim.status === 'REJECTED';
   const isExpired = claim.status === 'EXPIRED';
 
-  const getStatusColor = () => {
-    if (isAccepted) return Colors.success || '#22C55E';
-    if (isRejected) return '#EF4444';
-    if (isExpired) return '#6B7280';
-    return '#F59E0B'; // Pending
-  };
 
-  const getStatusText = () => {
-    if (isAccepted) return 'Aceptado';
-    if (isRejected) return 'Rechazado';
-    if (isExpired) return 'Vencido';
-    return 'Pendiente';
-  };
 
   const getMeetingStatusText = () => {
     if (claim.meetingStatus === 'ACCEPTED') return 'Confirmado por ambas partes';
@@ -63,8 +52,8 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           </Text>
           <Text style={styles.dateText}>{formattedDate}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
-          <Text style={styles.statusText}>{getStatusText()}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: getClaimStatusColor(claim.status) }]}>
+          <Text style={styles.statusText}>{getClaimStatusLabel(claim.status)}</Text>
         </View>
       </View>
 
