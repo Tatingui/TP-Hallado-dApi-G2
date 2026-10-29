@@ -28,7 +28,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { createPublicationApi } from "../../services/publicationService";
 import { clearDraft, loadDraft, saveDraft } from "../../storage/draftStorage";
 import { savePendingPublication } from "../../storage/pendingSyncStorage";
-import { checkNetworkConnection } from "../../hooks/useNetworkStatus";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -183,11 +182,6 @@ export default function PublishScreen() {
     }
 
     try {
-      const isOnline = await checkNetworkConnection();
-      if (!isOnline) {
-        throw { status: 0, message: "Sin conexión a internet" };
-      }
-
       await createPublicationApi(payload, form.images);
       await clearDraft();
       Alert.alert(
@@ -202,6 +196,7 @@ export default function PublishScreen() {
         ],
       );
       setForm(INITIAL_FORM);
+      setTouched({});
       setStep(0);
     } catch (err) {
       console.warn("Fallo en envío de publicación, intentando guardado offline...", err);
@@ -220,6 +215,7 @@ export default function PublishScreen() {
           ],
         );
         setForm(INITIAL_FORM);
+        setTouched({});
         setStep(0);
       } catch (saveError) {
         Alert.alert(
@@ -436,22 +432,30 @@ export default function PublishScreen() {
                   Una pregunta que solo el dueño real podría responder
                 </Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, fieldError("verificationQuestion") && styles.inputError]}
                   placeholder="Ej: ¿Qué dice la chapita del collar?"
                   placeholderTextColor={Colors.textSecondary}
                   value={form.verificationQuestion}
                   onChangeText={(v) => updateField("verificationQuestion", v)}
+                  onBlur={() => markTouched("verificationQuestion")}
                   maxLength={200}
                 />
+                {fieldError("verificationQuestion") && (
+                  <Text style={styles.errorText}>{fieldError("verificationQuestion")}</Text>
+                )}
                 <Text style={styles.inputLabel}>Respuesta esperada *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, fieldError("verificationAnswer") && styles.inputError]}
                   placeholder="Ej: Luna"
                   placeholderTextColor={Colors.textSecondary}
                   value={form.verificationAnswer}
                   onChangeText={(v) => updateField("verificationAnswer", v)}
+                  onBlur={() => markTouched("verificationAnswer")}
                   maxLength={200}
                 />
+                {fieldError("verificationAnswer") && (
+                  <Text style={styles.errorText}>{fieldError("verificationAnswer")}</Text>
+                )}
               </>
             )}
           </View>
@@ -800,6 +804,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   textArea: { minHeight: 100, textAlignVertical: "top" },
+  inputError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
+    backgroundColor: Colors.errorLight,
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: 2,
+    marginBottom: 12,
+  },
   charCount: {
     fontSize: 12,
     color: Colors.textSecondary,
