@@ -12,6 +12,7 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
+import { shared } from "../../constants/sharedStyles";
 import { useAuth } from "../../hooks/useAuth";
 import { getMyPublicationsApi, deletePublicationApi } from "../../services/publicationService";
 import { getPublicationStatusColor } from "../../constants/publicationConstants";
@@ -135,7 +136,7 @@ export default function MyPublicationsScreen() {
     if (item.isPending) {
       return (
         <TouchableOpacity
-          style={[styles.card, styles.pendingCard]}
+          style={[shared.card, styles.pendingCard]}
           activeOpacity={0.8}
           onPress={() =>
             Alert.alert(
@@ -145,8 +146,8 @@ export default function MyPublicationsScreen() {
           }
         >
           <View style={styles.cardHeader}>
-            <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor("PENDIENTE_ENVIO") }]}>
-              <Text style={styles.statusText}>Pendiente de envío ⏳</Text>
+            <View style={[shared.statusBadge, { backgroundColor: getPublicationStatusColor("PENDIENTE_ENVIO") }]}>
+              <Text style={shared.statusText}>Pendiente de envío ⏳</Text>
             </View>
             <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
           </View>
@@ -155,14 +156,14 @@ export default function MyPublicationsScreen() {
             {item.title}
           </Text>
 
-          <View style={styles.cardMeta}>
-            <View style={styles.metaItem}>
+          <View style={shared.metaRow}>
+            <View style={shared.metaItem}>
               <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.metaText}>{getCategoryLabel(item.category)}</Text>
+              <Text style={shared.metaText}>{getCategoryLabel(item.category)}</Text>
             </View>
-            <View style={styles.metaItem}>
+            <View style={shared.metaItem}>
               <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.metaText}>{item.barrio || "Sin barrio"}</Text>
+              <Text style={shared.metaText}>{item.barrio || "Sin barrio"}</Text>
             </View>
           </View>
 
@@ -172,10 +173,10 @@ export default function MyPublicationsScreen() {
     }
 
     return (
-      <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
+      <TouchableOpacity style={shared.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
         <View style={styles.cardHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+          <View style={[shared.statusBadge, { backgroundColor: getPublicationStatusColor(item.status) }]}>
+            <Text style={shared.statusText}>{getStatusLabel(item.status)}</Text>
           </View>
           <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
         </View>
@@ -184,14 +185,14 @@ export default function MyPublicationsScreen() {
           {item.title}
         </Text>
 
-        <View style={styles.cardMeta}>
-          <View style={styles.metaItem}>
+        <View style={shared.metaRow}>
+          <View style={shared.metaItem}>
             <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
-            <Text style={styles.metaText}>{getCategoryLabel(item.category)}</Text>
+            <Text style={shared.metaText}>{getCategoryLabel(item.category)}</Text>
           </View>
-          <View style={styles.metaItem}>
+          <View style={shared.metaItem}>
             <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-            <Text style={styles.metaText}>{item.barrio}</Text>
+            <Text style={shared.metaText}>{item.barrio}</Text>
           </View>
         </View>
 
@@ -337,14 +338,6 @@ const styles = StyleSheet.create({
   },
 
   // Cards
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
   pendingCard: {
     borderColor: Colors.warning,
     backgroundColor: "#FFFBEB",
@@ -362,13 +355,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
-  statusText: { fontSize: 11, fontWeight: "600", color: Colors.surface },
   typeText: { fontSize: 12, color: Colors.textSecondary },
   cardTitle: { fontSize: 16, fontWeight: "600", color: Colors.text, marginBottom: 8 },
-  cardMeta: { flexDirection: "row", gap: 16, marginBottom: 4 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 13, color: Colors.textSecondary },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',

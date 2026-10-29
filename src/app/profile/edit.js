@@ -17,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import { shared } from "../../constants/sharedStyles";
 import {
   hasBiometricHardware,
   isBiometricEnabled,
@@ -146,20 +147,20 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={shared.centerContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={shared.screenContainer}>
       {/* Top Bar */}
-      <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+      <View style={shared.topBar}>
+        <Pressable style={shared.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.textOnPrimary} />
         </Pressable>
-        <Text style={styles.topBarTitle}>Editar Perfil</Text>
+        <Text style={shared.topBarTitle}>Editar Perfil</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.formContainer}>
@@ -293,33 +294,6 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.background,
-  },
-  topBar: {
-    backgroundColor: Colors.primary,
-    paddingTop: 50,
-    paddingBottom: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  backButton: {
-    padding: 4,
-  },
-  topBarTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: "bold",
-    color: Colors.textOnPrimary,
-  },
   formContainer: {
     padding: Spacing.lg,
   },
