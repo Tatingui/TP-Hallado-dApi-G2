@@ -56,6 +56,11 @@ export default function PublishScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [touched, setTouched] = useState({});
+
+  const markTouched = useCallback((field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }, []);
 
   // Cargar borrador al montar
   useEffect(() => {
@@ -227,6 +232,32 @@ export default function PublishScreen() {
     }
   };
 
+  // ─── Errores de validación por campo (solo se muestran si el campo fue tocado) ───
+  function fieldError(field) {
+    if (!touched[field]) return null;
+    switch (field) {
+      case "title":
+        if (form.title.trim().length === 0) return "El título es obligatorio.";
+        if (form.title.trim().length < 5) return "Mínimo 5 caracteres.";
+        return null;
+      case "description":
+        if (form.description.trim().length === 0)
+          return "La descripción es obligatoria.";
+        if (form.description.trim().length < 10) return "Mínimo 10 caracteres.";
+        return null;
+      case "verificationQuestion":
+        if (form.verificationQuestion.trim().length === 0)
+          return "La pregunta de verificación es obligatoria.";
+        return null;
+      case "verificationAnswer":
+        if (form.verificationAnswer.trim().length === 0)
+          return "La respuesta es obligatoria.";
+        return null;
+      default:
+        return null;
+    }
+  }
+
   // ─── Validación por paso ───
   const canAdvance = () => {
     switch (STEPS[step]) {
@@ -364,27 +395,37 @@ export default function PublishScreen() {
             </Text>
             <Text style={styles.inputLabel}>Título *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fieldError("title") && styles.inputError]}
               placeholder="Ej: Perro labrador negro con collar rojo"
               placeholderTextColor={Colors.textSecondary}
               value={form.title}
               onChangeText={(v) => updateField("title", v)}
+              onBlur={() => markTouched("title")}
               maxLength={100}
             />
-            <Text style={styles.charCount}>{form.title.length}/100</Text>
+            {fieldError("title") ? (
+              <Text style={styles.errorText}>{fieldError("title")}</Text>
+            ) : (
+              <Text style={styles.charCount}>{form.title.length}/100</Text>
+            )}
 
             <Text style={styles.inputLabel}>Descripción *</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, fieldError("description") && styles.inputError]}
               placeholder="Detallá características, color, tamaño, dónde y cuándo fue..."
               placeholderTextColor={Colors.textSecondary}
               value={form.description}
               onChangeText={(v) => updateField("description", v)}
+              onBlur={() => markTouched("description")}
               multiline
               numberOfLines={4}
               maxLength={500}
             />
-            <Text style={styles.charCount}>{form.description.length}/500</Text>
+            {fieldError("description") ? (
+              <Text style={styles.errorText}>{fieldError("description")}</Text>
+            ) : (
+              <Text style={styles.charCount}>{form.description.length}/500</Text>
+            )}
 
             {form.type === PublicationType.FOUND && (
               <>
