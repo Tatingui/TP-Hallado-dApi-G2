@@ -198,7 +198,7 @@ export default function HomeScreen() {
       {/* App Top Bar */}
       <View style={styles.appHeader}>
         <View style={styles.brandContainer}>
-          <LogoHallado size={28} color=Colors.surface />
+          <LogoHallado size={28} color={Colors.surface} />
           <Text style={styles.brandTitle}>Hallado</Text>
         </View>
 
@@ -206,7 +206,7 @@ export default function HomeScreen() {
           style={styles.guidedSearchButtonHeader}
           onPress={() => setSearchModalVisible(true)}
         >
-          <MaterialCommunityIcons name="tune-variant" size={18} color=Colors.surface />
+          <MaterialCommunityIcons name="tune-variant" size={18} color={Colors.surface} />
           <Text style={styles.guidedSearchButtonText}>Buscador Guiado</Text>
         </Pressable>
       </View>
@@ -239,7 +239,7 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <MaterialCommunityIcons name="chevron-right" size={22} color=Colors.gray400 />
+        <MaterialCommunityIcons name="chevron-right" size={22} color={Colors.gray400} />
       </Pressable>
 
       {/* Offline Warning Banner */}
@@ -257,7 +257,7 @@ export default function HomeScreen() {
           {/* Limpiar filtros: solo si hay alguno aplicado */}
           {hasActiveFilters && (
             <Pressable style={styles.filterChip} onPress={handleClearFilters}>
-              <MaterialCommunityIcons name="filter-remove" size={14} color=Colors.error />
+              <MaterialCommunityIcons name="filter-remove" size={14} color={Colors.error} />
               <Text style={[styles.filterChipText, { color: Colors.error }]}>Limpiar</Text>
             </Pressable>
           )}

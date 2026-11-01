@@ -179,7 +179,7 @@ export default function CreateClaimModal({
                     style={styles.removeImageBtn}
                     onPress={() => setImageUri(null)}
                   >
-                    <Ionicons name="trash" size={16} color=Colors.surface />
+                    <Ionicons name="trash" size={16} color={Colors.surface} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -198,7 +198,7 @@ export default function CreateClaimModal({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color=Colors.surface />
+                <ActivityIndicator color={Colors.surface} />
               ) : (
                 <Text style={styles.submitBtnText}>Enviar Reclamo</Text>
               )}

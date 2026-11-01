@@ -64,7 +64,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           <Image source={{ uri: resolveImageUrl(claim.proofImageUrl) }} style={styles.proofImage} />
         ) : (
           <View style={styles.noImageContainer}>
-            <Ionicons name="image-outline" size={32} color=Colors.gray400 />
+            <Ionicons name="image-outline" size={32} color={Colors.gray400} />
             <Text style={styles.noImageText}>Sin foto</Text>
           </View>
         )}
@@ -81,7 +81,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           {isReceived && claim.verificationQuestion && (
             <View style={styles.verificationBox}>
               <Text style={styles.verificationLabel}>
-                <Ionicons name="shield-checkmark-outline" size={14} color=Colors.purple700 /> Verificación
+                <Ionicons name="shield-checkmark-outline" size={14} color={Colors.purple700} /> Verificación
               </Text>
               <Text style={styles.verificationQuestion}>
                 {claim.verificationQuestion}
@@ -143,7 +143,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
             disabled={isProcessing}
           >
             {isProcessing ? (
-               <ActivityIndicator color=Colors.surface size="small" />
+               <ActivityIndicator color={Colors.surface} size="small" />
             ) : (
                <Text style={styles.acceptBtnText}>Aceptar Reclamo</Text>
             )}
@@ -208,7 +208,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
                 disabled={isProcessing}
               >
                 {isProcessing ? (
-                  <ActivityIndicator color=Colors.surface size="small" />
+                  <ActivityIndicator color={Colors.surface} size="small" />
                 ) : (
                   <Text style={styles.acceptBtnText}>Aceptar</Text>
                 )}

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getTypeLabel, PublicationType } from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+import { getTypeLabel, PublicationType } from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 
 export default function StepType({ form, updateField }) {
   return (

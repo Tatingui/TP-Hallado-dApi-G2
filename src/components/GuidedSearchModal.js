@@ -141,7 +141,7 @@ export default function GuidedSearchModal({
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Buscador Guiado</Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color=Colors.gray700 />
+            <MaterialCommunityIcons name="close" size={24} color={Colors.gray700} />
           </Pressable>
         </View>
 
@@ -245,7 +245,7 @@ export default function GuidedSearchModal({
             {/* Keyword Input */}
             <Text style={[styles.label, { marginTop: 12 }]}>Palabras clave (opcional):</Text>
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="magnify" size={20} color=Colors.gray400 />
+              <MaterialCommunityIcons name="magnify" size={20} color={Colors.gray400} />
               <TextInput
                 style={styles.input}
                 placeholder="Ej. Mochila Nike, Caniche, Llave de auto..."
@@ -254,7 +254,7 @@ export default function GuidedSearchModal({
               />
               {query ? (
                 <Pressable onPress={() => setQuery('')}>
-                  <MaterialCommunityIcons name="close-circle" size={18} color=Colors.gray400 />
+                  <MaterialCommunityIcons name="close-circle" size={18} color={Colors.gray400} />
                 </Pressable>
               ) : null}
             </View>
@@ -275,7 +275,7 @@ export default function GuidedSearchModal({
               <MaterialCommunityIcons
                 name={showBarrioPicker ? 'chevron-up' : 'chevron-down'}
                 size={20}
-                color=Colors.gray500
+                color={Colors.gray500}
               />
             </Pressable>
 
@@ -373,14 +373,14 @@ export default function GuidedSearchModal({
                     style={styles.recentItem}
                     onPress={() => handleSelectRecentSearch(item)}
                   >
-                    <MaterialCommunityIcons name="history" size={16} color=Colors.gray500 />
+                    <MaterialCommunityIcons name="history" size={16} color={Colors.gray500} />
                     <Text style={styles.recentText} numberOfLines={1}>
                       {item.type === PublicationType.LOST ? 'Perdí ' : 'Encontré '}
                       {item.category ? `${getCategoryLabel(item.category)} ` : ''}
                       {item.query ? `"${item.query}" ` : ''}
                       {item.barrio ? `en ${item.barrio}` : ''}
                     </Text>
-                    <MaterialCommunityIcons name="arrow-top-left" size={16} color=Colors.gray400 />
+                    <MaterialCommunityIcons name="arrow-top-left" size={16} color={Colors.gray400} />
                   </Pressable>
                 ))}
               </View>
@@ -415,7 +415,7 @@ export default function GuidedSearchModal({
             ]}
             onPress={handleSubmitSearch}
           >
-            <MaterialCommunityIcons name="magnify" size={22} color=Colors.surface />
+            <MaterialCommunityIcons name="magnify" size={22} color={Colors.surface} />
             <Text style={styles.submitButtonText}>Buscar Publicaciones</Text>
           </Pressable>
         </View>

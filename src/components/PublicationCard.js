@@ -58,7 +58,7 @@ export default function PublicationCard({ publication, onPress }) {
           <MaterialCommunityIcons
             name={isFound ? 'hand-heart' : 'help-circle'}
             size={12}
-            color=Colors.surface
+            color={Colors.surface}
           />
           <Text style={styles.typeBadgeText}>
             {isFound ? 'ENCONTRADO' : 'PERDIDO'}
@@ -68,7 +68,7 @@ export default function PublicationCard({ publication, onPress }) {
         {/* Distance Badge if available */}
         {publication.distanceKm != null && (
           <View style={styles.distanceBadge}>
-            <MaterialCommunityIcons name="map-marker-distance" size={12} color=Colors.surface />
+            <MaterialCommunityIcons name="map-marker-distance" size={12} color={Colors.surface} />
             <Text style={styles.distanceBadgeText}>
               {publication.distanceKm} km
             </Text>
@@ -121,13 +121,13 @@ export default function PublicationCard({ publication, onPress }) {
 
           {publication.publisher && (
             <View style={styles.publisherContainer}>
-              <MaterialCommunityIcons name="account-circle" size={14} color=Colors.gray500 />
+              <MaterialCommunityIcons name="account-circle" size={14} color={Colors.gray500} />
               <Text style={styles.publisherName} numberOfLines={1}>
                 {publication.publisher.nombre}
               </Text>
               {publication.publisher.devolucionesConcretadas >= 5 && (
                 <View style={styles.badgeSolidario} title="Vecino Solidario">
-                  <MaterialCommunityIcons name="star-circle" size={14} color=Colors.warning />
+                  <MaterialCommunityIcons name="star-circle" size={14} color={Colors.warning} />
                 </View>
               )}
             </View>

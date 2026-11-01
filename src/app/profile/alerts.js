@@ -165,7 +165,7 @@ export default function MyAlertsScreen() {
             onPress={() => handleDelete(item)}
             disabled={isProcessing}
           >
-            <Ionicons name="trash-outline" size={16} color=Colors.error />
+            <Ionicons name="trash-outline" size={16} color={Colors.error} />
             <Text style={styles.deleteText}>Eliminar</Text>
           </Pressable>
         </View>

@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { BARRIOS_LIST, PublicationType } from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+import { BARRIOS_LIST, PublicationType } from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 
 export default function StepLocation({
   form, updateField, getLocation, showDatePicker, setShowDatePicker,

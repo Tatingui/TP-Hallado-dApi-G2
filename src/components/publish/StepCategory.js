@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { CATEGORY_OPTIONS } from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+import { CATEGORY_OPTIONS } from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 
 function mapCategoryIcon(icon) {
   switch (icon) {
