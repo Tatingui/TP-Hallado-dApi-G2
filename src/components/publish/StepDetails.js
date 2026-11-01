@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { PublicationType } from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+import { PublicationType } from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 
 export default function StepDetails({ form, updateField, markTouched, fieldError }) {
   return (

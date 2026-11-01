@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import { Colors } from "../../constants/theme";
 import usePublishForm from "../../hooks/usePublishForm";
-import StepType from "./publish/StepType";
-import StepCategory from "./publish/StepCategory";
-import StepDetails from "./publish/StepDetails";
-import StepLocation from "./publish/StepLocation";
-import StepImages from "./publish/StepImages";
-import StepReview from "./publish/StepReview";
+import StepType from "../../components/publish/StepType";
+import StepCategory from "../../components/publish/StepCategory";
+import StepDetails from "../../components/publish/StepDetails";
+import StepLocation from "../../components/publish/StepLocation";
+import StepImages from "../../components/publish/StepImages";
+import StepReview from "../../components/publish/StepReview";
 
 export default function PublishScreen() {
   const {

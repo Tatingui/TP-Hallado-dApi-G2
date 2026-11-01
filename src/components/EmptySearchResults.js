@@ -42,7 +42,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
           ]}
           onPress={handlePublish}
         >
-          <MaterialCommunityIcons name="plus-circle" size={18} color=Colors.surface />
+          <MaterialCommunityIcons name="plus-circle" size={18} color={Colors.surface} />
           <Text style={styles.primaryButtonText}>Publicar mi pérdida o hallazgo</Text>
         </Pressable>
 

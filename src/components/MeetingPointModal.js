@@ -94,7 +94,7 @@ export default function MeetingPointModal({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color=Colors.surface />
+                <ActivityIndicator color={Colors.surface} />
               ) : (
                 <Text style={styles.submitBtnText}>
                   {isAlternative ? 'Enviar alternativa' : 'Enviar propuesta'}

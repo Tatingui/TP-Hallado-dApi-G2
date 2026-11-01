@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { CATEGORY_OPTIONS, getTypeLabel } from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+import { CATEGORY_OPTIONS, getTypeLabel } from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 
 export default function StepReview({ form }) {
   return (

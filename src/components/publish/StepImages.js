@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Colors } from "../../../constants/theme";
+import { Colors } from "../../constants/theme";
 
 export default function StepImages({ form, pickImages, removeImage }) {
   return (
