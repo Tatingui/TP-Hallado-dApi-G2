@@ -173,7 +173,7 @@ export default function usePublishForm() {
             text: "Ver mis publicaciones",
             onPress: () => router.replace("/(tabs)/my-publications"),
           },
-          { text: "OK" },
+          { text: "OK", onPress: () => router.replace("/(tabs)/home") },
         ],
       );
       setForm(INITIAL_FORM);
