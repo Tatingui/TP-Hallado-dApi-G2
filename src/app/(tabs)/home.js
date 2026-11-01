@@ -72,7 +72,7 @@ export default function HomeScreen() {
 
     try {
       const response = await searchPublicationsApi({
-        type: searchCriteria.type,
+        type: searchCriteria.type === 'LOST' ? 'FOUND' : 'LOST',
         category: searchCriteria.category,
         query: searchCriteria.query,
         barrio: searchCriteria.barrio,
