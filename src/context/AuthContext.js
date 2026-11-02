@@ -55,11 +55,11 @@ export function AuthProvider({ children }) {
   /**
    * Limpia storage y estado — cierra sesion.
    */
-  async function logout() {
+  async function logout(loginParams) {
     await clearSession();
     setToken(null);
     setUser(null);
-    resetTo("Login");
+    resetTo("Login", loginParams);
   }
 
   const value = {

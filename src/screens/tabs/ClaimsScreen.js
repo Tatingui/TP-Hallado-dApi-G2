@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -26,8 +27,11 @@ import MeetingPointModal from '../../components/MeetingPointModal';
 
 export default function ClaimsScreen() {
   const { token } = useAuth();
+  const navigation = useNavigation();
+  const { tab } = useRoute().params ?? {};
 
-  const [activeTab, setActiveTab] = useState('SENT'); // SENT or RECEIVED
+  const [selectedTab, setActiveTab] = useState('SENT');
+  const activeTab = tab === 'received' ? 'RECEIVED' : tab === 'sent' ? 'SENT' : selectedTab;
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +44,14 @@ export default function ClaimsScreen() {
   // Punto 8: reclamo sobre el que se está proponiendo un punto de encuentro
   const [meetingClaim, setMeetingClaim] = useState(null);
   const [isSubmittingMeeting, setIsSubmittingMeeting] = useState(false);
+
+  useEffect(() => {
+    if (tab === 'received' || tab === 'sent') {
+      setActiveTab(tab === 'received' ? 'RECEIVED' : 'SENT');
+      // Consumir el destino permite volver a pedirlo tras cambiar de pestaña manualmente.
+      navigation.setParams({ tab: undefined });
+    }
+  }, [tab, navigation]);
 
   useEffect(() => {
     fetchClaims(0, true);

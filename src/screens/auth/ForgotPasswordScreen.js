@@ -9,13 +9,14 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { sendOtp } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation();
+  const { nextState } = useRoute().params ?? {};
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ export default function ForgotPasswordScreen() {
       const response = await sendOtp(email);
 
       if (response.success) {
-        navigation.navigate("ResetPassword", { email });
+        navigation.navigate("ResetPassword", { email, nextState });
       } else {
         setError(response.message || "No se pudo enviar el código");
       }

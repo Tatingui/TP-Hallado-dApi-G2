@@ -20,7 +20,7 @@ const RESEND_COOLDOWN = 60;
 
 export default function VerifyOtpScreen() {
   const navigation = useNavigation();
-  const { email, fromRegister } = useRoute().params ?? {};
+  const { email, fromRegister, nextState } = useRoute().params ?? {};
   const [code, setCode] = useState(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,7 +78,7 @@ export default function VerifyOtpScreen() {
 
       if (response.success) {
         await loginContext(response.token, email);
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        navigation.reset(nextState ?? { index: 0, routes: [{ name: "Main" }] });
       } else {
         setError(response.message || "Código inválido");
         setCode(Array(OTP_LENGTH).fill(""));

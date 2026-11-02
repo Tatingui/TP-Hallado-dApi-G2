@@ -139,7 +139,7 @@ export default function usePublicationDetail() {
       Alert.alert(
         "Reclamo enviado",
         "Tu reclamo fue enviado exitosamente al publicador. Podés seguir el estado desde 'Mis Reclamos'.",
-        [{ text: "Entendido", onPress: () => navigation.navigate("Main", { screen: "ClaimsTab" }) }]
+        [{ text: "Entendido", onPress: () => navigation.popTo("Main", { screen: "ClaimsTab", params: { tab: "sent" } }) }]
       );
     } catch (err) {
       Alert.alert("Error", err.message || "No se pudo enviar el reclamo. Recordá el límite de 3 intentos.");

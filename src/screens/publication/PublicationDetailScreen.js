@@ -167,7 +167,7 @@ export default function PublicationDetailScreen() {
           )}
           <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: Colors.primary, flex: 1 }]}
-            onPress={() => navigation.navigate("Main", { screen: "ClaimsTab", params: { tab: "received" } })}
+            onPress={() => navigation.popTo("Main", { screen: "ClaimsTab", params: { tab: "received" } })}
           >
             <Ionicons name="mail-open-outline" size={20} color={Colors.surface} />
             <Text style={styles.mainActionText}>Ver reclamos</Text>
