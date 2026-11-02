@@ -11,6 +11,7 @@ export default appSchema({
     tableSchema({
       name: 'publications',
       columns: [
+        { name: 'snapshot_json', type: 'string' },
         { name: 'owner', type: 'string', isIndexed: true },
         { name: 'server_id', type: 'number', isOptional: true },
         { name: 'title', type: 'string' },
@@ -90,6 +91,7 @@ export default appSchema({
     tableSchema({
       name: 'claims',
       columns: [
+        { name: 'snapshot_json', type: 'string' },
         { name: 'owner', type: 'string', isIndexed: true },
         { name: 'server_id', type: 'number', isOptional: true },
         { name: 'publication_id', type: 'number' },
