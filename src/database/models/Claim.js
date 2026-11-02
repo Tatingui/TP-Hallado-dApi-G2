@@ -3,6 +3,8 @@ import { field, text, field as numField, field as boolField, date } from '@nozbe
 
 export default class Claim extends Model {
   static table = 'claims';
+  @text('owner') owner;
+  @text('snapshot_json') snapshotJson;
 
   @field('server_id') serverId;
   @field('publication_id') publicationId;

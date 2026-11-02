@@ -1,3 +1,5 @@
+import migrations from './migrations';
+import CacheEntry from './models/CacheEntry';
 import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import schema from './schema';
@@ -12,6 +14,7 @@ import Profile from './models/Profile';
 
 const adapter = new SQLiteAdapter({
   schema,
+  migrations,
   // (optional) Database name
   dbName: 'hallado_local_db',
   // (optional) Enable JSI for faster queries in Development Build / Native
@@ -24,6 +27,7 @@ const adapter = new SQLiteAdapter({
 export const database = new Database({
   adapter,
   modelClasses: [
+    CacheEntry,
     Publication,
     PublicationImage,
     Draft,

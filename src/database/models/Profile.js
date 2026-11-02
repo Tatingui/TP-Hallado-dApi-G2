@@ -3,6 +3,7 @@ import { field, text, date } from '@nozbe/watermelondb/decorators';
 
 export default class Profile extends Model {
   static table = 'profiles';
+  @text('owner') owner;
 
   @field('server_id') serverId;
   @text('nombre') nombre;

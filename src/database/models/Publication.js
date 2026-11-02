@@ -3,6 +3,8 @@ import { field, text, date, children } from '@nozbe/watermelondb/decorators';
 
 export default class Publication extends Model {
   static table = 'publications';
+  @text('owner') owner;
+  @text('snapshot_json') snapshotJson;
 
   static associations = {
     publication_images: { type: 'has_many', foreignKey: 'publication_id' },

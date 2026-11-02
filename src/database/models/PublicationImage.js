@@ -3,6 +3,7 @@ import { text, date, relation } from '@nozbe/watermelondb/decorators';
 
 export default class PublicationImage extends Model {
   static table = 'publication_images';
+  @text('owner') owner;
 
   static associations = {
     publications: { type: 'belongs_to', key: 'publication_id' },

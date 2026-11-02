@@ -1,36 +1,30 @@
 import { database } from '../database';
 import { Q } from '@nozbe/watermelondb';
+import { assertCurrentSession, getDatabaseSession } from '../database/session';
 
-export const getLocalClaims = async (isReceived = false) => {
-  const collection = database.get('claims');
-  return await collection.query(Q.where('is_received', isReceived)).fetch();
-};
+export async function getLocalClaims(isReceived = false, session = getDatabaseSession()) {
+  const rows = await database.get('claims').query(Q.where('owner', session.owner), Q.where('is_received', isReceived)).fetch();
+  assertCurrentSession(session);
+  return rows.filter(row => row.snapshotJson).map(row => JSON.parse(row.snapshotJson));
+}
 
-export const saveClaimsToLocal = async (claimsList, isReceived = false) => {
+export async function saveClaimsToLocal(items, isReceived = false, session = getDatabaseSession()) {
   const collection = database.get('claims');
   await database.write(async () => {
-    for (const item of claimsList) {
-      const existing = await collection.query(Q.where('server_id', item.id)).fetch();
-      if (existing.length === 0) {
-        await collection.create((claim) => {
-          claim.serverId = item.id;
-          claim.publicationId = item.publicationId;
-          claim.publicationTitle = item.publicationTitle;
-          claim.publicationType = item.publicationType;
-          claim.publicationBarrio = item.publicationBarrio;
-          claim.claimantName = item.claimant ? item.claimant.name : '';
-          claim.claimantPhone = item.claimant ? item.claimant.phone : '';
-          claim.publisherName = item.publisher ? item.publisher.name : '';
-          claim.publisherPhone = item.publisher ? item.publisher.phone : '';
-          claim.exactAddress = item.exactAddress || '';
-          claim.proofMessage = item.proofMessage || '';
-          claim.proofImageUrl = item.proofImageUrl || '';
-          claim.status = item.status;
-          claim.isReceived = isReceived;
-          claim.claimDate = item.claimDate ? new Date(item.claimDate).getTime() : Date.now();
-          claim.syncStatus = 'synced';
-        });
-      }
+    assertCurrentSession(session);
+    for (const item of items) {
+      const rows = await collection.query(Q.where('owner', session.owner), Q.where('server_id', Number(item.id)), Q.where('is_received', isReceived)).fetch();
+      assertCurrentSession(session);
+      const assign = row => {
+        row.owner = session.owner;
+        row.serverId = Number(item.id);
+        row.snapshotJson = JSON.stringify(item);
+        row.isReceived = isReceived;
+        row.status = item.status;
+        row.syncStatus = 'synced';
+      };
+      if (rows.length) await rows[0].update(assign);
+      else await collection.create(assign);
     }
   });
-};
+}

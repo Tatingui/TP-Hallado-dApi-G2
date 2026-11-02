@@ -1,57 +1,45 @@
 import { database } from '../database';
 import { Q } from '@nozbe/watermelondb';
+import { assertCurrentSession, getDatabaseSession } from '../database/session';
 
-export const getLocalPublications = async ({ type, category, query, barrio }) => {
-  const collection = database.get('publications');
-  const conditions = [];
+export async function getLocalPublications(criteria = {}, session = getDatabaseSession()) {
+  const rows = await database.get('publications').query(Q.where('owner', session.owner)).fetch();
+  assertCurrentSession(session);
+  return rows.filter(row => row.syncStatus === 'synced' && row.snapshotJson).map(row => JSON.parse(row.snapshotJson));
+}
 
-  if (type) {
-    // Inverse type match
-    const targetType = type === 'LOST' ? 'FOUND' : 'LOST';
-    conditions.push(Q.where('type', targetType));
-  }
-
-  if (category) {
-    conditions.push(Q.where('category', category));
-  }
-
-  if (barrio) {
-    conditions.push(Q.where('barrio', barrio));
-  }
-
-  if (conditions.length > 0) {
-    return await collection.query(...conditions).fetch();
-  }
-
-  return await collection.query().fetch();
-};
-
-export const savePublicationsToLocal = async (publicationsList) => {
+export async function savePublicationsToLocal(items, session = getDatabaseSession()) {
   const collection = database.get('publications');
   await database.write(async () => {
-    for (const item of publicationsList) {
-      const existing = await collection.query(Q.where('server_id', item.id)).fetch();
-      if (existing.length === 0) {
-        await collection.create((pub) => {
-          pub.serverId = item.id;
-          pub.title = item.title;
-          pub.description = item.description || '';
-          pub.type = item.type;
-          pub.category = item.category;
-          pub.barrio = item.barrio;
-          pub.address = item.address || '';
-          pub.latitude = item.latitude;
-          pub.longitude = item.longitude;
-          pub.eventDate = item.eventDate ? new Date(item.eventDate).getTime() : Date.now();
-          pub.status = item.status;
-          pub.publisherName = item.publisher ? item.publisher.nombre : '';
-          pub.publisherPhone = item.publisher ? item.publisher.phone : '';
-          pub.publisherReputation = item.publisher ? item.publisher.devolucionesConcretadas : 0;
-          pub.createdAt = Date.now();
-          pub.updatedAt = Date.now();
-          pub.syncStatus = 'synced';
-        });
-      }
+    assertCurrentSession(session);
+    for (const item of items) {
+      if (item.id == null) continue;
+      const rows = await collection.query(Q.where('owner', session.owner), Q.where('server_id', Number(item.id))).fetch();
+      assertCurrentSession(session);
+      const assign = pub => {
+        pub.owner = session.owner;
+        pub.serverId = Number(item.id);
+        pub.title = item.title || '';
+        pub.description = item.description || '';
+        pub.type = item.type || '';
+        pub.category = item.category || '';
+        pub.barrio = item.barrio || '';
+        pub.status = item.status || 'OPEN';
+        pub.snapshotJson = JSON.stringify(item);
+        pub.updatedAt = new Date();
+        pub.syncStatus = 'synced';
+      };
+      if (rows.length) {
+        if (rows[0].syncStatus === 'synced') await rows[0].update(assign);
+      } else await collection.create(pub => { assign(pub); pub.createdAt = new Date(); });
     }
   });
-};
+}
+
+export async function removeLocalPublication(id, session = getDatabaseSession()) {
+  await database.write(async () => {
+    assertCurrentSession(session);
+    const rows = await database.get('publications').query(Q.where('owner', session.owner), Q.where('server_id', Number(id))).fetch();
+    await database.batch(...rows.map(row => row.prepareDestroyPermanently()));
+  });
+}

@@ -3,6 +3,7 @@ import { text, date } from '@nozbe/watermelondb/decorators';
 
 export default class RecentSearch extends Model {
   static table = 'recent_searches';
+  @text('owner') owner;
 
   @text('type') type;
   @text('category') category;
