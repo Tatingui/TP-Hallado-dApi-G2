@@ -1,54 +1,58 @@
-# Hallado — App de Objetos y Mascotas Perdidas (WatermelonDB + Expo Architecture)
+# Hallado — React Native, Expo y WatermelonDB
 
-Aplicación móvil desarrollada con **React Native + Expo (SDK 58)**, **WatermelonDB (SQLite local)** y un backend en **Spring Boot (Java 17 / MySQL)**.
+Aplicación Android con Expo development build, WatermelonDB (SQLite local) y API Spring Boot + MySQL. **No se ejecuta en Expo Go.**
 
----
+## Instalación
 
-## 🏛️ Arquitectura del Sistema
+1. Ejecutar `npm ci` en la raíz.
+2. Copiar `.env.example` a `.env.local` y configurar `EXPO_PUBLIC_API_URL`.
+3. Preparar MySQL 8 con `backend/setup-db.sql`, JDK 17 o superior y las variables SMTP del entorno.
+4. En `backend`, ejecutar `.\mvnw.cmd spring-boot:run` (Windows) o `./mvnw spring-boot:run`.
+5. Con Android SDK y un dispositivo/emulador configurados, ejecutar `npm run android`.
+6. Para las siguientes sesiones de desarrollo, ejecutar `npm start`.
 
-El proyecto sigue una arquitectura **Offline-First** estructurada en capas:
+El backend usa el puerto 8081 y el prefijo `/api`. En el emulador Android se usa `http://10.0.2.2:8081/api`; en un teléfono físico, la IP LAN de la computadora. Los cambios nativos requieren recompilar el cliente.
 
-1. **Almacenamiento Local:**
-   * **`WatermelonDB` (SQLite):** Publicaciones, fotos locales, borradores, cola de operaciones pendientes (`pending_operations`), búsquedas recientes y reclamos.
-   * **`SecureStore`:** Almacenamiento cifrado de tokens JWT.
-   * **`AsyncStorage`:** Indicadores de interfaz y preferencias simples.
-2. **Coordinador de Sincronización (`src/sync/syncCoordinator.js`):**
-   * Monitorea la conectividad de red con `@react-native-community/netinfo`.
-   * Procesa las operaciones creadas en modo offline de forma idempotente enviando la cabecera `X-Idempotency-Key` al backend.
-3. **Backend en Spring Boot:**
-   * API REST con filtro de idempotencia (`IdempotencyFilter`) para prevenir duplicados ante reconexiones de red.
+Ver [guía de development builds](docs/DEVELOPMENT.md) para compilación local o EAS. El proyecto EAS se vincula con la cuenta del equipo; no se incluyen credenciales.
 
----
+## Persistencia y sesión
 
-## 🚀 Requisitos Previos e Instalación
+- SecureStore conserva el token. AsyncStorage queda para preferencias y como respaldo de datos anteriores.
+- WatermelonDB mantiene datos locales y snapshots de respuestas autorizadas, separados por cuenta.
+- Borradores y resultados recientes se guardan en SQLite; las fotos se copian o descargan al directorio persistente de cada cuenta.
+- Los datos antiguos sin propietario se recuperan solo tras una confirmación explícita dentro de la app. La copia original no se borra.
+- La migración es reanudable; imágenes antiguas inexistentes quedan señaladas para corregirlas.
 
-### 1. Dependencias
-```bash
-npm install --legacy-peer-deps
-```
+## Publicación y sincronización
 
-### 2. Base de datos MySQL y Backend
-```bash
+El formulario guarda la publicación y su operación pendiente en un único batch de WatermelonDB. Un solo coordinador envía las publicaciones con la sesión de su propietario, al reconectar, volver al primer plano y durante el uso activo.
+
+Los reintentos conservan la misma clave `X-Idempotency-Key`. Spring Boot registra respuesta y publicación en la misma transacción, con bloqueo de base de datos por usuario. Un fallo revierte el registro; un reintento exitoso devuelve el mismo resultado. Las fotos guardadas durante una transacción fallida se eliminan.
+
+No se descartan pendientes por cantidad de intentos. Los errores temporales se reintentan con espera progresiva; los errores de validación quedan visibles y permiten recuperar el contenido para corregirlo desde Mis publicaciones. Los reclamos y sus respuestas no se encolan offline.
+
+Al cambiar de sesión se invalidan las tareas anteriores. Si el servidor confirmó una publicación pero la sesión cambió antes de recibirla, la operación permanece pendiente y se reconcilia con su misma clave cuando vuelve su propietario.
+
+## Pruebas
+
+```sh
+npm test
 cd backend
-.\mvnw.cmd spring-boot:run
+./mvnw test
 ```
 
-### 3. Ejecución en Expo (Development Build / Expo Go)
-```bash
-npx expo start -c
+En Windows usar `.\mvnw.cmd test`. Los tests de dominio de WatermelonDB usan el adaptador Loki en Node: comprueban las operaciones, no sustituyen una ejecución con SQLite nativo.
+
+Para generar el bundle Android:
+
+```sh
+npx expo export --platform android --output-dir dist
 ```
 
----
+## Alcance y validación pendiente
 
-## 📊 Estado de Implementación de los 10 Puntos del TPO
+Esta corrección integra persistencia y sincronización con los flujos existentes. **No certifica automáticamente los diez puntos del TPO.** La aceptación funcional completa requiere recorrerlos en Android.
 
-* ✅ **Punto 1:** Autenticación, OTP, Login, Recupero de Contraseña y Bloqueo Biométrico.
-* ✅ **Punto 2:** Perfil, Reputación, Insignias y Perfil Público.
-* ✅ **Punto 3:** Buscador Inicial Guiado (Tipo Inverso, Categorías, Barrio/GPS, Búsquedas Recientes).
-* ✅ **Punto 4:** Detalle de Publicación con acciones y dirección enmascarada.
-* ✅ **Punto 5:** Publicar Hallazgo/Pérdida (Wizard, verificación, fotos locales y borradores).
-* ✅ **Punto 6:** Modo Sin Conexión Completo (Caché local en WatermelonDB, cola de sincronización e idempotencia).
-* ✅ **Punto 7:** Reclamos y Verificación (Pregunta de seguridad, 3 intentos máx, scheduler de expiración a 48hs y panel Mis Reclamos).
-* ⏳ **Punto 8:** Devolución y Punto de Encuentro (Mapa / Google Maps).
-* ⏳ **Punto 9:** Alertas y Seguidas.
-* ⏳ **Punto 10:** Historial y Valoraciones.
+Ver [verificación de la refactorización](docs/VERIFICATION.md). La ejecución en segundo plano con la aplicación cerrada, sincronización bidireccional general y resolución de ediciones concurrentes no se implementan aquí: las modificaciones remotas diferentes de crear publicaciones requieren conexión.
+
+Orden de integración de las ramas: base (PR 39), datos offline (PR 40), sincronización y backend (PR 41). Son ramas acumulativas; no hacer squash de una etapa si se quiere conservar su relación de ancestros con las siguientes.

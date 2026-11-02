@@ -40,10 +40,12 @@ public class PublicationController {
 
     private final PublicationService publicationService;
     private final ObjectMapper objectMapper;
+    private final com.hallado.backend.service.IdempotentPublicationService idempotentPublications;
 
-    public PublicationController(PublicationService publicationService, ObjectMapper objectMapper) {
+    public PublicationController(PublicationService publicationService, ObjectMapper objectMapper, com.hallado.backend.service.IdempotentPublicationService idempotentPublications) {
         this.publicationService = publicationService;
         this.objectMapper = objectMapper;
+        this.idempotentPublications = idempotentPublications;
     }
 
     @PutMapping("/{id}")
@@ -84,15 +86,18 @@ public class PublicationController {
     public ResponseEntity<PublicationResponseDTO> createPublication(
             @RequestParam("publication") String publicationJson,
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
             Authentication authentication
     ) {
         try {
             CreatePublicationRequest request = objectMapper.readValue(publicationJson, CreatePublicationRequest.class);
             String userEmail = authentication.getName();
-            PublicationResponseDTO created = publicationService.createPublication(request, images, userEmail);
+            PublicationResponseDTO created = idempotentPublications.create(request, images, userEmail, idempotencyKey);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).build();
         } catch (Exception e) {
             log.error("Error al crear publicación: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

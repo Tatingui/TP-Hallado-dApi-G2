@@ -5,7 +5,7 @@ import { Colors } from '../constants/theme';
 import { getClaimStatusColor, getClaimStatusLabel } from '../constants/publicationConstants';
 import { resolveImageUrl } from '../utils/imageUrl';
 
-export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing }) {
+export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing, isOfflineMode = false }) {
   if (!claim) return null;
 
   const isReceived = type === 'RECEIVED';
@@ -132,7 +132,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
           <TouchableOpacity
             style={[styles.actionBtn, styles.rejectBtn]}
             onPress={() => onReject(claim.id)}
-            disabled={isProcessing}
+            disabled={isProcessing || isOfflineMode}
           >
             <Text style={styles.rejectBtnText}>Rechazar</Text>
           </TouchableOpacity>

@@ -25,13 +25,8 @@ import {
   getCategoryLabel,
   getTypeLabel,
 } from '../../constants/publicationConstants';
-import { searchPublicationsApi } from '../../services/publicationService';
 import { createAlertApi } from '../../services/alertService';
 import { checkNetworkConnection } from '../../hooks/useNetworkStatus';
-import {
-  saveSearchCacheOffline,
-  getOfflineSearchCache,
-} from '../../storage/offlinePublicationsStorage';
 
 export default function HomeScreen() {
   const navigation = useNavigation();

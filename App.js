@@ -3,20 +3,15 @@ import { database } from './src/database';
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
-import { useNetworkStatus } from './src/hooks/useNetworkStatus';
-import { syncPendingPublications } from './src/services/offlineSyncService';
+import { useAuth } from './src/hooks/useAuth';
+import { startSyncCoordinator } from './src/sync/syncCoordinator';
 import AppNavigator from './src/navigation/AppNavigator';
 
-// Punto 6: al recuperar la conexión se envían las publicaciones pendientes
 function GlobalOfflineSyncWatcher({ children }) {
-  const { isConnected } = useNetworkStatus(12000);
-
+  const { token, user, loading } = useAuth();
   useEffect(() => {
-    if (isConnected) {
-      syncPendingPublications();
-    }
-  }, [isConnected]);
-
+    if (token && user && !loading) return startSyncCoordinator();
+  }, [token, user, loading]);
   return children;
 }
 

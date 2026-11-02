@@ -1,4 +1,7 @@
-import { useState, useCallback } from "react";
+import { database } from '../../database';
+import { Q } from '@nozbe/watermelondb';
+import { getDatabaseSession, isCurrentSession } from '../../database/session';
+import { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -84,6 +87,26 @@ export default function MyPublicationsScreen() {
     }, [fetchPublications])
   );
 
+  useEffect(() => {
+    const session = getDatabaseSession();
+    let previousCount = null;
+    const subscription = database.get('pending_operations').query(Q.where('owner', session.owner))
+      .observeWithColumns(['state', 'last_error']).subscribe(async rows => {
+        if (!isCurrentSession(session)) return;
+        try {
+          const pending = await getPendingPublications();
+          if (!isCurrentSession(session)) return;
+          setPendingPublications(pending);
+          if (previousCount !== null && rows.length < previousCount) {
+            const data = await getMyPublicationsApi(0, 10, statusFilter);
+            if (isCurrentSession(session)) { setPublications(data.content || []); setPage(0); setIsLastPage(data.last ?? true); }
+          }
+          previousCount = rows.length;
+        } catch { /* refresh remains available if the backend is offline */ }
+      });
+    return () => subscription.unsubscribe();
+  }, [token, statusFilter]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchPublications(0);
@@ -108,6 +131,7 @@ export default function MyPublicationsScreen() {
     isPending: true,
     lastError: p.lastError,
     pendingState: p.status,
+    pendingDraft: { ...p.payload, images: p.images },
   }));
 
   const combinedData = [...formattedPendingList, ...publications];
@@ -143,7 +167,8 @@ export default function MyPublicationsScreen() {
           onPress={() =>
             Alert.alert(
               "Publicación Pendiente",
-              item.lastError || "Se enviará automáticamente cuando el dispositivo recupere conexión."
+              item.lastError || "Se enviará automáticamente cuando el dispositivo recupere conexión.",
+              item.pendingState === "blocked" ? [{text: "Cerrar"}, {text: "Corregir", onPress: () => navigation.navigate("PublishTab", {pendingDraft: item.pendingDraft, pendingId: item.id})}] : [{text:"Entendido"}]
             )
           }
         >

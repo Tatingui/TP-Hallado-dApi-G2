@@ -1,14 +1,15 @@
+import { randomUUID } from 'expo-crypto';
+import { triggerSyncProcess } from '../sync/syncCoordinator';
 import { persistImages } from '../services/files/fileSystemManager';
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { PublicationType } from "../constants/publicationConstants";
 import { useAuth } from "./useAuth";
-import { createPublicationApi } from "../services/publicationService";
 import { clearDraft, loadDraft, saveDraft } from "../storage/draftStorage";
-import { savePendingPublication } from "../storage/pendingSyncStorage";
+import { savePendingPublication, removePendingPublication } from "../storage/pendingSyncStorage";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -29,10 +30,11 @@ const INITIAL_FORM = {
 
 export default function usePublishForm() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { token } = useAuth();
 
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(() => ({ ...INITIAL_FORM, operationKey: randomUUID() }));
   const [submitting, setSubmitting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -45,6 +47,7 @@ export default function usePublishForm() {
   // Cargar borrador al montar
   useEffect(() => {
     (async () => {
+      if (route.params?.pendingDraft) return;
       const draft = await loadDraft();
       if (draft && (draft.title || draft.type || draft.category)) {
         setHasDraft(true);
@@ -63,7 +66,7 @@ export default function usePublishForm() {
             {
               text: "Continuar",
               onPress: () => {
-                setForm({ ...INITIAL_FORM, ...draft });
+                setForm({ ...INITIAL_FORM, operationKey: randomUUID(), ...draft });
                 setStep(draft.currentStep || 0);
                 if (draft.recoveryWarning) Alert.alert("Revisá las fotos", draft.recoveryWarning);
                 setHasDraft(false);
@@ -74,6 +77,13 @@ export default function usePublishForm() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (route.params?.pendingDraft) {
+      setForm({ ...INITIAL_FORM, ...route.params.pendingDraft, operationKey: randomUUID() });
+      setStep(2);
+    }
+  }, [route.params?.pendingDraft]);
 
   // Auto-guardar borrador cuando cambia el form
   useEffect(() => {
@@ -169,9 +179,14 @@ export default function usePublishForm() {
     }
 
     try {
-      await savePendingPublication(payload, form.images);
+      await savePendingPublication(payload, form.images, { idempotencyKey: form.operationKey });
+      if (route.params?.pendingId) {
+        await removePendingPublication(route.params.pendingId);
+        navigation.setParams({pendingId: undefined, pendingDraft: undefined});
+      }
       await clearDraft();
-      setForm(INITIAL_FORM);
+      triggerSyncProcess().catch(() => {});
+      setForm({ ...INITIAL_FORM, operationKey: randomUUID() });
       setTouched({});
       setStep(0);
       Alert.alert('Publicación guardada', 'Se enviará automáticamente cuando haya conexión. Podés consultar el estado en Mis publicaciones.', [{text:'Ver mis publicaciones', onPress:()=>navigation.navigate('MyPublicationsTab')}]);

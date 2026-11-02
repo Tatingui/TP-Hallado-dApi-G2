@@ -1,91 +1,46 @@
 import NetInfo from '@react-native-community/netinfo';
+import { AppState } from 'react-native';
 import { database } from '../database';
-import { Q } from '@nozbe/watermelondb';
-import { getToken } from '../storage/authStorage';
+import { getDatabaseSession, isCurrentSession, assertCurrentSession } from '../database/session';
+import { getPendingOperations, completeOperation, enqueuePublication } from '../repositories/pendingRepository';
 import { createPublicationApi } from '../services/publicationService';
-import { createClaimApi, respondToClaimApi } from '../services/claimService';
-import { 'v4' as uuidv4 } from 'uuid';
+import { isTokenExpired } from '../storage/authStorage';
+import { createSyncEngine } from './syncEngine';
 
-let isSyncRunning = false;
-
-export const queuePendingOperation = async (type, payload) => {
-  const collection = database.get('pending_operations');
-  const idempotencyKey = uuidv4();
-
-  await database.write(async () => {
-    await collection.create((op) => {
-      op.idempotencyKey = idempotencyKey;
-      op.operationType = type; // 'CREATE_PUBLICATION' | 'CREATE_CLAIM' | 'RESPOND_CLAIM'
-      op.payloadJson = JSON.stringify(payload);
-      op.retryCount = 0;
-      op.createdAt = Date.now();
-      op.updatedAt = Date.now();
+export const triggerSyncProcess = createSyncEngine({
+  getSession: () => { try { const session = getDatabaseSession(); return !session.ready || isTokenExpired(session.token) ? null : session; } catch { return null; } },
+  isCurrent: isCurrentSession,
+  isOnline: async () => (await NetInfo.fetch()).isConnected === true,
+  list: getPendingOperations,
+  send: (op, session) => {
+    const { publication, images } = JSON.parse(op.payloadJson);
+    return createPublicationApi(publication, images, session.token, op.idempotencyKey);
+  },
+  complete: completeOperation,
+  fail: (op, failure, session) => database.write(async () => {
+    assertCurrentSession(session);
+    await op.update(row => {
+      row.state = failure.state;
+      row.lastError = failure.message;
+      row.retryCount += 1;
+      row.nextAttemptAt = failure.nextAttemptAt || 0;
+      row.updatedAt = new Date();
     });
-  });
-
-  // Attempt sync immediately if online
-  triggerSyncProcess();
-};
-
-export const triggerSyncProcess = async () => {
-  if (isSyncRunning) return; // Rule: Una sola ejecución a la vez
-
-  const netState = await NetInfo.fetch();
-  if (!netState.isConnected) return; // No network
-
-  const token = await getToken();
-  if (!token) return; // Pausar ante sesión vencida
-
-  isSyncRunning = true;
-
-  try {
-    const collection = database.get('pending_operations');
-    const pendingOps = await collection.query(Q.sortBy('created_at', Q.asc)).fetch();
-
-    for (const op of pendingOps) {
-      try {
-        const payload = JSON.parse(op.payloadJson);
-
-        if (op.operationType === 'CREATE_PUBLICATION') {
-          await createPublicationApi(payload, payload.images, token, op.idempotencyKey);
-        } else if (op.operationType === 'CREATE_CLAIM') {
-          await createClaimApi(payload.publicationId, payload.proofMessage, payload.verificationAnswer, payload.imageUri, token, op.idempotencyKey);
-        } else if (op.operationType === 'RESPOND_CLAIM') {
-          await respondToClaimApi(payload.claimId, payload.status, token, op.idempotencyKey);
-        }
-
-        // Success: Remove operation from local queue
-        await database.write(async () => {
-          await op.destroyPermanently();
-        });
-      } catch (error) {
-        console.warn(`Sync failed for operation ${op.id}:`, error);
-
-        // Pause on Auth errors (401, 403)
-        if (error && (error.status === 401 || error.status === 403)) {
-          break;
-        }
-
-        // Increment retry count for temporary network errors
-        await database.write(async () => {
-          await op.update((record) => {
-            record.retryCount += 1;
-            record.lastError = error ? error.message || 'Error de red' : 'Error desconocido';
-            record.updatedAt = Date.now();
-          });
-        });
-      }
-    }
-  } catch (globalError) {
-    console.error('Error during Sync Coordinator execution:', globalError);
-  } finally {
-    isSyncRunning = false;
-  }
-};
-
-// Escuchar cambios de red automáticamente para disparar sincronización
-NetInfo.addEventListener((state) => {
-  if (state.isConnected) {
-    triggerSyncProcess();
-  }
+  }),
 });
+
+export async function queuePendingOperation(type, payload) {
+  if (type !== 'CREATE_PUBLICATION') throw new Error('Los reclamos y sus respuestas requieren conexión.');
+  const id = await enqueuePublication(payload.publication || payload, payload.images || []);
+  triggerSyncProcess().catch(() => {});
+  return id;
+}
+
+export function startSyncCoordinator() {
+  const run = () => { if (AppState.currentState === 'active') triggerSyncProcess().catch(error => console.warn('No se pudo sincronizar:', error.message)); };
+  const network = NetInfo.addEventListener(state => { if (state.isConnected) run(); });
+  const foreground = AppState.addEventListener('change', state => { if (state === 'active') run(); });
+  const timer = setInterval(run, 15000);
+  run();
+  return () => { network(); foreground.remove(); clearInterval(timer); };
+}

@@ -64,7 +64,7 @@ export async function completeOperation(operation, result, session) {
       ...duplicates.filter(row => row.id !== publication.id).map(row => row.prepareDestroyPermanently()),
       publication.prepareUpdate(row => {
         row.serverId = Number(result.id);
-        row.snapshotJson = JSON.stringify(result);
+        row.snapshotJson = JSON.stringify({ ...result, imageUrls: JSON.parse(operation.payloadJson).images.map(image => image.uri) });
         row.status = result.status;
         row.syncStatus = 'synced';
         row.updatedAt = new Date();
@@ -83,4 +83,3 @@ export async function removePending(id) {
     await database.batch(row.prepareDestroyPermanently(), publication.prepareDestroyPermanently());
   });
 }
-

@@ -1,4 +1,4 @@
-import { setDatabaseSession } from '../database/session';
+import { setDatabaseSession, subscribeSession, getDatabaseSession, markDatabaseReady } from '../database/session';
 import { migrateAsyncStorageToWatermelon } from '../database/dataMigration';
 import { createContext, useState, useEffect } from "react";
 import { resetTo } from "../navigation/navigationRef";
@@ -28,6 +28,9 @@ export function AuthProvider({ children }) {
   // Al montar, chequear si hay sesion guardada
   useEffect(() => {
     restoreSession();
+    return subscribeSession(() => {
+      try { getDatabaseSession(); } catch { setToken(null); setUser(null); }
+    });
   }, []);
 
   async function restoreSession() {
@@ -37,11 +40,13 @@ export function AuthProvider({ children }) {
         const email = await getUserEmail();
         setDatabaseSession(email, storedToken);
         await migrateAsyncStorageToWatermelon();
+        markDatabaseReady();
         setToken(storedToken);
         setUser(email);
       }
     } catch (error) {
-      console.error("Error restaurando sesion:", error);
+      setDatabaseSession(null, null);
+      console.error("No se pudo restaurar la sesión y sus datos:", error);
     } finally {
       setLoading(false);
     }
@@ -54,6 +59,7 @@ export function AuthProvider({ children }) {
     await saveSession(newToken, email);
     setDatabaseSession(email, newToken);
     await migrateAsyncStorageToWatermelon();
+        markDatabaseReady();
     setToken(newToken);
     setUser(email);
   }
