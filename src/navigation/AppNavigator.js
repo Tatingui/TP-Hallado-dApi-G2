@@ -7,25 +7,25 @@ import { Colors } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
 
 // Auth Screens
-import LoginScreen from '../app/(auth)/login';
-import RegisterScreen from '../app/(auth)/register';
-import VerifyOtpScreen from '../app/(auth)/verify-otp';
-import ForgotPasswordScreen from '../app/(auth)/forgot-password';
-import ResetPasswordScreen from '../app/(auth)/reset-password';
-import NewPasswordScreen from '../app/(auth)/new-password';
-import LockScreen from '../app/(auth)/lock';
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import VerifyOtpScreen from '../screens/auth/VerifyOtpScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
+import NewPasswordScreen from '../screens/auth/NewPasswordScreen';
+import LockScreen from '../screens/auth/LockScreen';
 
 // Main Tab Screens
-import HomeScreen from '../app/(tabs)/home';
-import PublishScreen from '../app/(tabs)/publish';
-import MyPublicationsScreen from '../app/(tabs)/my-publications';
-import ClaimsScreen from '../app/(tabs)/claims';
-import ProfileScreen from '../app/(tabs)/profile';
+import HomeScreen from '../screens/tabs/HomeScreen';
+import PublishScreen from '../screens/tabs/PublishScreen';
+import MyPublicationsScreen from '../screens/tabs/MyPublicationsScreen';
+import ClaimsScreen from '../screens/tabs/ClaimsScreen';
+import ProfileScreen from '../screens/tabs/ProfileScreen';
 
 // Detail & Modal Screens
-import PublicationDetailScreen from '../app/publication/[id]';
-import EditProfileScreen from '../app/profile/edit';
-import PublicProfileScreen from '../app/profile/public/[id]';
+import PublicationDetailScreen from '../screens/publication/PublicationDetailScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import PublicProfileScreen from '../screens/profile/PublicProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
