@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { Colors, Spacing, FontSize } from '../../constants/theme';
 import LogoHallado from '../../components/LogoHallado';
 import PublicationCard from '../../components/PublicationCard';
@@ -33,7 +33,7 @@ import {
 } from '../../storage/offlinePublicationsStorage';
 
 export default function HomeScreen() {
-  const router = useRouter();
+  const navigation = useNavigation();
 
   // Guided Search State
   const [searchModalVisible, setSearchModalVisible] = useState(false);
@@ -346,7 +346,7 @@ export default function HomeScreen() {
               publication={item}
               onPress={() => {
                 // Navigate to Publication Detail (Point 4)
-                router.push(`/publication/${item.id}`);
+                navigation.navigate("PublicationDetail", { id: String(item.id) });
               }}
             />
           )}

@@ -25,7 +25,7 @@ import usePublicationDetail from "../../hooks/usePublicationDetail";
 export default function PublicationDetailScreen() {
   const insets = useSafeAreaInsets();
   const {
-    router,
+    navigation,
     publication,
     loading,
     images,
@@ -60,7 +60,7 @@ export default function PublicationDetailScreen() {
       <View style={styles.loadingContainer}>
         <Ionicons name="alert-circle-outline" size={64} color={Colors.border} />
         <Text style={styles.errorText}>No se pudo cargar la publicación</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.retryBtnText}>Volver</Text>
         </TouchableOpacity>
       </View>
@@ -71,7 +71,7 @@ export default function PublicationDetailScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>Detalle</Text>
@@ -167,7 +167,7 @@ export default function PublicationDetailScreen() {
           )}
           <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: Colors.primary, flex: 1 }]}
-            onPress={() => router.push({ pathname: "/(tabs)/claims", params: { tab: "received" } })}
+            onPress={() => navigation.navigate("Main", { screen: "ClaimsTab", params: { tab: "received" } })}
           >
             <Ionicons name="mail-open-outline" size={20} color={Colors.surface} />
             <Text style={styles.mainActionText}>Ver reclamos</Text>

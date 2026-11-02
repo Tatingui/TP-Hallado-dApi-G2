@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useAuth } from "./useAuth";
 import {
   getFollowedPublicationsApi,
@@ -15,6 +15,7 @@ import { setProfileTabBadge } from "../storage/profileTabBadge";
  * Hook que centraliza toda la lógica de la pantalla de perfil.
  */
 export default function useProfile() {
+  const navigation = useNavigation();
   const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,7 +111,7 @@ export default function useProfile() {
       setFollowedUpdatesCount(remaining);
       setProfileTabBadge(remaining > 0 || alertsNewCount > 0);
     }
-    router.push(`/publication/${publication.id}`);
+    navigation.navigate("PublicationDetail", { id: String(publication.id) });
   };
 
   const handleTogglePhoneVisibility = async (value) => {

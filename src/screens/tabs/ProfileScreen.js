@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import {
   ActivityIndicator,
   Pressable,
@@ -17,6 +17,7 @@ import FollowedSection from "../../components/profile/FollowedSection";
 import ContactSection from "../../components/profile/ContactSection";
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();
   const {
     loading,
     refreshing,
@@ -91,7 +92,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={styles.linkButton}
-          onPress={() => router.push("/profile/resolved-history")}
+          onPress={() => navigation.navigate("ResolvedHistory")}
         >
           <Ionicons name="time-outline" size={18} color={Colors.primary} />
           <Text style={styles.linkButtonText}>Historial de casos resueltos</Text>
@@ -125,7 +126,7 @@ export default function ProfileScreen() {
       {/* Acciones */}
       <Pressable
         style={styles.primaryButton}
-        onPress={() => { if (profile?.id) router.push(`/profile/public/${profile.id}`); }}
+        onPress={() => { if (profile?.id) navigation.navigate("PublicProfile", { id: String(profile.id) }); }}
       >
         <Ionicons name="eye-outline" size={20} color={Colors.surface} />
         <Text style={styles.primaryButtonText}>Ver mi Perfil Público</Text>

@@ -1,5 +1,5 @@
 import { clearSession } from '../storage/authStorage';
-import { router } from 'expo-router';
+import { resetTo } from '../navigation/navigationRef';
 
 import Constants from 'expo-constants';
 
@@ -30,7 +30,7 @@ async function handleSessionExpired() {
   _isRedirecting = true;
   try {
     await clearSession();
-    router.replace("/(auth)/login");
+    resetTo("Login");
   } catch (e) {
     console.error("Error cerrando sesión expirada:", e);
   } finally {

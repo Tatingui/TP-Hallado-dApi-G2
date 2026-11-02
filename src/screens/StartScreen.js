@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { isBiometricEnabled } from "../services/biometricService";
 import { isTokenExpired } from "../storage/authStorage";
 import { Colors } from "../constants/theme";
 
 export default function Index() {
+  const navigation = useNavigation();
   const { isAuthenticated, token, loading, logout } = useAuth();
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function Index() {
         checkBiometricAndRedirect();
       }
     } else {
-      router.replace("/(auth)/login");
+      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
     }
   }, [loading, isAuthenticated]);
 
@@ -28,12 +29,12 @@ export default function Index() {
     try {
       const bioEnabled = await isBiometricEnabled();
       if (bioEnabled) {
-        router.replace("/(auth)/lock");
+        navigation.reset({ index: 0, routes: [{ name: "Lock" }] });
       } else {
-        router.replace("/(tabs)/home");
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       }
     } catch {
-      router.replace("/(tabs)/home");
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     }
   }
 

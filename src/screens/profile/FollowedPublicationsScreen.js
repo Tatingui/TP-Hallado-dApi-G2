@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +22,7 @@ import {
  * Las que cambiaron de estado desde la última vez que se vieron se marcan con "Novedad".
  */
 export default function FollowedPublicationsScreen() {
+  const navigation = useNavigation();
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -78,7 +79,7 @@ export default function FollowedPublicationsScreen() {
         ),
       );
     }
-    router.push(`/publication/${publication.id}`);
+    navigation.navigate("PublicationDetail", { id: String(publication.id) });
   };
 
   const renderPublication = ({ item }) => (
@@ -98,7 +99,7 @@ export default function FollowedPublicationsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
         <Text style={styles.headerTitle}>Seguidas</Text>

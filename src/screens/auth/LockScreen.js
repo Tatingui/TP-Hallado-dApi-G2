@@ -6,12 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { authenticate, getBiometricType } from "../../services/biometricService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
 
 export default function LockScreen() {
+  const navigation = useNavigation();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Biometria");
@@ -40,7 +41,7 @@ export default function LockScreen() {
     try {
       const result = await authenticate();
       if (result.success) {
-        router.replace("/(tabs)/home");
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       } else {
         setError("No se pudo verificar tu identidad");
       }

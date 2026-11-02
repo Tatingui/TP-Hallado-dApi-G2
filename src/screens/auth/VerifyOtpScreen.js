@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { verifyOtp, resendOtp } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
@@ -19,7 +19,8 @@ const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
 
 export default function VerifyOtpScreen() {
-  const { email, fromRegister } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { email, fromRegister } = useRoute().params ?? {};
   const [code, setCode] = useState(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,7 +78,7 @@ export default function VerifyOtpScreen() {
 
       if (response.success) {
         await loginContext(response.token, email);
-        router.replace("/(tabs)/home");
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       } else {
         setError(response.message || "Código inválido");
         setCode(Array(OTP_LENGTH).fill(""));

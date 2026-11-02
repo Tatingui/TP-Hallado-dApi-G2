@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "./useAuth";
 import { createClaimApi } from "../services/claimService";
 import {
@@ -21,8 +21,8 @@ import { PublicationStatus, PublicationType } from "../constants/publicationCons
  * carga, follow/unfollow, reclamos y derivaciones.
  */
 export default function usePublicationDetail() {
-  const { id } = useLocalSearchParams();
-  const router = useRouter();
+  const { id } = useRoute().params ?? {};
+  const navigation = useNavigation();
   const { user, isAuthenticated } = useAuth();
 
   const [publication, setPublication] = useState(null);
@@ -119,7 +119,7 @@ export default function usePublicationDetail() {
       Alert.alert("Sin conexión", "Se requiere conexión a internet para editar publicaciones.");
       return;
     }
-    router.push(`/publication/edit/${publication.id}`);
+    navigation.navigate("EditPublication", { id: String(publication.id) });
   };
 
   const handleSubmitClaim = async (claimData) => {
@@ -139,7 +139,7 @@ export default function usePublicationDetail() {
       Alert.alert(
         "Reclamo enviado",
         "Tu reclamo fue enviado exitosamente al publicador. Podés seguir el estado desde 'Mis Reclamos'.",
-        [{ text: "Entendido", onPress: () => router.push("/(tabs)/claims") }]
+        [{ text: "Entendido", onPress: () => navigation.navigate("Main", { screen: "ClaimsTab" }) }]
       );
     } catch (err) {
       Alert.alert("Error", err.message || "No se pudo enviar el reclamo. Recordá el límite de 3 intentos.");
@@ -160,7 +160,7 @@ export default function usePublicationDetail() {
 
   return {
     id,
-    router,
+    navigation,
     publication,
     loading,
     images,

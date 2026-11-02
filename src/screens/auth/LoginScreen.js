@@ -10,7 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { login } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
@@ -22,7 +22,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { resetSuccess } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { resetSuccess } = useRoute().params ?? {};
   const { login: loginContext } = useAuth();
 
   async function handleLogin() {
@@ -39,12 +40,9 @@ export default function LoginScreen() {
 
       if (data.success && data.token) {
         await loginContext(data.token, email.trim());
-        router.replace("/(tabs)/home");
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       } else if (data.requiresVerification) {
-        router.push({
-          pathname: "/(auth)/verify-otp",
-          params: { email: email.trim(), fromLogin: "true" },
-        });
+        navigation.navigate("VerifyOtp", { email: email.trim(), fromLogin: "true" });
       } else {
         setError(data.message || "Error al iniciar sesion");
       }
@@ -132,14 +130,14 @@ export default function LoginScreen() {
 
           <Pressable
             style={styles.forgotContainer}
-            onPress={() => router.push("/(auth)/forgot-password")}
+            onPress={() => navigation.navigate("ForgotPassword")}
           >
             <Text style={styles.forgotText}>Olvidaste tu contrasena?</Text>
           </Pressable>
 
           <Pressable
             style={styles.linkButton}
-            onPress={() => router.push("/(auth)/register")}
+            onPress={() => navigation.navigate("Register")}
           >
             <Text style={styles.linkText}>
               No tenes cuenta?{" "}

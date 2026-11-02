@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { PublicationType } from "../constants/publicationConstants";
 import { useAuth } from "./useAuth";
 import { createPublicationApi } from "../services/publicationService";
@@ -27,7 +27,7 @@ const INITIAL_FORM = {
 };
 
 export default function usePublishForm() {
-  const router = useRouter();
+  const navigation = useNavigation();
   const { token } = useAuth();
 
   const [step, setStep] = useState(0);
@@ -171,9 +171,9 @@ export default function usePublishForm() {
         [
           {
             text: "Ver mis publicaciones",
-            onPress: () => router.replace("/(tabs)/my-publications"),
+            onPress: () => navigation.navigate("MyPublicationsTab"),
           },
-          { text: "OK", onPress: () => router.replace("/(tabs)/home") },
+          { text: "OK", onPress: () => navigation.navigate("HomeTab") },
         ],
       );
       setForm(INITIAL_FORM);
@@ -190,7 +190,7 @@ export default function usePublishForm() {
           [
             {
               text: "Ver mis publicaciones",
-              onPress: () => router.replace("/(tabs)/my-publications"),
+              onPress: () => navigation.navigate("MyPublicationsTab"),
             },
             { text: "Entendido" },
           ],

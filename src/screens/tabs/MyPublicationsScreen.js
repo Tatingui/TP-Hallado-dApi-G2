@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { shared } from "../../constants/sharedStyles";
@@ -34,7 +34,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function MyPublicationsScreen() {
-  const router = useRouter();
+  const navigation = useNavigation();
   const { token } = useAuth();
   const [publications, setPublications] = useState([]);
   const [pendingPublications, setPendingPublications] = useState([]);
@@ -173,7 +173,7 @@ export default function MyPublicationsScreen() {
     }
 
     return (
-      <TouchableOpacity style={shared.card} activeOpacity={0.7} onPress={() => router.push(`/publication/${item.id}`)}>
+      <TouchableOpacity style={shared.card} activeOpacity={0.7} onPress={() => navigation.navigate("PublicationDetail", { id: String(item.id) })}>
         <View style={styles.cardHeader}>
           <View style={[shared.statusBadge, { backgroundColor: getPublicationStatusColor(item.status) }]}>
             <Text style={shared.statusText}>{getStatusLabel(item.status)}</Text>

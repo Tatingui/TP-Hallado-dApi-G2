@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, COLORS } from '../constants/theme';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 
 export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const handlePublish = () => {
     // Navigate to Create Publication Wizard (Point 5)
-    router.push('/(tabs)/profile'); // Or publish screen route
+    navigation.navigate('Main', { screen: 'ProfileTab' }); // Or publish screen route
   };
 
   const handleSaveAlert = () => {

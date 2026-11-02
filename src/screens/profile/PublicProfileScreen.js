@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,7 +16,8 @@ import { getPublicProfile } from "../../services/userService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
 export default function PublicProfileScreen() {
-  const { id } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { id } = useRoute().params ?? {};
   const [loading, setLoading] = useState(true);
   const [publicData, setPublicData] = useState(null);
 
@@ -63,7 +64,7 @@ export default function PublicProfileScreen() {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={Colors.textOnPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>Perfil Público</Text>

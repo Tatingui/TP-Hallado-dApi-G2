@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +21,8 @@ import {
  * Las nuevas (desde la última vez que se abrió) se marcan con "Nueva".
  */
 export default function AlertResultsScreen() {
-  const { id, summary } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { id, summary } = useRoute().params ?? {};
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -75,7 +76,7 @@ export default function AlertResultsScreen() {
       )}
       <PublicationCard
         publication={item}
-        onPress={() => router.push(`/publication/${item.id}`)}
+        onPress={() => navigation.navigate("PublicationDetail", { id: String(item.id) })}
       />
     </View>
   );
@@ -83,7 +84,7 @@ export default function AlertResultsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
         <View style={styles.headerTextContainer}>

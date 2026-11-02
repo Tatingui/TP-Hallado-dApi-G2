@@ -10,7 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { register } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
@@ -18,6 +18,7 @@ import PasswordInput from "../../components/PasswordInput";
 import PasswordCriteria, { validatePassword } from "../../components/PasswordCriteria";
 
 export default function RegisterScreen() {
+  const navigation = useNavigation();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,10 +50,7 @@ export default function RegisterScreen() {
       const response = await register(nombre, email, password);
 
       if (response.success) {
-        router.push({
-          pathname: "/(auth)/verify-otp",
-          params: { email, fromRegister: "true" },
-        });
+        navigation.navigate("VerifyOtp", { email, fromRegister: "true" });
       } else {
         setError(response.message || "Error al registrar");
       }
@@ -139,7 +137,7 @@ export default function RegisterScreen() {
 
           <Pressable
             style={styles.linkContainer}
-            onPress={() => router.back()}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.linkText}>
               Ya tenes cuenta?{" "}
