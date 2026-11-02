@@ -116,17 +116,18 @@ La app usa `10.0.2.2:8081` como IP del host (es la IP especial que el emulador d
 
 ```
 TP-Hallado-dApi-G2/
+├── index.js                      # Punto de entrada (registerRootComponent)
+├── App.js                        # AuthProvider + navegación
 ├── src/                          # Frontend React Native
-│   ├── app/
-│   │   ├── (auth)/               # Pantallas de autenticación
-│   │   │   ├── login.js
-│   │   │   ├── register.js
-│   │   │   ├── verify-otp.js
-│   │   │   ├── forgot-password.js
-│   │   │   ├── reset-password.js
-│   │   │   └── lock.js           # Bloqueo biométrico
-│   │   └── (tabs)/
-│   │       └── home.js           # Pantalla principal
+│   ├── navigation/               # React Navigation
+│   │   ├── AppNavigator.js       # Stack raíz + Bottom Tabs
+│   │   └── navigationRef.js      # Navegar desde fuera de las pantallas
+│   ├── screens/
+│   │   ├── StartScreen.js        # Decide login, bloqueo biométrico o app
+│   │   ├── auth/                 # Login, registro, OTP, recupero, bloqueo
+│   │   ├── tabs/                 # Inicio, Publicar, Mis Publicaciones, Reclamos, Perfil
+│   │   ├── publication/          # Detalle y edición de publicaciones
+│   │   └── profile/              # Editar perfil, perfil público, historial, alertas, seguidas
 │   ├── components/               # Componentes reutilizables
 │   │   ├── LogoHallado.js
 │   │   ├── PasswordInput.js      # Campo de contraseña con ojito
