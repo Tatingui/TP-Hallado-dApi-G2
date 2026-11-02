@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import LogoHallado from "../LogoHallado";
 import { Colors, FontSize, Spacing } from "../../constants/theme";
 import { resolveImageUrl } from "../../utils/imageUrl";
@@ -16,6 +16,7 @@ function getInitials(nombre) {
 }
 
 export default function ProfileHeader({ profile }) {
+  const navigation = useNavigation();
   const initials = getInitials(profile?.nombre);
 
   return (
@@ -52,7 +53,7 @@ export default function ProfileHeader({ profile }) {
 
         <Pressable
           style={styles.editButton}
-          onPress={() => router.push("/profile/edit")}
+          onPress={() => navigation.navigate("EditProfile")}
         >
           <Ionicons name="create-outline" size={18} color={Colors.primary} />
           <Text style={styles.editButtonText}>Editar Perfil</Text>

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -26,6 +26,7 @@ import {
  * con la cantidad de publicaciones nuevas que coinciden con cada una.
  */
 export default function MyAlertsScreen() {
+  const navigation = useNavigation();
   const { isConnected } = useNetworkStatus();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,10 +105,7 @@ export default function MyAlertsScreen() {
   };
 
   const handleOpenAlert = (alert) => {
-    router.push({
-      pathname: "/profile/alert/[id]",
-      params: { id: alert.id, summary: getAlertSummary(alert) },
-    });
+    navigation.navigate("AlertResults", { id: String(alert.id), summary: getAlertSummary(alert) });
   };
 
   const renderAlert = ({ item }) => {
@@ -176,7 +174,7 @@ export default function MyAlertsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
         <Text style={styles.headerTitle}>Mis alertas</Text>

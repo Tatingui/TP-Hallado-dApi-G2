@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -23,6 +23,7 @@ const displayDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-AR") : "-";
 
 export default function ResolvedHistoryScreen() {
+  const navigation = useNavigation();
   const [cases, setCases] = useState([]);
   const [type, setType] = useState("ALL");
   const [from, setFrom] = useState(null);
@@ -77,7 +78,7 @@ export default function ResolvedHistoryScreen() {
   const renderCase = ({ item }) => (
     <View style={styles.card}>
       <Pressable
-        onPress={() => router.push(`/publication/${item.publicationId}`)}
+        onPress={() => navigation.navigate("PublicationDetail", { id: String(item.publicationId) })}
       >
         <View style={styles.cardHeader}>
           <Text style={styles.title} numberOfLines={1}>
@@ -117,7 +118,7 @@ export default function ResolvedHistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
         <Text style={styles.headerTitle}>Casos resueltos</Text>

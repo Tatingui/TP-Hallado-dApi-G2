@@ -1,6 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,15 +17,16 @@ import {
 import {
   BARRIOS_LIST,
   PublicationType,
-} from "../../../constants/publicationConstants";
-import { Colors } from "../../../constants/theme";
+} from "../../constants/publicationConstants";
+import { Colors } from "../../constants/theme";
 import {
   getPublicationForEditApi,
   updatePublicationApi,
-} from "../../../services/publicationService";
+} from "../../services/publicationService";
 
 export default function EditPublicationScreen() {
-  const { id } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { id } = useRoute().params ?? {};
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -132,7 +133,7 @@ export default function EditPublicationScreen() {
       Alert.alert(
         "Publicación actualizada",
         "Los cambios se guardaron correctamente.",
-        [{ text: "OK", onPress: () => router.replace(`/publication/${id}`) }],
+        [{ text: "OK", onPress: () => navigation.replace("PublicationDetail", { id }) }],
       );
     } catch (error) {
       Alert.alert(
@@ -158,7 +159,7 @@ export default function EditPublicationScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.back}>‹</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Editar publicación</Text>

@@ -1,6 +1,6 @@
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/theme";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
@@ -9,7 +9,7 @@ import { resolveImageUrl } from "../../utils/imageUrl";
  * @param {{ publisher: Object, isOfflineMode: boolean }} props
  */
 export default function PublisherCard({ publisher, isOfflineMode }) {
-  const router = useRouter();
+  const navigation = useNavigation();
 
   if (!publisher) return null;
 
@@ -21,7 +21,7 @@ export default function PublisherCard({ publisher, isOfflineMode }) {
         if (isOfflineMode) {
           Alert.alert("Sin conexión", "Se requiere conexión a internet para ver perfiles de usuarios.");
         } else {
-          router.push(`/profile/public/${publisher.id}`);
+          navigation.navigate("PublicProfile", { id: String(publisher.id) });
         }
       }}
     >

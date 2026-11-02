@@ -7,40 +7,55 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
-import { sendOtp } from "../../services/authService";
+import { useNavigation } from "@react-navigation/native";
+import { register } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
+import PasswordInput from "../../components/PasswordInput";
+import PasswordCriteria, { validatePassword } from "../../components/PasswordCriteria";
 
-export default function ForgotPasswordScreen() {
+export default function RegisterScreen() {
+  const navigation = useNavigation();
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSendOtp() {
+  async function handleRegister() {
     setError("");
 
-    if (!email.trim()) {
-      setError("Ingresá tu email");
+    if (!nombre.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setError("Completa todos los campos");
+      return;
+    }
+
+    const { valid, errors } = validatePassword(password);
+    if (!valid) {
+      setError("La contrasena no cumple: " + errors[0]);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contrasenas no coinciden");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await sendOtp(email);
+      const response = await register(nombre, email, password);
 
       if (response.success) {
-        router.push({
-          pathname: "/(auth)/reset-password",
-          params: { email },
-        });
+        navigation.navigate("VerifyOtp", { email, fromRegister: "true" });
       } else {
-        setError(response.message || "No se pudo enviar el código");
+        setError(response.message || "Error al registrar");
       }
     } catch (err) {
-      setError("Error de conexión con el servidor");
+      setError("Error de conexion con el servidor");
     } finally {
       setLoading(false);
     }
@@ -51,22 +66,36 @@ export default function ForgotPasswordScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.content}>
-        <View style={styles.iconBg}>
-          <LogoHallado size={36} color={Colors.textOnPrimary} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoBg}>
+            <LogoHallado size={40} color={Colors.textOnPrimary} />
+          </View>
+          <Text style={styles.appName}>Crear cuenta</Text>
+          <Text style={styles.subtitle}>Unite a Hallado</Text>
         </View>
 
-        <Text style={styles.title}>Recuperar contraseña</Text>
-        <Text style={styles.subtitle}>
-          Ingresá tu email y te enviaremos un código para restablecer tu contraseña.
-        </Text>
-
+        {/* Formulario */}
         <View style={styles.form}>
           {error ? (
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
+
+          <Text style={styles.label}>Nombre completo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: Juan Perez"
+            placeholderTextColor={Colors.disabled}
+            value={nombre}
+            onChangeText={setNombre}
+            autoCapitalize="words"
+          />
 
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -79,29 +108,44 @@ export default function ForgotPasswordScreen() {
             autoCapitalize="none"
           />
 
+          <Text style={styles.label}>Contrasena</Text>
+          <PasswordInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Minimo 6 caracteres"
+          />
+          <PasswordCriteria password={password} />
+
+          <Text style={styles.label}>Confirmar contrasena</Text>
+          <PasswordInput
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Repeti tu contrasena"
+          />
+
           <Pressable
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSendOtp}
+            onPress={handleRegister}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color={Colors.textOnPrimary} />
             ) : (
-              <Text style={styles.buttonText}>ENVIAR CÓDIGO</Text>
+              <Text style={styles.buttonText}>REGISTRARME</Text>
             )}
           </Pressable>
 
           <Pressable
             style={styles.linkContainer}
-            onPress={() => router.back()}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.linkText}>
-              Volver al{" "}
-              <Text style={styles.linkBold}>inicio de sesión</Text>
+              Ya tenes cuenta?{" "}
+              <Text style={styles.linkBold}>Inicia sesion</Text>
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -111,37 +155,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
     padding: Spacing.lg,
   },
-  iconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  logoBg: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
-  title: {
+  appName: {
     fontSize: FontSize.xl,
     fontWeight: "bold",
     color: Colors.text,
-    marginBottom: Spacing.sm,
   },
   subtitle: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: Spacing.xl,
-    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.xs,
   },
   form: {
-    width: "100%",
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: Spacing.lg,
@@ -167,6 +209,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text,
     marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   input: {
     backgroundColor: Colors.inputBackground,

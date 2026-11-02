@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { Colors, FontSize, Spacing } from "../../constants/theme";
 
 function getPublicationTypeLabel(type) {
@@ -18,6 +18,7 @@ export default function FollowedSection({
   toggleFollowedExpanded,
   handleOpenFollowedPublication,
 }) {
+  const navigation = useNavigation();
   return (
     <View style={styles.sectionCard}>
       <Pressable style={styles.accordionHeader} onPress={toggleFollowedExpanded}>
@@ -76,7 +77,7 @@ export default function FollowedSection({
           {followedTotal > 0 && (
             <Pressable
               style={styles.linkButton}
-              onPress={() => router.push("/profile/followed")}
+              onPress={() => navigation.navigate("FollowedPublications")}
             >
               <Ionicons name="list-outline" size={18} color={Colors.primary} />
               <Text style={styles.linkButtonText}>

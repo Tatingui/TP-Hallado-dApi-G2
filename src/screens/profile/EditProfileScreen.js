@@ -11,7 +11,7 @@ import {
   Alert,
   Image,
 } from "react-native";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
@@ -26,6 +26,7 @@ import {
 } from "../../services/biometricService";
 
 export default function EditProfileScreen() {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -136,7 +137,7 @@ export default function EditProfileScreen() {
       });
 
       Alert.alert("Perfil Actualizado", "Tus datos se guardaron correctamente.", [
-        { text: "OK", onPress: () => router.back() },
+        { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
       Alert.alert("Error", err?.message || "Ocurrió un problema al guardar los cambios.");
@@ -157,7 +158,7 @@ export default function EditProfileScreen() {
     <View style={shared.screenContainer}>
       {/* Top Bar */}
       <View style={shared.topBar}>
-        <Pressable style={shared.backButton} onPress={() => router.back()}>
+        <Pressable style={shared.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={Colors.textOnPrimary} />
         </Pressable>
         <Text style={shared.topBarTitle}>Editar Perfil</Text>

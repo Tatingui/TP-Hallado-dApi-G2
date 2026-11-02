@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -9,19 +9,20 @@ import {
   Text,
   View,
 } from "react-native";
-import PublicationCard from "../../../components/PublicationCard";
-import { Colors } from "../../../constants/theme";
+import PublicationCard from "../../components/PublicationCard";
+import { Colors } from "../../constants/theme";
+import { getStatusLabel } from "../../constants/publicationConstants";
 import {
-  getAlertPublicationsApi,
-  markAlertAsSeenApi,
-} from "../../../services/alertService";
+  getFollowedPublicationsApi,
+  markPublicationAsSeenApi,
+} from "../../services/publicationService";
 
 /**
- * Punto 9: Publicaciones que coinciden con una alerta.
- * Las nuevas (desde la última vez que se abrió) se marcan con "Nueva".
+ * Punto 9: Sección "Seguidas" con todas las publicaciones que la persona sigue.
+ * Las que cambiaron de estado desde la última vez que se vieron se marcan con "Novedad".
  */
-export default function AlertResultsScreen() {
-  const { id, summary } = useLocalSearchParams();
+export default function FollowedPublicationsScreen() {
+  const navigation = useNavigation();
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -29,71 +30,79 @@ export default function AlertResultsScreen() {
   const [isLastPage, setIsLastPage] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadFirstPage();
-  }, [id]);
-
-  const loadFirstPage = async () => {
+  const loadFirstPage = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
-      const data = await getAlertPublicationsApi(id, 0, 10);
+      const data = await getFollowedPublicationsApi(0, 10);
       setPublications(data?.content || []);
       setPage(data?.pageNumber || 0);
       setIsLastPage(data?.last ?? true);
-      // Se marca como vista después de cargar, así las nuevas siguen marcadas en esta pantalla
-      await markAlertAsSeenApi(id);
     } catch (err) {
-      setError(err?.message || "No se pudieron cargar las publicaciones de la alerta.");
+      setError(err?.message || "No se pudieron cargar las publicaciones seguidas.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Se recarga al volver del detalle (por si se dejó de seguir o se vio una novedad)
+  useFocusEffect(
+    useCallback(() => {
+      loadFirstPage();
+    }, [loadFirstPage]),
+  );
 
   const handleLoadMore = async () => {
     if (loadingMore || isLastPage || loading) return;
     try {
       setLoadingMore(true);
-      const data = await getAlertPublicationsApi(id, page + 1, 10);
+      const data = await getFollowedPublicationsApi(page + 1, 10);
       setPublications((prev) => [...prev, ...(data?.content || [])]);
       setPage(data?.pageNumber || page + 1);
       setIsLastPage(data?.last ?? true);
     } catch (err) {
-      console.warn("Error cargando más resultados de la alerta:", err);
+      console.warn("Error cargando más seguidas:", err);
     } finally {
       setLoadingMore(false);
     }
   };
 
+  const handleOpen = async (publication) => {
+    if (publication.hasNewUpdates) {
+      try {
+        await markPublicationAsSeenApi(publication.id);
+      } catch (err) {
+        console.warn("Error marcando publicación como vista:", err);
+      }
+      setPublications((prev) =>
+        prev.map((item) =>
+          item.id === publication.id ? { ...item, hasNewUpdates: false } : item,
+        ),
+      );
+    }
+    navigation.navigate("PublicationDetail", { id: String(publication.id) });
+  };
+
   const renderPublication = ({ item }) => (
     <View>
-      {item.hasNewUpdates && (
-        <View style={styles.newBadge}>
-          <Ionicons name="sparkles" size={12} color="#fff" />
-          <Text style={styles.newBadgeText}>Nueva</Text>
-        </View>
-      )}
-      <PublicationCard
-        publication={item}
-        onPress={() => router.push(`/publication/${item.id}`)}
-      />
+      <View style={styles.statusRow}>
+        <Text style={styles.statusText}>Estado: {getStatusLabel(item.status)}</Text>
+        {item.hasNewUpdates && (
+          <View style={styles.newBadge}>
+            <Text style={styles.newBadgeText}>Novedad: cambió de estado</Text>
+          </View>
+        )}
+      </View>
+      <PublicationCard publication={item} onPress={() => handleOpen(item)} />
     </View>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Resultados de la alerta</Text>
-          {summary ? (
-            <Text style={styles.headerSubtitle} numberOfLines={1}>
-              {summary}
-            </Text>
-          ) : null}
-        </View>
+        <Text style={styles.headerTitle}>Seguidas</Text>
       </View>
 
       {loading ? (
@@ -118,10 +127,10 @@ export default function AlertResultsScreen() {
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Ionicons name="search-outline" size={56} color="#D1D5DB" />
-              <Text style={styles.emptyTitle}>Todavía no hay publicaciones que coincidan</Text>
+              <Ionicons name="bookmark-outline" size={56} color="#D1D5DB" />
+              <Text style={styles.emptyTitle}>Todavía no seguís ninguna publicación</Text>
               <Text style={styles.emptySubtitle}>
-                Cuando alguien publique algo que coincida, lo vas a ver acá y en "Mis alertas".
+                Desde el detalle de una publicación podés seguirla para enterarte cuando cambie de estado.
               </Text>
             </View>
           }
@@ -150,18 +159,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 14,
   },
-  headerTextContainer: {
-    flex: 1,
-  },
   headerTitle: {
     color: "#fff",
     fontSize: 21,
     fontWeight: "800",
-  },
-  headerSubtitle: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 13,
-    marginTop: 2,
   },
   center: {
     flex: 1,
@@ -174,22 +175,28 @@ const styles = StyleSheet.create({
     padding: 16,
     flexGrow: 1,
   },
-  newBadge: {
+  statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 4,
+    justifyContent: "space-between",
+    marginBottom: 6,
+    gap: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.gray600,
+  },
+  newBadge: {
     backgroundColor: Colors.error,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    marginBottom: 6,
   },
   newBadgeText: {
     color: "#fff",
     fontSize: 11,
     fontWeight: "700",
-    textTransform: "uppercase",
   },
   emptyTitle: {
     fontSize: 15,

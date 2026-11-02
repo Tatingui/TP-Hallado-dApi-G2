@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { verifyOtp, resendOtp } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
@@ -18,7 +18,8 @@ const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
 
 export default function ResetPasswordOtpScreen() {
-  const { email } = useLocalSearchParams();
+  const navigation = useNavigation();
+  const { email } = useRoute().params ?? {};
   const [code, setCode] = useState(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,10 +73,7 @@ export default function ResetPasswordOtpScreen() {
 
       if (response.success) {
         // OTP verificado — navegar a elegir nueva contrasena
-        router.push({
-          pathname: "/(auth)/new-password",
-          params: { email, code: fullCode },
-        });
+        navigation.navigate("NewPassword", { email, code: fullCode });
       } else {
         setError(response.message || "Codigo invalido");
         setCode(Array(OTP_LENGTH).fill(""));

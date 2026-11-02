@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-import { router } from "expo-router";
+import { resetTo } from "../navigation/navigationRef";
 import {
   saveSession,
   getToken,
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
     await clearSession();
     setToken(null);
     setUser(null);
-    router.replace("/(auth)/login");
+    resetTo("Login");
   }
 
   const value = {
