@@ -1,3 +1,5 @@
+import { setDatabaseSession } from '../database/session';
+import { migrateAsyncStorageToWatermelon } from '../database/dataMigration';
 import { createContext, useState, useEffect } from "react";
 import { resetTo } from "../navigation/navigationRef";
 import {
@@ -33,6 +35,8 @@ export function AuthProvider({ children }) {
       const storedToken = await getToken();
       if (storedToken) {
         const email = await getUserEmail();
+        setDatabaseSession(email, storedToken);
+        await migrateAsyncStorageToWatermelon();
         setToken(storedToken);
         setUser(email);
       }
@@ -48,6 +52,8 @@ export function AuthProvider({ children }) {
    */
   async function loginContext(newToken, email) {
     await saveSession(newToken, email);
+    setDatabaseSession(email, newToken);
+    await migrateAsyncStorageToWatermelon();
     setToken(newToken);
     setUser(email);
   }
@@ -56,6 +62,7 @@ export function AuthProvider({ children }) {
    * Limpia storage y estado — cierra sesion.
    */
   async function logout(loginParams) {
+    setDatabaseSession(null, null);
     await clearSession();
     setToken(null);
     setUser(null);

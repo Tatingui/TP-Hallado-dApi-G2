@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readLocal, writeLocal } from '../database/localStore';
+const AsyncStorage = { getItem: async () => JSON.stringify(await readLocal('recent_searches', [])), setItem: async (_, value) => writeLocal('recent_searches', JSON.parse(value)), removeItem: async () => writeLocal('recent_searches', []) };
 
 const RECENT_SEARCHES_KEY = '@hallado_recent_searches_v1';
 const MAX_RECENT_SEARCHES = 5;

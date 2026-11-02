@@ -1,3 +1,5 @@
+import { getDatabaseSession, isCurrentSession } from '../database/session';
+import { invalidateOfflinePublication } from '../storage/offlinePublicationsStorage';
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -43,12 +45,14 @@ export default function usePublicationDetail() {
   }, [publication?.id, user, isOfflineMode]);
 
   const loadPublication = async (pubId) => {
+    const session = getDatabaseSession();
     try {
       setLoading(true);
       setIsOfflineMode(false);
       const data = await getPublicationByIdApi(pubId);
+      if (!isCurrentSession(session)) return;
       setPublication(data);
-      await savePublicationDetailOffline(data);
+      await savePublicationDetailOffline(data, session);
     } catch (err) {
       console.warn("Error o falta de red al cargar publicación, buscando copia local...", err);
       const cached = await getOfflinePublicationDetail(pubId);
