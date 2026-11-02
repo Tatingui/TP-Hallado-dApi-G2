@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { isBiometricEnabled } from "../services/biometricService";
 import { isTokenExpired } from "../storage/authStorage";
@@ -8,6 +8,7 @@ import { Colors } from "../constants/theme";
 
 export default function Index() {
   const navigation = useNavigation();
+  const { nextState } = useRoute().params ?? {};
   const { isAuthenticated, token, loading, logout } = useAuth();
 
   useEffect(() => {
@@ -16,25 +17,25 @@ export default function Index() {
     if (isAuthenticated) {
       if (isTokenExpired(token)) {
         // Token vencido: limpiar sesion y mandar al login
-        logout();
+        logout({ nextState });
       } else {
         checkBiometricAndRedirect();
       }
     } else {
-      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+      navigation.reset({ index: 0, routes: [{ name: "Login", params: { nextState } }] });
     }
-  }, [loading, isAuthenticated]);
+  }, [loading, isAuthenticated, nextState]);
 
   async function checkBiometricAndRedirect() {
     try {
       const bioEnabled = await isBiometricEnabled();
       if (bioEnabled) {
-        navigation.reset({ index: 0, routes: [{ name: "Lock" }] });
+        navigation.reset({ index: 0, routes: [{ name: "Lock", params: { nextState } }] });
       } else {
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        navigation.reset(nextState ?? { index: 0, routes: [{ name: "Main" }] });
       }
     } catch {
-      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+      navigation.reset(nextState ?? { index: 0, routes: [{ name: "Main" }] });
     }
   }
 

@@ -23,7 +23,7 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-  const { resetSuccess } = useRoute().params ?? {};
+  const { resetSuccess, nextState } = useRoute().params ?? {};
   const { login: loginContext } = useAuth();
 
   async function handleLogin() {
@@ -40,9 +40,9 @@ export default function LoginScreen() {
 
       if (data.success && data.token) {
         await loginContext(data.token, email.trim());
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        navigation.reset(nextState ?? { index: 0, routes: [{ name: "Main" }] });
       } else if (data.requiresVerification) {
-        navigation.navigate("VerifyOtp", { email: email.trim(), fromLogin: "true" });
+        navigation.navigate("VerifyOtp", { email: email.trim(), fromLogin: "true", nextState });
       } else {
         setError(data.message || "Error al iniciar sesion");
       }
@@ -130,14 +130,14 @@ export default function LoginScreen() {
 
           <Pressable
             style={styles.forgotContainer}
-            onPress={() => navigation.navigate("ForgotPassword")}
+            onPress={() => navigation.navigate("ForgotPassword", { nextState })}
           >
             <Text style={styles.forgotText}>Olvidaste tu contrasena?</Text>
           </Pressable>
 
           <Pressable
             style={styles.linkButton}
-            onPress={() => navigation.navigate("Register")}
+            onPress={() => navigation.navigate("Register", { nextState })}
           >
             <Text style={styles.linkText}>
               No tenes cuenta?{" "}

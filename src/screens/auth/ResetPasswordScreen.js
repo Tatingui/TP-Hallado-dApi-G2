@@ -19,7 +19,7 @@ const RESEND_COOLDOWN = 60;
 
 export default function ResetPasswordOtpScreen() {
   const navigation = useNavigation();
-  const { email } = useRoute().params ?? {};
+  const { email, nextState } = useRoute().params ?? {};
   const [code, setCode] = useState(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,7 +73,7 @@ export default function ResetPasswordOtpScreen() {
 
       if (response.success) {
         // OTP verificado — navegar a elegir nueva contrasena
-        navigation.navigate("NewPassword", { email, code: fullCode });
+        navigation.navigate("NewPassword", { email, code: fullCode, nextState });
       } else {
         setError(response.message || "Codigo invalido");
         setCode(Array(OTP_LENGTH).fill(""));

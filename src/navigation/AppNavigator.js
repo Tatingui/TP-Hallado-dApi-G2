@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { navigationRef } from './navigationRef';
+import { linking } from './linking';
 import { getProfileTabBadge, subscribeToProfileTabBadge } from '../storage/profileTabBadge';
 
 // Pantalla inicial: decide si ir al login, al bloqueo biométrico o a la app
@@ -135,7 +136,7 @@ const authHeaderOptions = {
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator initialRouteName="Start" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Start" component={StartScreen} />
 

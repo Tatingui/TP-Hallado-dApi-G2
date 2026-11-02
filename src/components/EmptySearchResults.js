@@ -8,8 +8,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
   const navigation = useNavigation();
 
   const handlePublish = () => {
-    // Navigate to Create Publication Wizard (Point 5)
-    navigation.navigate('Main', { screen: 'ProfileTab' }); // Or publish screen route
+    navigation.navigate('PublishTab');
   };
 
   const handleSaveAlert = () => {

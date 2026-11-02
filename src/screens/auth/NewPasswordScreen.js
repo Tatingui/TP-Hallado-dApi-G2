@@ -18,7 +18,7 @@ import PasswordCriteria, { validatePassword } from "../../components/PasswordCri
 
 export default function NewPasswordScreen() {
   const navigation = useNavigation();
-  const { email, code } = useRoute().params ?? {};
+  const { email, code, nextState } = useRoute().params ?? {};
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -48,7 +48,7 @@ export default function NewPasswordScreen() {
       const response = await resetPassword(email, code, newPassword);
 
       if (response.success) {
-        navigation.reset({ index: 0, routes: [{ name: "Login", params: { resetSuccess: "true" } }] });
+        navigation.reset({ index: 0, routes: [{ name: "Login", params: { resetSuccess: "true", nextState } }] });
       } else {
         setError(response.message || "No se pudo restablecer la contrasena");
       }

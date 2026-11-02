@@ -10,7 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { register } from "../../services/authService";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
@@ -19,6 +19,7 @@ import PasswordCriteria, { validatePassword } from "../../components/PasswordCri
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
+  const { nextState } = useRoute().params ?? {};
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +51,7 @@ export default function RegisterScreen() {
       const response = await register(nombre, email, password);
 
       if (response.success) {
-        navigation.navigate("VerifyOtp", { email, fromRegister: "true" });
+        navigation.navigate("VerifyOtp", { email, fromRegister: "true", nextState });
       } else {
         setError(response.message || "Error al registrar");
       }

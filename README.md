@@ -114,6 +114,17 @@ La app usa `10.0.2.2:8081` como IP del host (es la IP especial que el emulador d
 
 ## Estructura del proyecto
 
+La navegación usa React Navigation. Los enlaces `tpreactnative://publication/42`
+y `tpreactnative://profile/public/17` abren una publicación y un perfil,
+respectivamente. Si hace falta iniciar sesión o desbloquear con biometría,
+la app conserva el destino y lo abre al completar ese paso.
+
+Para ejecutar las pruebas de navegación y almacenamiento:
+
+```bash
+node --test src/navigation/navigation.test.js src/storage/followedPublicationsStorage.test.js
+```
+
 ```
 TP-Hallado-dApi-G2/
 ├── index.js                      # Punto de entrada (registerRootComponent)
