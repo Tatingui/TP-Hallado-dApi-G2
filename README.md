@@ -1,176 +1,54 @@
-# Hallado — App de objetos y mascotas perdidas
+# Hallado — App de Objetos y Mascotas Perdidas (WatermelonDB + Expo Architecture)
 
-Aplicación móvil desarrollada con **React Native + Expo (JavaScript)** y un backend en **Spring Boot (Java 17)**. Proyecto universitario — Grupo 2.
-
----
-
-## Requisitos previos
-
-Antes de clonar el repositorio, asegurate de tener instalado:
-
-| Herramienta | Versión mínima | Para qué se usa |
-|---|---|---|
-| **Node.js** | 18+ | Ejecutar Expo y el frontend |
-| **npm** | 9+ | Instalar dependencias JS |
-| **Java JDK** | 17 | Compilar y ejecutar el backend |
-| **MySQL** | 8.0+ | Base de datos del backend |
-| **Android Studio** | — | Emulador de Android |
-| **Expo Go** | Última versión | Ejecutar la app en el emulador |
-
-> **Nota:** No hace falta instalar Maven. El proyecto incluye `mvnw` (Maven Wrapper) que se descarga solo.
+Aplicación móvil desarrollada con **React Native + Expo (SDK 58)**, **WatermelonDB (SQLite local)** y un backend en **Spring Boot (Java 17 / MySQL)**.
 
 ---
 
-## 1. Clonar el repositorio
+## 🏛️ Arquitectura del Sistema
 
+El proyecto sigue una arquitectura **Offline-First** estructurada en capas:
+
+1. **Almacenamiento Local:**
+   * **`WatermelonDB` (SQLite):** Publicaciones, fotos locales, borradores, cola de operaciones pendientes (`pending_operations`), búsquedas recientes y reclamos.
+   * **`SecureStore`:** Almacenamiento cifrado de tokens JWT.
+   * **`AsyncStorage`:** Indicadores de interfaz y preferencias simples.
+2. **Coordinador de Sincronización (`src/sync/syncCoordinator.js`):**
+   * Monitorea la conectividad de red con `@react-native-community/netinfo`.
+   * Procesa las operaciones creadas en modo offline de forma idempotente enviando la cabecera `X-Idempotency-Key` al backend.
+3. **Backend en Spring Boot:**
+   * API REST con filtro de idempotencia (`IdempotencyFilter`) para prevenir duplicados ante reconexiones de red.
+
+---
+
+## 🚀 Requisitos Previos e Instalación
+
+### 1. Dependencias
 ```bash
-git clone https://github.com/Tatingui/TP-Hallado-dApi-G2.git
-cd TP-Hallado-dApi-G2
+npm install --legacy-peer-deps
 ```
 
----
-
-## 2. Configurar la base de datos (una sola vez)
-
-Abrí MySQL como root y ejecutá el script incluido:
-
-```bash
-mysql -u root -p < backend/setup-db.sql
-```
-
-Esto crea la base `hallado` y el usuario `hallado`/`hallado`. Las tablas se crean solas cuando arranca el backend (Hibernate `ddl-auto=update`).
-
----
-
-## 3. Levantar el backend
-
-### Opción A — Con el script (recomendada para Windows)
-
+### 2. Base de datos MySQL y Backend
 ```bash
 cd backend
-start-backend.bat
+.\mvnw.cmd spring-boot:run
 ```
 
-El `.bat` se encarga de:
-- Agregar la regla de firewall para el puerto 8081 (solo la primera vez)
-- Detectar el emulador y configurar `adb reverse tcp:8081 tcp:8081`
-- Setear las credenciales de email para el OTP
-- Levantar el servidor Spring Boot
-
-### Opción B — Manual (cualquier sistema operativo)
-
+### 3. Ejecución en Expo (Development Build / Expo Go)
 ```bash
-cd backend
-
-# Windows
-.\mvnw.cmd spring-boot:run -Dmaven.test.skip=true
-
-# Linux / macOS
-./mvnw spring-boot:run -Dmaven.test.skip=true
-```
-
-> Si usás la opción manual, tenés que configurar `adb reverse` vos mismo (ver sección 5).
-
-El backend corre en `http://localhost:8081/api`.
-
----
-
-## 4. Instalar dependencias del frontend e iniciar Expo
-
-Volvé a la raíz del proyecto y ejecutá:
-
-```bash
-npm install
-npx expo start
-```
-
-Esto abre el menú de Expo en la terminal. Desde ahí:
-- Presioná **`a`** para abrir en el emulador de Android
-- O escaneá el QR con **Expo Go** en un celular físico
-
----
-
-## 5. Configurar adb reverse (emulador Android)
-
-Para que la app en el emulador se conecte al backend en tu máquina, necesitás este comando **cada vez que reiniciás el emulador**:
-
-```bash
-adb reverse tcp:8081 tcp:8081
-```
-
-> Si usás `start-backend.bat`, esto se hace automáticamente. Solo necesitás hacerlo manual si levantás el backend por tu cuenta.
-
-La app usa `10.0.2.2:8081` como IP del host (es la IP especial que el emulador de Android asigna a la máquina host).
-
----
-
-## 6. Verificar que todo funciona
-
-1. El backend está corriendo si ves `Started HalladoBackendApplication` en la consola
-2. La app se abre en el emulador mostrando la pantalla de login de Hallado
-3. Podés registrar un usuario nuevo — te va a llegar un código OTP al email que pongas
-
----
-
-## Estructura del proyecto
-
-La navegación usa React Navigation. Los enlaces `tpreactnative://publication/42`
-y `tpreactnative://profile/public/17` abren una publicación y un perfil,
-respectivamente. Si hace falta iniciar sesión o desbloquear con biometría,
-la app conserva el destino y lo abre al completar ese paso.
-
-Para ejecutar las pruebas de navegación y almacenamiento:
-
-```bash
-node --test src/navigation/navigation.test.js src/storage/followedPublicationsStorage.test.js
-```
-
-```
-TP-Hallado-dApi-G2/
-├── index.js                      # Punto de entrada (registerRootComponent)
-├── App.js                        # AuthProvider + navegación
-├── src/                          # Frontend React Native
-│   ├── navigation/               # React Navigation
-│   │   ├── AppNavigator.js       # Stack raíz + Bottom Tabs
-│   │   └── navigationRef.js      # Navegar desde fuera de las pantallas
-│   ├── screens/
-│   │   ├── StartScreen.js        # Decide login, bloqueo biométrico o app
-│   │   ├── auth/                 # Login, registro, OTP, recupero, bloqueo
-│   │   ├── tabs/                 # Inicio, Publicar, Mis Publicaciones, Reclamos, Perfil
-│   │   ├── publication/          # Detalle y edición de publicaciones
-│   │   └── profile/              # Editar perfil, perfil público, historial, alertas, seguidas
-│   ├── components/               # Componentes reutilizables
-│   │   ├── LogoHallado.js
-│   │   ├── PasswordInput.js      # Campo de contraseña con ojito
-│   │   └── PasswordCriteria.js   # Indicador de criterios de seguridad
-│   ├── services/                 # Comunicación con el backend
-│   │   ├── api.js                # Cliente HTTP base
-│   │   └── authService.js        # Endpoints de autenticación
-│   ├── storage/
-│   │   └── authStorage.js        # Persistencia con AsyncStorage
-│   └── constants/
-│       └── theme.js              # Colores, espaciado, fuentes
-├── backend/                      # Backend Spring Boot
-│   ├── src/main/java/com/hallado/backend/
-│   │   ├── controller/           # Endpoints REST
-│   │   ├── service/              # Lógica de negocio
-│   │   ├── model/                # Entidades JPA
-│   │   ├── dto/                  # Objetos de transferencia
-│   │   ├── repository/           # Acceso a datos
-│   │   └── config/               # JWT, seguridad, CORS
-│   ├── setup-db.sql              # Script de creación de base de datos
-│   └── start-backend.bat         # Script de arranque para Windows
-└── README.md
+npx expo start -c
 ```
 
 ---
 
-## Problemas comunes
+## 📊 Estado de Implementación de los 10 Puntos del TPO
 
-| Problema | Solución |
-|---|---|
-| `Connection refused` en la app | Verificá que el backend esté corriendo y que hiciste `adb reverse tcp:8081 tcp:8081` |
-| No llega el email OTP | Revisá la consola del backend — el código OTP se imprime en el log de debug |
-| El emulador no aparece en `adb devices` | Abrí el emulador desde Android Studio antes de correr el `.bat` |
-| Error `JAVA_HOME not set` | Instalá JDK 17 y configurá la variable de entorno `JAVA_HOME` |
-| `npm install` falla | Probá borrar `node_modules` y `package-lock.json`, y correr `npm install` de nuevo |
+* ✅ **Punto 1:** Autenticación, OTP, Login, Recupero de Contraseña y Bloqueo Biométrico.
+* ✅ **Punto 2:** Perfil, Reputación, Insignias y Perfil Público.
+* ✅ **Punto 3:** Buscador Inicial Guiado (Tipo Inverso, Categorías, Barrio/GPS, Búsquedas Recientes).
+* ✅ **Punto 4:** Detalle de Publicación con acciones y dirección enmascarada.
+* ✅ **Punto 5:** Publicar Hallazgo/Pérdida (Wizard, verificación, fotos locales y borradores).
+* ✅ **Punto 6:** Modo Sin Conexión Completo (Caché local en WatermelonDB, cola de sincronización e idempotencia).
+* ✅ **Punto 7:** Reclamos y Verificación (Pregunta de seguridad, 3 intentos máx, scheduler de expiración a 48hs y panel Mis Reclamos).
+* ⏳ **Punto 8:** Devolución y Punto de Encuentro (Mapa / Google Maps).
+* ⏳ **Punto 9:** Alertas y Seguidas.
+* ⏳ **Punto 10:** Historial y Valoraciones.
