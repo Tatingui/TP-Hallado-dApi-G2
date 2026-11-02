@@ -106,6 +106,8 @@ export default function MyPublicationsScreen() {
     status: "PENDIENTE_ENVIO",
     createdAt: p.createdAt,
     isPending: true,
+    lastError: p.lastError,
+    pendingState: p.status,
   }));
 
   const combinedData = [...formattedPendingList, ...publications];
@@ -141,7 +143,7 @@ export default function MyPublicationsScreen() {
           onPress={() =>
             Alert.alert(
               "Publicación Pendiente",
-              "Esta publicación fue creada sin conexión. Se enviará automáticamente cuando el dispositivo recupere internet."
+              item.lastError || "Se enviará automáticamente cuando el dispositivo recupere conexión."
             )
           }
         >
@@ -167,7 +169,7 @@ export default function MyPublicationsScreen() {
             </View>
           </View>
 
-          <Text style={styles.pendingHint}>Guardada localmente (esperando conexión)</Text>
+          <Text style={styles.pendingHint}>{item.lastError || "Guardada localmente (esperando conexión)"}</Text>
         </TouchableOpacity>
       );
     }

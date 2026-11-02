@@ -1,3 +1,4 @@
+import { persistImages } from '../services/files/fileSystemManager';
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -63,6 +64,8 @@ export default function usePublishForm() {
               text: "Continuar",
               onPress: () => {
                 setForm({ ...INITIAL_FORM, ...draft });
+                setStep(draft.currentStep || 0);
+                if (draft.recoveryWarning) Alert.alert("Revisá las fotos", draft.recoveryWarning);
                 setHasDraft(false);
               },
             },
@@ -75,9 +78,9 @@ export default function usePublishForm() {
   // Auto-guardar borrador cuando cambia el form
   useEffect(() => {
     if (form.type || form.title) {
-      saveDraft(form);
+      saveDraft({ ...form, currentStep: step }).catch(error => Alert.alert("No se pudo guardar el borrador", error.message));
     }
-  }, [form]);
+  }, [form, step]);
 
   const updateField = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -113,7 +116,10 @@ export default function usePublishForm() {
         type: a.mimeType || "image/jpeg",
         fileName: a.fileName || `img_${Date.now()}.jpg`,
       }));
-      updateField("images", [...form.images, ...newImages].slice(0, 4));
+      try {
+        const durable = await persistImages(newImages);
+        updateField("images", [...form.images, ...durable].slice(0, 4));
+      } catch (error) { Alert.alert("No se pudieron guardar las fotos", error.message); }
     }
   };
 
@@ -163,50 +169,15 @@ export default function usePublishForm() {
     }
 
     try {
-      await createPublicationApi(payload, form.images);
+      await savePendingPublication(payload, form.images);
       await clearDraft();
-      Alert.alert(
-        "¡Publicación creada!",
-        "Tu publicación fue creada con éxito.",
-        [
-          {
-            text: "Ver mis publicaciones",
-            onPress: () => navigation.navigate("MyPublicationsTab"),
-          },
-          { text: "OK", onPress: () => navigation.navigate("HomeTab") },
-        ],
-      );
       setForm(INITIAL_FORM);
       setTouched({});
       setStep(0);
-    } catch (err) {
-      console.warn("Fallo en envío de publicación, intentando guardado offline...", err);
-      try {
-        await savePendingPublication(payload, form.images);
-        await clearDraft();
-        Alert.alert(
-          "Publicación guardada (Modo Sin Conexión)",
-          "No tenés conexión a internet en este momento. La publicación quedó marcada como 'Pendiente de envío' y se subirá automáticamente cuando recuperes la red.",
-          [
-            {
-              text: "Ver mis publicaciones",
-              onPress: () => navigation.navigate("MyPublicationsTab"),
-            },
-            { text: "Entendido" },
-          ],
-        );
-        setForm(INITIAL_FORM);
-        setTouched({});
-        setStep(0);
-      } catch (saveError) {
-        Alert.alert(
-          "Error",
-          err?.message || "No se pudo crear ni guardar la publicación.",
-        );
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      Alert.alert('Publicación guardada', 'Se enviará automáticamente cuando haya conexión. Podés consultar el estado en Mis publicaciones.', [{text:'Ver mis publicaciones', onPress:()=>navigation.navigate('MyPublicationsTab')}]);
+    } catch (error) {
+      Alert.alert('No se pudo guardar', error.message);
+    } finally { setSubmitting(false); }
   };
 
   // ─── Errores de validación por campo ───

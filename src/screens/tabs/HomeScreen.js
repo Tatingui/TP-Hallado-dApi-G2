@@ -1,3 +1,4 @@
+import { usePublications } from '../../hooks/usePublications';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -36,7 +37,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
 
   // Guided Search State
-  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [searchModalVisible, setSearchModalVisible] = useState(true);
   const [searchCriteria, setSearchCriteria] = useState({
     type: PublicationType.LOST, // User condition: LOST -> target search FOUND
     category: null,
@@ -47,82 +48,15 @@ export default function HomeScreen() {
     lng: null,
   });
 
-  // Results & Pagination State
-  const [publications, setPublications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(0);
-  const [isLastPage, setIsLastPage] = useState(false);
-  const [sortBy, setSortBy] = useState('recent'); // recent or distance
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [sortBy, setSortBy] = useState('recent');
   const [savingAlert, setSavingAlert] = useState(false);
-
-  useEffect(() => {
-    fetchResults(0, true);
-  }, [searchCriteria, sortBy]);
-
-  const fetchResults = async (pageToFetch = 0, isInitial = false) => {
-    if (isInitial) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-    setIsOfflineMode(false);
-
-    try {
-      const response = await searchPublicationsApi({
-        type: searchCriteria.type === 'LOST' ? 'FOUND' : 'LOST',
-        category: searchCriteria.category,
-        query: searchCriteria.query,
-        barrio: searchCriteria.barrio,
-        dateFilter: searchCriteria.dateFilter,
-        lat: searchCriteria.lat,
-        lng: searchCriteria.lng,
-        sortBy,
-        page: pageToFetch,
-        size: 10,
-      });
-
-      const newContent = response.content || [];
-
-      if (pageToFetch === 0) {
-        setPublications(newContent);
-        // Save to offline cache
-        await saveSearchCacheOffline(newContent);
-      } else {
-        setPublications((prev) => [...prev, ...newContent]);
-      }
-
-      setPage(response.pageNumber || 0);
-      setIsLastPage(response.last ?? true);
-    } catch (error) {
-      console.error('Network or search error:', error);
-      // Fallback to offline cache
-      if (pageToFetch === 0) {
-        const cache = await getOfflineSearchCache();
-        if (cache && cache.items) {
-          setPublications(cache.items);
-          setIsOfflineMode(true);
-        }
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchResults(0, false);
-  };
-
-  const handleLoadMore = () => {
-    if (!loadingMore && !isLastPage && !isOfflineMode) {
-      fetchResults(page + 1, false);
-    }
-  };
+  const [refreshing, setRefreshing] = useState(false);
+  const { publications, loading, isOfflineMode, refetch, loadMore, error } = usePublications({ ...searchCriteria, sortBy }, hasSearched);
+  const loadingMore = loading && publications.length > 0;
+  useEffect(() => { if (error) Alert.alert('No se pudo buscar', error.message || 'Revisá los filtros o la sesión.'); }, [error]);
+  const handleRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
+  const handleLoadMore = () => loadMore();
 
   const handleSelectCategoryFilter = (catId) => {
     setSearchCriteria((prev) => ({
@@ -379,7 +313,7 @@ export default function HomeScreen() {
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
         initialCriteria={searchCriteria}
-        onApplySearch={(newCriteria) => setSearchCriteria(newCriteria)}
+        onApplySearch={(newCriteria) => { setHasSearched(true); setSearchCriteria(newCriteria); }}
         onSaveAlert={handleSaveAlert}
         isSavingAlert={savingAlert}
       />

@@ -1,3 +1,4 @@
+import { setDatabaseSession } from '../database/session';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
@@ -33,6 +34,7 @@ export async function getUserEmail() {
  * Limpia la sesion: borra token de SecureStore y email de AsyncStorage.
  */
 export async function clearSession() {
+  setDatabaseSession(null, null);
   await SecureStore.deleteItemAsync(TOKEN_KEY);
   await AsyncStorage.removeItem(USER_EMAIL_KEY);
 }

@@ -1,3 +1,5 @@
+import { DatabaseProvider } from '@nozbe/watermelondb/react';
+import { database } from './src/database';
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
@@ -20,11 +22,13 @@ function GlobalOfflineSyncWatcher({ children }) {
 
 export default function App() {
   return (
+    <DatabaseProvider database={database}>
     <AuthProvider>
       <GlobalOfflineSyncWatcher>
         <StatusBar style="dark" />
         <AppNavigator />
       </GlobalOfflineSyncWatcher>
     </AuthProvider>
+    </DatabaseProvider>
   );
 }

@@ -97,7 +97,8 @@ export default function PublicationDetailScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Galería de imágenes */}
-        <ImageGallery images={images} activeImage={activeImage} onImageChange={setActiveImage} />
+        {publication?.offlineImagesMissing && <Text>Algunas fotos no están disponibles sin conexión.</Text>}
+      <ImageGallery images={images} activeImage={activeImage} onImageChange={setActiveImage} />
 
         {/* Badges */}
         <View style={styles.badgeRow}>
