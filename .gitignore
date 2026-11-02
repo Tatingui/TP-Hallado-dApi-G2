@@ -43,3 +43,6 @@ example
 backend/target/
 backend/.idea/
 backend/*.iml
+
+# Local review bundle
+dist-review/

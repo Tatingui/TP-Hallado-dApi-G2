@@ -1,3 +1,4 @@
+import { useNetworkStatus } from './useNetworkStatus';
 import { getDatabaseSession, isCurrentSession } from '../database/session';
 import { invalidateOfflinePublication } from '../storage/offlinePublicationsStorage';
 import { useEffect, useState } from "react";
@@ -32,7 +33,9 @@ export default function usePublicationDetail() {
   const [activeImage, setActiveImage] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [cachedOffline, setIsOfflineMode] = useState(false);
+  const { isConnected } = useNetworkStatus();
+  const isOfflineMode = cachedOffline || !isConnected;
   const [claimModalVisible, setClaimModalVisible] = useState(false);
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
 
@@ -54,6 +57,13 @@ export default function usePublicationDetail() {
       setPublication(data);
       await savePublicationDetailOffline(data, session);
     } catch (err) {
+      if (!isCurrentSession(session)) return;
+      if (err.status === 404 || err.status === 403) {
+        await invalidateOfflinePublication(pubId, session);
+        setPublication(null);
+        return;
+      }
+      if (err.status === 401) return;
       console.warn("Error o falta de red al cargar publicación, buscando copia local...", err);
       const cached = await getOfflinePublicationDetail(pubId);
       if (cached) {

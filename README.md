@@ -1,19 +1,58 @@
-# Hallado — base Expo y WatermelonDB
+# Hallado — React Native, Expo y WatermelonDB
 
-Aplicación Android con React Native, Expo development build y backend Spring Boot + MySQL.
+Aplicación Android con Expo development build, WatermelonDB (SQLite local) y API Spring Boot + MySQL. **No se ejecuta en Expo Go.**
 
-## Desarrollo
+## Instalación
 
-- Instalar dependencias con `npm ci`.
-- Preparar MySQL con `backend/setup-db.sql` y arrancar el backend desde `backend` con `./mvnw spring-boot:run` o `.\mvnw.cmd spring-boot:run` en Windows.
-- Copiar `.env.example` a `.env.local` y definir la URL de la API para el emulador o teléfono.
-- Instalar Android SDK/JDK y ejecutar `npm run android` para compilar e instalar la development build.
-- Ejecutar `npm start` en las siguientes sesiones. Recompilar al agregar módulos nativos.
+1. Ejecutar `npm ci` en la raíz.
+2. Copiar `.env.example` a `.env.local` y configurar `EXPO_PUBLIC_API_URL`.
+3. Preparar MySQL 8 con `backend/setup-db.sql`, JDK 17 o superior y las variables SMTP del entorno.
+4. En `backend`, ejecutar `.\mvnw.cmd spring-boot:run` (Windows) o `./mvnw spring-boot:run`.
+5. Con Android SDK y un dispositivo/emulador configurados, ejecutar `npm run android`.
+6. Para las siguientes sesiones de desarrollo, ejecutar `npm start`.
 
-**Expo Go no soporta esta arquitectura.** Ver [guía de compilación local y EAS](docs/DEVELOPMENT.md).
+El backend usa el puerto 8081 y el prefijo `/api`. En el emulador Android se usa `http://10.0.2.2:8081/api`; en un teléfono físico, la IP LAN de la computadora. Los cambios nativos requieren recompilar el cliente.
 
-## Etapas de integración
+Ver [guía de development builds](docs/DEVELOPMENT.md) para compilación local o EAS. El proyecto EAS se vincula con la cuenta del equipo; no se incluyen credenciales.
 
-Esta rama aporta la base nativa, esquema versionado, modelos, almacenamiento separado por cuenta y repositorios. La integración de las pantallas, migración y fotos pertenece a la etapa 3/4; el coordinador y la idempotencia transaccional del servidor pertenecen a la etapa 5/6/7. Integrar las ramas en ese orden.
+## Persistencia y sesión
 
-La presencia de modelos no certifica que los diez puntos del TPO estén completos. Antes de la entrega hay que ejecutar los recorridos funcionales y validar SQLite en Android.
+- SecureStore conserva el token. AsyncStorage queda para preferencias y como respaldo de datos anteriores.
+- WatermelonDB mantiene datos locales y snapshots de respuestas autorizadas, separados por cuenta.
+- Borradores y resultados recientes se guardan en SQLite; las fotos se copian o descargan al directorio persistente de cada cuenta.
+- Los datos antiguos sin propietario se recuperan solo tras una confirmación explícita dentro de la app. La copia original no se borra.
+- La migración es reanudable; imágenes antiguas inexistentes quedan señaladas para corregirlas.
+
+## Publicación y sincronización
+
+El formulario guarda la publicación y su operación pendiente en un único batch de WatermelonDB. Un solo coordinador envía las publicaciones con la sesión de su propietario, al reconectar, volver al primer plano y durante el uso activo.
+
+Los reintentos conservan la misma clave `X-Idempotency-Key`. Spring Boot registra respuesta y publicación en la misma transacción, con bloqueo de base de datos por usuario. Un fallo revierte el registro; un reintento exitoso devuelve el mismo resultado. Las fotos guardadas durante una transacción fallida se eliminan.
+
+No se descartan pendientes por cantidad de intentos. Los errores temporales se reintentan con espera progresiva; los errores de validación quedan visibles y permiten recuperar el contenido para corregirlo desde Mis publicaciones. Los reclamos y sus respuestas no se encolan offline.
+
+Al cambiar de sesión se invalidan las tareas anteriores. Si el servidor confirmó una publicación pero la sesión cambió antes de recibirla, la operación permanece pendiente y se reconcilia con su misma clave cuando vuelve su propietario.
+
+## Pruebas
+
+```sh
+npm test
+cd backend
+./mvnw test
+```
+
+En Windows usar `.\mvnw.cmd test`. Los tests de dominio de WatermelonDB usan el adaptador Loki en Node: comprueban las operaciones, no sustituyen una ejecución con SQLite nativo.
+
+Para generar el bundle Android:
+
+```sh
+npx expo export --platform android --output-dir dist
+```
+
+## Alcance y validación pendiente
+
+Esta corrección integra persistencia y sincronización con los flujos existentes. **No certifica automáticamente los diez puntos del TPO.** La aceptación funcional completa requiere recorrerlos en Android.
+
+Ver [verificación de la refactorización](docs/VERIFICATION.md). La ejecución en segundo plano con la aplicación cerrada, sincronización bidireccional general y resolución de ediciones concurrentes no se implementan aquí: las modificaciones remotas diferentes de crear publicaciones requieren conexión.
+
+Orden de integración de las ramas: base (PR 39), datos offline (PR 40), sincronización y backend (PR 41). Son ramas acumulativas; no hacer squash de una etapa si se quiere conservar su relación de ancestros con las siguientes.

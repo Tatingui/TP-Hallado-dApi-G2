@@ -57,8 +57,8 @@ export const searchPublicationsApi = async ({
  * @param {string} [publication.verificationAnswer] - Solo para FOUND
  * @param {Array} [images] - Array de objetos { uri, type, fileName }
  */
-export const createPublicationApi = async (publication, images = []) => {
-  const token = await getToken();
+export const createPublicationApi = async (publication, images = [], tokenParam = null, idempotencyKey = null) => {
+  const token = tokenParam || await getToken();
 
   // Enviar datos de publicación como query param y las imágenes en FormData.
   // React Native tiene problemas al mezclar strings y archivos en FormData.
@@ -78,7 +78,7 @@ export const createPublicationApi = async (publication, images = []) => {
     });
   }
 
-  const data = await apiPostMultipart(url, formData, token);
+  const data = await apiPostMultipart(url, formData, token, idempotencyKey);
   return data;
 };
 

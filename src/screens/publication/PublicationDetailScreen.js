@@ -78,7 +78,7 @@ export default function PublicationDetailScreen() {
         <TouchableOpacity
           style={[styles.followButton, isFollowing && styles.followButtonActive, isOfflineMode && styles.disabledButton]}
           onPress={handleToggleFollow}
-          disabled={isUpdatingFollow}
+          disabled={isUpdatingFollow || isOfflineMode}
         >
           <Ionicons
             name={isFollowing ? "bookmark" : "bookmark-outline"}
@@ -92,7 +92,7 @@ export default function PublicationDetailScreen() {
       </View>
 
       {isOfflineMode && (
-        <OfflineBanner message="Modo Sin Conexión: Viendo copia guardada localmente" />
+        <OfflineBanner message="Sin conexión: los datos pueden estar desactualizados. Reclamar, seguir y editar requieren conexión." />
       )}
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -147,6 +147,7 @@ export default function PublicationDetailScreen() {
           <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: isFound ? Colors.primary : Colors.success }, isOfflineMode && styles.disabledActionBtn]}
             onPress={handlePressClaim}
+            disabled={isOfflineMode}
           >
             <MaterialCommunityIcons name={isFound ? "hand-heart" : "hand-back-right"} size={20} color={Colors.surface} />
             <Text style={styles.mainActionText}>{isFound ? "¡Es mío!" : "¡Lo encontré!"}</Text>
@@ -161,6 +162,7 @@ export default function PublicationDetailScreen() {
             <TouchableOpacity
               style={[styles.mainActionBtn, { backgroundColor: Colors.gray700, flex: 1 }, isOfflineMode && styles.disabledActionBtn]}
               onPress={handlePressEdit}
+              disabled={isOfflineMode}
             >
               <Ionicons name="settings-outline" size={20} color={Colors.surface} />
               <Text style={styles.mainActionText}>Gestionar</Text>

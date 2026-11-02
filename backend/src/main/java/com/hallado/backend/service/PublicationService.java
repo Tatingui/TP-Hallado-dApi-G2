@@ -69,6 +69,7 @@ public class PublicationService {
      * Las imágenes se guardan en el filesystem y sus rutas se almacenan
      * como string separado por comas en el campo imageUrls.
      */
+    @Transactional
     public PublicationResponseDTO createPublication(CreatePublicationRequest req,
                                                      List<MultipartFile> images,
                                                      String userEmail) {
@@ -461,7 +462,17 @@ public class PublicationService {
             }
             String fileName = UUID.randomUUID() + extension;
             Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
+            try (var stream = file.getInputStream()) { Files.copy(stream, filePath); }
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override public void afterCompletion(int status) {
+                            if (status != STATUS_COMMITTED) {
+                                try { Files.deleteIfExists(filePath); } catch (IOException ignored) { }
+                            }
+                        }
+                    });
+            }
 
             return "/uploads/publications/" + fileName;
         } catch (IOException e) {

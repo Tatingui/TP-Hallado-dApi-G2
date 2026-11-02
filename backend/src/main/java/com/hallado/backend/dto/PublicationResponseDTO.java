@@ -21,6 +21,8 @@ public class PublicationResponseDTO {
         private int valoracionesPositivas;
         private int valoracionesNegativas;
 
+        public PublisherSummaryDTO() {}
+
         public PublisherSummaryDTO(Long id, String nombre, String email, String profileImageUrl, 
                                    int devolucionesConcretadas, int valoracionesPositivas, int valoracionesNegativas) {
             this.id = id;

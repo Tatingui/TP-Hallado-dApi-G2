@@ -5,7 +5,7 @@ const listeners = new Set();
 
 export function setDatabaseSession(owner, token) {
   generation += 1;
-  session = owner && token ? { owner: owner.trim().toLowerCase(), token, generation } : null;
+  session = owner && token ? { owner: owner.trim().toLowerCase(), token, generation, ready: false } : null;
   listeners.forEach((listener) => listener());
 }
 
@@ -29,4 +29,9 @@ export function assertCurrentSession(captured) {
 export function subscribeSession(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+export function markDatabaseReady(captured = getDatabaseSession()) {
+  assertCurrentSession(captured);
+  session.ready = true;
 }

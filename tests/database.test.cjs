@@ -40,10 +40,9 @@ const publications = require('../src/repositories/publicationRepository');
 const pending = require('../src/repositories/pendingRepository');
 const local = require('../src/database/localStore');
 
-process.on('uncaughtException', console.error);
 test.after(() => database.adapter.underlyingAdapter._driver.loki.close());
 
-test('SQLite-domain operations: account isolation, upsert, durable queue and migration replay', async () => {
+test('WatermelonDB domain operations (Loki test adapter): account isolation, upsert, durable queue and migration replay', async () => {
   sessions.setDatabaseSession('a@example.com', 'a');
   await publications.savePublicationsToLocal([{ id: 7, title: 'Llaves', status: 'OPEN' }]);
   await publications.savePublicationsToLocal([{ id: 7, title: 'Llaves', status: 'RESOLVED' }]);

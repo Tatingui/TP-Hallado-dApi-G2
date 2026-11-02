@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { checkNetworkConnection } from '../../hooks/useNetworkStatus';
+import { checkNetworkConnection, useNetworkStatus } from '../../hooks/useNetworkStatus';
 import OfflineBanner from '../../components/OfflineBanner';
 import {
   getMySentClaimsApi,
@@ -39,7 +39,9 @@ export default function ClaimsScreen() {
   const [page, setPage] = useState(0);
   const [isLastPage, setIsLastPage] = useState(false);
   const [processingId, setProcessingId] = useState(null);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [cachedOffline, setIsOfflineMode] = useState(false);
+  const { isConnected } = useNetworkStatus();
+  const isOfflineMode = cachedOffline || !isConnected;
 
   // Punto 8: reclamo sobre el que se está proponiendo un punto de encuentro
   const [meetingClaim, setMeetingClaim] = useState(null);
@@ -70,6 +72,7 @@ export default function ClaimsScreen() {
         response = await getMyReceivedClaimsApi(pageToFetch, 10, token);
       }
 
+      setIsOfflineMode(Boolean(response.__offline));
       const newContent = response.content || [];
       if (pageToFetch === 0) {
         setClaims(newContent);
@@ -134,6 +137,7 @@ export default function ClaimsScreen() {
   };
 
   const handleSubmitMeeting = async (address) => {
+    if (!(await checkNetworkConnection())) { Alert.alert("Sin conexión", "Necesitás conexión para acordar el encuentro."); return; }
     try {
       setIsSubmittingMeeting(true);
       await proposeMeetingPointApi(meetingClaim.id, address, token);
@@ -210,6 +214,7 @@ export default function ClaimsScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
             <ClaimCard
+              isOfflineMode={isOfflineMode}
               claim={item}
               type={activeTab}
               isProcessing={processingId === item.id}
