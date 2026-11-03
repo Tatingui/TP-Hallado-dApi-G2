@@ -1,22 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/theme';
-import { getClaimStatusColor, getClaimStatusLabel } from '../constants/publicationConstants';
-import { resolveImageUrl } from '../utils/imageUrl';
 import { formatDateTime } from '../utils/date';
+import ClaimActions from './claim/ClaimActions';
+import ClaimContent from './claim/ClaimContent';
+import ClaimHeader from './claim/ClaimHeader';
+import MeetingSection from './claim/MeetingSection';
 
-export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing, isOfflineMode = false }) {
+export default function ClaimCard({
+  claim,
+  type,
+  onAccept,
+  onReject,
+  onProposeMeeting,
+  onAcceptMeeting,
+  isProcessing,
+  isOfflineMode = false,
+}) {
   if (!claim) return null;
 
   const isReceived = type === 'RECEIVED';
-  const counterpartName = (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
+  const counterpartName =
+    (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
   const isAccepted = claim.status === 'ACCEPTED';
   const isPending = claim.status === 'PENDING';
-  const isRejected = claim.status === 'REJECTED';
-  const isExpired = claim.status === 'EXPIRED';
-
-
 
   const getMeetingStatusText = () => {
     if (claim.meetingStatus === 'ACCEPTED') return 'Confirmado por ambas partes';
@@ -24,9 +31,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
     return `${counterpartName} propuso este lugar`;
   };
 
-  // Punto 8: Abre Google Maps (o el navegador) en modo navegación hacia el punto de encuentro
   const openDirections = async () => {
-    // Se agrega la ciudad para que Maps no busque la calle en otra localidad
     const destination = encodeURIComponent(`${claim.meetingAddress}, Buenos Aires, Argentina`);
     const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving&dir_action=navigate`;
     try {
@@ -36,182 +41,32 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
     }
   };
 
-  const formattedDate = formatDateTime(claim.claimDate);
-
   return (
     <View style={styles.card}>
-      {/* Header Info */}
-      <View style={styles.header}>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.pubTitle} numberOfLines={1}>
-            {claim.publicationTitle}
-          </Text>
-          <Text style={styles.dateText}>{formattedDate}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getClaimStatusColor(claim.status) }]}>
-          <Text style={styles.statusText}>{getClaimStatusLabel(claim.status)}</Text>
-        </View>
-      </View>
+      <ClaimHeader claim={claim} formattedDate={formatDateTime(claim.claimDate)} />
 
-      {/* Main Content */}
-      <View style={styles.body}>
-        {/* Foto Adjunta o Placeholder */}
-        {claim.proofImageUrl ? (
-          <Image source={{ uri: resolveImageUrl(claim.proofImageUrl) }} style={styles.proofImage} />
-        ) : (
-          <View style={styles.noImageContainer}>
-            <Ionicons name="image-outline" size={32} color={Colors.gray400} />
-            <Text style={styles.noImageText}>Sin foto</Text>
-          </View>
-        )}
+      <ClaimContent claim={claim} isReceived={isReceived} isAccepted={isAccepted} />
 
-        <View style={styles.detailsContainer}>
-          <Text style={styles.messageLabel}>
-            {isReceived ? `Mensaje de ${claim.claimant?.name || 'Usuario'}:` : 'Tu mensaje:'}
-          </Text>
-          <Text style={styles.messageText} numberOfLines={3}>
-            {claim.proofMessage || 'Sin descripción adicional.'}
-          </Text>
-
-          {/* Verificación: el publicador ve la respuesta del reclamante vs la esperada */}
-          {isReceived && claim.verificationQuestion && (
-            <View style={styles.verificationBox}>
-              <Text style={styles.verificationLabel}>
-                <Ionicons name="shield-checkmark-outline" size={14} color={Colors.purple700} /> Verificación
-              </Text>
-              <Text style={styles.verificationQuestion}>
-                {claim.verificationQuestion}
-              </Text>
-              <View style={styles.verificationRow}>
-                <View style={styles.verificationCol}>
-                  <Text style={styles.verificationSubLabel}>Respondió:</Text>
-                  <Text style={styles.verificationValue}>
-                    {claim.verificationAnswer || '(sin respuesta)'}
-                  </Text>
-                </View>
-                <View style={styles.verificationCol}>
-                  <Text style={styles.verificationSubLabel}>Esperada:</Text>
-                  <Text style={styles.verificationExpected}>
-                    {claim.expectedVerificationAnswer || '—'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Si fue aceptado, mostrar datos de contacto (Punto 7 / 8) */}
-          {isAccepted && (
-            <View style={styles.contactBox}>
-              <Text style={styles.contactLabel}>Datos de Contacto:</Text>
-              {isReceived ? (
-                <Text style={styles.contactValue}>
-                  Tel: {claim.claimant?.phone || 'No configurado/oculto'}
-                </Text>
-              ) : (
-                <>
-                  <Text style={styles.contactValue}>
-                    Tel: {claim.publisher?.phone || 'No configurado/oculto'}
-                  </Text>
-                  <Text style={styles.contactValue} numberOfLines={2}>
-                    Lugar: {claim.exactAddress || 'Contactar para acordar entrega'}
-                  </Text>
-                </>
-              )}
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Acciones del Publicador (Si es un reclamo recibido y está pendiente) */}
       {isReceived && isPending && (
-        <View style={styles.actionsFooter}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.rejectBtn]}
-            onPress={() => onReject(claim.id)}
-            disabled={isProcessing || isOfflineMode}
-          >
-            <Text style={styles.rejectBtnText}>Rechazar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.acceptBtn]}
-            onPress={() => onAccept(claim.id)}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-               <ActivityIndicator color={Colors.surface} size="small" />
-            ) : (
-               <Text style={styles.acceptBtnText}>Aceptar Reclamo</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <ClaimActions
+          claim={claim}
+          onAccept={onAccept}
+          onReject={onReject}
+          isProcessing={isProcessing}
+          isOfflineMode={isOfflineMode}
+        />
       )}
 
-      {/* Punto de encuentro (Punto 8) */}
       {isAccepted && (
-        <View style={styles.meetingBox}>
-          <View style={styles.meetingHeader}>
-            <Ionicons name="location" size={16} color={Colors.primary} />
-            <Text style={styles.meetingTitle}>Punto de encuentro</Text>
-          </View>
-
-          {claim.meetingAddress ? (
-            <>
-              <Text style={styles.meetingAddress}>{claim.meetingAddress}</Text>
-              <Text style={[
-                styles.meetingStatusText,
-                claim.meetingStatus === 'ACCEPTED' && styles.meetingStatusConfirmed
-              ]}>
-                {getMeetingStatusText()}
-              </Text>
-
-              <TouchableOpacity style={[styles.actionBtn, styles.directionsBtn]} onPress={openDirections}>
-                <Ionicons name="navigate" size={16} color={Colors.primary} />
-                <Text style={styles.suggestBtnText}>Cómo llegar</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <Text style={styles.meetingStatusText}>
-              {claim.canProposeMeeting
-                ? 'Como tenés el objeto, proponé dónde encontrarse.'
-                : `Esperando que ${counterpartName} proponga un lugar.`}
-            </Text>
-          )}
-
-          {claim.canProposeMeeting && (
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.acceptBtn, styles.meetingBtn]}
-              onPress={() => onProposeMeeting(claim)}
-              disabled={isProcessing}
-            >
-              <Text style={styles.acceptBtnText}>Proponer punto de encuentro</Text>
-            </TouchableOpacity>
-          )}
-
-          {claim.canRespondMeeting && (
-            <View style={styles.meetingActions}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.suggestBtn]}
-                onPress={() => onProposeMeeting(claim)}
-                disabled={isProcessing}
-              >
-                <Text style={styles.suggestBtnText}>Sugerir otro</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.acceptBtn]}
-                onPress={() => onAcceptMeeting(claim.id)}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator color={Colors.surface} size="small" />
-                ) : (
-                  <Text style={styles.acceptBtnText}>Aceptar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <MeetingSection
+          claim={claim}
+          counterpartName={counterpartName}
+          getMeetingStatusText={getMeetingStatusText}
+          onOpenDirections={openDirections}
+          onProposeMeeting={onProposeMeeting}
+          onAcceptMeeting={onAcceptMeeting}
+          isProcessing={isProcessing}
+        />
       )}
     </View>
   );
@@ -231,231 +86,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginRight: 12,
-  },
-  pubTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.gray900,
-    marginBottom: 2,
-  },
-  dateText: {
-    fontSize: 12,
-    color: Colors.gray500,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: Colors.surface,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  body: {
-    flexDirection: 'row',
-    padding: 14,
-    gap: 12,
-  },
-  proofImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: Colors.gray100,
-  },
-  noImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: Colors.gray50,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noImageText: {
-    fontSize: 10,
-    color: Colors.gray400,
-    marginTop: 4,
-  },
-  detailsContainer: {
-    flex: 1,
-  },
-  messageLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.gray700,
-    marginBottom: 4,
-  },
-  messageText: {
-    fontSize: 13,
-    color: Colors.gray600,
-    lineHeight: 18,
-  },
-  contactBox: {
-    marginTop: 10,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 8,
-    padding: 8,
-  },
-  contactLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.successDark,
-    marginBottom: 4,
-  },
-  contactValue: {
-    fontSize: 12,
-    color: Colors.successDark,
-  },
-  actionsFooter: {
-    flexDirection: 'row',
-    padding: 14,
-    paddingTop: 0,
-    gap: 12,
-  },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  rejectBtn: {
-    backgroundColor: '#FEE2E2',
-  },
-  rejectBtnText: {
-    color: Colors.error,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  acceptBtn: {
-    backgroundColor: Colors.primary,
-  },
-  acceptBtnText: {
-    color: Colors.surface,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  meetingBox: {
-    marginHorizontal: 14,
-    marginBottom: 14,
-    backgroundColor: Colors.purple50,
-    borderWidth: 1,
-    borderColor: Colors.purple200,
-    borderRadius: 8,
-    padding: 10,
-  },
-  meetingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  meetingTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  meetingAddress: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.gray900,
-    marginBottom: 2,
-  },
-  meetingStatusText: {
-    fontSize: 12,
-    color: Colors.gray500,
-  },
-  meetingStatusConfirmed: {
-    color: Colors.successDark,
-    fontWeight: '600',
-  },
-  meetingBtn: {
-    flex: 0,
-    marginTop: 10,
-  },
-  meetingActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 10,
-  },
-  suggestBtn: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.purple200,
-  },
-  directionsBtn: {
-    flex: 0,
-    marginTop: 10,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.purple200,
-  },
-  suggestBtnText: {
-    color: Colors.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-
-  verificationBox: {
-    marginTop: 10,
-    backgroundColor: Colors.purple50,
-    borderWidth: 1,
-    borderColor: Colors.purple200,
-    borderRadius: 8,
-    padding: 10,
-  },
-  verificationLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.purple700,
-    marginBottom: 4,
-  },
-  verificationQuestion: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.gray700,
-    fontStyle: 'italic',
-    marginBottom: 8,
-  },
-  verificationRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  verificationCol: {
-    flex: 1,
-  },
-  verificationSubLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.gray500,
-    marginBottom: 2,
-  },
-  verificationValue: {
-    fontSize: 13,
-    color: Colors.gray900,
-    fontWeight: '600',
-  },
-  verificationExpected: {
-    fontSize: 13,
-    color: Colors.successDark,
-    fontWeight: '600',
   },
 });
