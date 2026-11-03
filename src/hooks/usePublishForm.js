@@ -11,6 +11,10 @@ import { savePendingPublication, removePendingPublication } from "../storage/pen
 import { toLocalDateTimeString } from "../utils/date";
 import useLocation from "./useLocation";
 import useImagePicker from "./useImagePicker";
+import {
+  hasValidationErrors,
+  validatePublicationDetails,
+} from "../utils/validation/publicationValidation";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -188,27 +192,7 @@ export default function usePublishForm() {
   // ─── Errores de validación por campo ───
   function fieldError(field) {
     if (!touched[field]) return null;
-    switch (field) {
-      case "title":
-        if (form.title.trim().length === 0) return "El título es obligatorio.";
-        if (form.title.trim().length < 5) return "Mínimo 5 caracteres.";
-        return null;
-      case "description":
-        if (form.description.trim().length === 0)
-          return "La descripción es obligatoria.";
-        if (form.description.trim().length < 10) return "Mínimo 10 caracteres.";
-        return null;
-      case "verificationQuestion":
-        if (form.verificationQuestion.trim().length === 0)
-          return "La pregunta de verificación es obligatoria.";
-        return null;
-      case "verificationAnswer":
-        if (form.verificationAnswer.trim().length === 0)
-          return "La respuesta es obligatoria.";
-        return null;
-      default:
-        return null;
-    }
+    return validatePublicationDetails(form)[field] || null;
   }
 
   // ─── Validación por paso ───
@@ -219,16 +203,10 @@ export default function usePublishForm() {
       case "category":
         return form.category !== null;
       case "details": {
-        const hasBasicDetails =
-          form.title.trim().length >= 5 && form.description.trim().length >= 10;
-        const hasVerificationData =
-          form.type !== PublicationType.FOUND ||
-          (form.verificationQuestion.trim().length > 0 &&
-            form.verificationAnswer.trim().length > 0);
-        return hasBasicDetails && hasVerificationData;
+        return !hasValidationErrors(validatePublicationDetails(form));
       }
       case "location":
-        return form.barrio !== null;
+        return Boolean(form.barrio?.trim());
       case "images":
         return true;
       case "review":
