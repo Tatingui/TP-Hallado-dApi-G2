@@ -40,8 +40,8 @@ export const searchPublicationsApi = async ({
 
 /**
  * Crea una publicación nueva.
- * Envía multipart/form-data con las imágenes como archivos
- * y los datos de la publicación como campo JSON.
+ * Envía multipart/form-data: el campo "publication" con los datos en JSON
+ * y, si hay, las imágenes como archivos en el campo "images".
  *
  * @param {Object} publication - Datos de la publicación
  * @param {string} publication.title
@@ -52,7 +52,7 @@ export const searchPublicationsApi = async ({
  * @param {string} [publication.address]
  * @param {number} [publication.latitude]
  * @param {number} [publication.longitude]
- * @param {string} [publication.eventDate] - ISO string
+ * @param {string} [publication.eventDate] - Fecha local "AAAA-MM-DDTHH:mm:ss" (ver utils/date)
  * @param {string} [publication.verificationQuestion] - Solo para FOUND
  * @param {string} [publication.verificationAnswer] - Solo para FOUND
  * @param {Array} [images] - Array de objetos { uri, type, fileName }
@@ -60,26 +60,21 @@ export const searchPublicationsApi = async ({
 export const createPublicationApi = async (publication, images = [], tokenParam = null, idempotencyKey = null) => {
   const token = tokenParam || await getToken();
 
-  // Enviar datos de publicación como query param y las imágenes en FormData.
-  // React Native tiene problemas al mezclar strings y archivos en FormData.
-  const publicationParam = encodeURIComponent(JSON.stringify(publication));
-  const url = "/publications?publication=" + publicationParam;
-
+  // Los datos viajan como una parte más del formulario: así el multipart nunca
+  // queda vacío. En Android, un multipart sin partes (publicación sin fotos)
+  // se rechaza antes de enviarse y la publicación quedaba pendiente para siempre.
   const formData = new FormData();
+  formData.append("publication", JSON.stringify(publication));
 
-  // Imágenes como archivos adjuntos (solo si hay)
-  if (images && images.length > 0) {
-    images.forEach((img, index) => {
-      formData.append("images", {
-        uri: img.uri,
-        type: img.type || "image/jpeg",
-        name: img.fileName || `image_${index}.jpg`,
-      });
+  (images ?? []).forEach((img, index) => {
+    formData.append("images", {
+      uri: img.uri,
+      type: img.type || "image/jpeg",
+      name: img.fileName || `image_${index}.jpg`,
     });
-  }
+  });
 
-  const data = await apiPostMultipart(url, formData, token, idempotencyKey);
-  return data;
+  return apiPostMultipart("/publications", formData, token, idempotencyKey);
 };
 
 /**
