@@ -13,6 +13,18 @@ import {
 export const AuthContext = createContext(null);
 
 /**
+ * Importa datos de la versión anterior (AsyncStorage) a la base local.
+ * Un error acá no debe impedir iniciar sesión: se registra y se reintenta en el próximo inicio.
+ */
+async function importLegacyData() {
+  try {
+    await migrateAsyncStorageToWatermelon();
+  } catch (error) {
+    console.warn("No se pudieron importar los datos de la versión anterior:", error.message);
+  }
+}
+
+/**
  * AuthProvider — provee estado de autenticacion a toda la app.
  *
  * Expone: user (email), token, isAuthenticated, loading,
@@ -39,7 +51,7 @@ export function AuthProvider({ children }) {
       if (storedToken) {
         const email = await getUserEmail();
         setDatabaseSession(email, storedToken);
-        await migrateAsyncStorageToWatermelon();
+        await importLegacyData();
         markDatabaseReady();
         setToken(storedToken);
         setUser(email);
@@ -58,8 +70,8 @@ export function AuthProvider({ children }) {
   async function loginContext(newToken, email) {
     await saveSession(newToken, email);
     setDatabaseSession(email, newToken);
-    await migrateAsyncStorageToWatermelon();
-        markDatabaseReady();
+    await importLegacyData();
+    markDatabaseReady();
     setToken(newToken);
     setUser(email);
   }
