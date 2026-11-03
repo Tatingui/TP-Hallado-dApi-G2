@@ -143,8 +143,8 @@ public class PublicationController {
      * Obtener una publicación por ID.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<PublicationResponseDTO> getPublicationById(@PathVariable Long id) {
-        return ResponseEntity.ok(publicationService.getPublicationById(id));
+    public ResponseEntity<PublicationResponseDTO> getPublicationById(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(publicationService.getPublicationById(id, authentication.getName()));
     }
 
     @PostMapping("/{id}/seen")

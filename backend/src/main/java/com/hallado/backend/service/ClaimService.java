@@ -64,7 +64,7 @@ public class ClaimService {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
-        if (publication.getStatus() != PublicationStatus.OPEN) {
+        if (publication.getStatus() != PublicationStatus.OPEN || publication.isOverdue(LocalDateTime.now())) {
             throw new BadRequestException("La publicación no está disponible para recibir reclamos.");
         }
 
@@ -160,6 +160,12 @@ public class ClaimService {
             throw new BadRequestException("Solo puedes responder a reclamos pendientes.");
         }
 
+        Publication publication = claim.getPublication();
+        if (newStatus == ClaimStatus.ACCEPTED
+                && (publication.getStatus() != PublicationStatus.OPEN || publication.isOverdue(LocalDateTime.now()))) {
+            throw new BadRequestException("La publicación ya no está abierta: renovala para aceptar reclamos.");
+        }
+
         // Aceptar no concreta la devolución: eso ocurre cuando el publicador confirma la entrega.
         claim.setStatus(newStatus);
         claimRepository.save(claim);
@@ -244,6 +250,10 @@ public class ClaimService {
         if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
             throw new ForbiddenException("No participaste de este reclamo.");
         }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED
+                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
+        }
         if (claim.getMeetingStatus() != MeetingPointStatus.PROPOSED) {
             throw new BadRequestException("No hay un punto de encuentro pendiente de respuesta.");
         }
@@ -301,7 +311,14 @@ public class ClaimService {
 
         claim.setStatus(ClaimStatus.CANCELLED);
         claimRepository.save(claim);
-        publication.setStatus(PublicationStatus.OPEN);
+        // Si la vigencia terminó mientras estaba en reclamo, se renueva: si no,
+        // volvería a abrirse ya vencida y desaparecería de la búsqueda.
+        LocalDateTime now = LocalDateTime.now();
+        if (publication.getExpiresAt() != null && !publication.getExpiresAt().isAfter(now)) {
+            publication.renew(now);
+        } else {
+            publication.setStatus(PublicationStatus.OPEN);
+        }
         publicationRepository.save(publication);
 
         return ClaimResponseDTO.fromEntity(claim, true);

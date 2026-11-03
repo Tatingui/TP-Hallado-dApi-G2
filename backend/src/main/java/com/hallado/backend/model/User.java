@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements OtpHolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,11 +33,12 @@ public class User {
 
     private LocalDateTime otpExpiresAt;
 
+    /** Intentos fallidos con el código actual; al llegar al máximo el código se invalida. */
+    private Integer otpAttempts;
+
     private String telefono;
 
     private boolean telefonoVisible = true;
-
-    private String zona;
 
     private String barrio;
 
@@ -87,14 +88,15 @@ public class User {
     public LocalDateTime getOtpExpiresAt() { return otpExpiresAt; }
     public void setOtpExpiresAt(LocalDateTime otpExpiresAt) { this.otpExpiresAt = otpExpiresAt; }
 
+    public int getOtpAttempts() { return otpAttempts == null ? 0 : otpAttempts; }
+    public void setOtpAttempts(int otpAttempts) { this.otpAttempts = otpAttempts; }
+
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
     public boolean isTelefonoVisible() { return telefonoVisible; }
     public void setTelefonoVisible(boolean telefonoVisible) { this.telefonoVisible = telefonoVisible; }
 
-    public String getZona() { return zona; }
-    public void setZona(String zona) { this.zona = zona; }
 
     public String getBarrio() { return barrio; }
     public void setBarrio(String barrio) { this.barrio = barrio; }

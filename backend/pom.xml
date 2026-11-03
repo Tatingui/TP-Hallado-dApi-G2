@@ -57,7 +57,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Security (para BCrypt) -->
+        <!-- Spring Security: filtro JWT, autorización y BCrypt -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>

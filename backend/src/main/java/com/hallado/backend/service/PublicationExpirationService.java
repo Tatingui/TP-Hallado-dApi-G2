@@ -1,7 +1,10 @@
 package com.hallado.backend.service;
 
+import com.hallado.backend.model.Claim;
+import com.hallado.backend.model.ClaimStatus;
 import com.hallado.backend.model.Publication;
 import com.hallado.backend.model.PublicationStatus;
+import com.hallado.backend.repository.ClaimRepository;
 import com.hallado.backend.repository.PublicationRepository;
 
 import org.slf4j.Logger;
@@ -15,7 +18,8 @@ import java.util.List;
 
 /**
  * Punto 5: "Las publicaciones vencen a los 30 días y pueden renovarse."
- * Marca como vencidas las publicaciones abiertas cuya vigencia terminó.
+ * Marca como vencidas las publicaciones abiertas cuya vigencia terminó, junto con
+ * sus reclamos pendientes, que ya no se pueden aceptar.
  * Corre al iniciar el backend y después cada 10 minutos.
  */
 @Service
@@ -24,9 +28,11 @@ public class PublicationExpirationService {
     private static final Logger log = LoggerFactory.getLogger(PublicationExpirationService.class);
 
     private final PublicationRepository publicationRepository;
+    private final ClaimRepository claimRepository;
 
-    public PublicationExpirationService(PublicationRepository publicationRepository) {
+    public PublicationExpirationService(PublicationRepository publicationRepository, ClaimRepository claimRepository) {
         this.publicationRepository = publicationRepository;
+        this.claimRepository = claimRepository;
     }
 
     /** Devuelve cuántas publicaciones se marcaron como vencidas. */
@@ -38,6 +44,12 @@ public class PublicationExpirationService {
 
         vencidas.forEach(Publication::expire);
         publicationRepository.saveAll(vencidas);
+
+        for (Publication publicacion : vencidas) {
+            List<Claim> pendientes = claimRepository.findByPublicationAndStatus(publicacion, ClaimStatus.PENDING);
+            pendientes.forEach(claim -> claim.setStatus(ClaimStatus.EXPIRED));
+            claimRepository.saveAll(pendientes);
+        }
 
         if (!vencidas.isEmpty()) {
             log.info("{} publicaciones vencieron por superar los {} días.", vencidas.size(), Publication.VIGENCIA_DIAS);

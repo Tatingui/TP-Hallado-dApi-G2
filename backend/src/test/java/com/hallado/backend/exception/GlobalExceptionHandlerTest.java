@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -26,6 +27,10 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/inesperado")
         void inesperado() {
             throw new IllegalStateException("detalle interno de la base de datos");
+        }
+
+        @GetMapping("/numero")
+        void numero(@RequestParam int valor) {
         }
 
         @GetMapping("/validacion")
@@ -50,6 +55,14 @@ class GlobalExceptionHandlerTest {
         mvc.perform(get("/inesperado"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message", not(containsString("detalle interno"))));
+    }
+
+    @Test
+    void unParametroMalFormadoEsUn400YNoUn500() throws Exception {
+        mvc.perform(get("/numero").param("valor", "abc"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/numero"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

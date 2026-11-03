@@ -15,7 +15,6 @@ public class PublicationResponseDTO {
     public static class PublisherSummaryDTO {
         private Long id;
         private String nombre;
-        private String email; // <- Agregado para validar isMyPublication en frontend
         private String profileImageUrl;
         private int devolucionesConcretadas;
         private int valoracionesPositivas;
@@ -23,11 +22,10 @@ public class PublicationResponseDTO {
 
         public PublisherSummaryDTO() {}
 
-        public PublisherSummaryDTO(Long id, String nombre, String email, String profileImageUrl, 
+        public PublisherSummaryDTO(Long id, String nombre, String profileImageUrl,
                                    int devolucionesConcretadas, int valoracionesPositivas, int valoracionesNegativas) {
             this.id = id;
             this.nombre = nombre;
-            this.email = email;
             this.profileImageUrl = profileImageUrl;
             this.devolucionesConcretadas = devolucionesConcretadas;
             this.valoracionesPositivas = valoracionesPositivas;
@@ -35,7 +33,6 @@ public class PublicationResponseDTO {
         }
 
         public int getDevolucionesConcretadas() { return devolucionesConcretadas; }
-        public String getEmail() { return email; }
         public Long getId() { return id; }
         public String getNombre() { return nombre; }
         public String getProfileImageUrl() { return profileImageUrl; }
@@ -50,7 +47,6 @@ public class PublicationResponseDTO {
         dto.setType(p.getType());
         dto.setCategory(p.getCategory());
         dto.setBarrio(p.getBarrio());
-        dto.setAddress(p.getAddress());
         dto.setLatitude(p.getLatitude());
         dto.setLongitude(p.getLongitude());
         dto.setEventDate(p.getEventDate());
@@ -70,7 +66,6 @@ public class PublicationResponseDTO {
             dto.setPublisher(new PublisherSummaryDTO(
                 p.getUser().getId(),
                 p.getUser().getNombre(),
-                p.getUser().getEmail(),
                 p.getUser().getProfileImageUrl(),
                 p.getUser().getDevolucionesConcretadas(),
                 p.getUser().getValoracionesPositivas(),
@@ -86,7 +81,8 @@ public class PublicationResponseDTO {
     private PublicationType type;
     private CategoryEnum category;
     private String barrio;
-    private String address;
+    /** true si quien consulta el detalle es el publicador (la app no recibe emails ajenos). */
+    private boolean mine;
     private Double latitude;
     private Double longitude;
     private LocalDateTime eventDate;
@@ -107,7 +103,7 @@ public class PublicationResponseDTO {
     public PublicationResponseDTO() {}
 
     public String getBarrio() { return barrio; }
-    public String getAddress() { return address; }
+    public boolean isMine() { return mine; }
     public CategoryEnum getCategory() { return category; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -135,7 +131,7 @@ public class PublicationResponseDTO {
 
     public boolean isHasNewUpdates() { return hasNewUpdates; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
-    public void setAddress(String address) { this.address = address; }
+    public void setMine(boolean mine) { this.mine = mine; }
 
     public void setCategory(CategoryEnum category) { this.category = category; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

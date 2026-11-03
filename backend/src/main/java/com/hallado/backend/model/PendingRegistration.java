@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "pending_registrations")
-public class PendingRegistration {
+public class PendingRegistration implements OtpHolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +29,9 @@ public class PendingRegistration {
     private String otpCode;
 
     private LocalDateTime otpExpiresAt;
+
+    /** Intentos fallidos con el código actual; al llegar al máximo el código se invalida. */
+    private Integer otpAttempts;
 
     /** true cuando el código fue validado y solo falta definir nombre y contraseña. */
     private boolean verified;
@@ -57,6 +60,9 @@ public class PendingRegistration {
 
     public LocalDateTime getOtpExpiresAt() { return otpExpiresAt; }
     public void setOtpExpiresAt(LocalDateTime otpExpiresAt) { this.otpExpiresAt = otpExpiresAt; }
+
+    public int getOtpAttempts() { return otpAttempts == null ? 0 : otpAttempts; }
+    public void setOtpAttempts(int otpAttempts) { this.otpAttempts = otpAttempts; }
 
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }

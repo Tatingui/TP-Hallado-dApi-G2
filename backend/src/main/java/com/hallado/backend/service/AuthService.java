@@ -7,13 +7,12 @@ import com.hallado.backend.dto.LoginRequest;
 import com.hallado.backend.dto.OtpRequest;
 import com.hallado.backend.dto.OtpSendRequest;
 import com.hallado.backend.dto.ResetPasswordRequest;
+import com.hallado.backend.model.OtpHolder;
 import com.hallado.backend.model.PendingRegistration;
 import com.hallado.backend.model.User;
 import com.hallado.backend.repository.PendingRegistrationRepository;
 import com.hallado.backend.repository.UserRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +24,10 @@ import java.util.Optional;
 @Service
 public class AuthService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-
     private static final int OTP_VIGENCIA_MINUTOS = 5;
+    private static final int MAX_INTENTOS_OTP = 5;
+    private static final String OTP_BLOQUEADO = "Superaste los intentos permitidos. Solicitá un código nuevo.";
+    private static final String CREDENCIALES_INVALIDAS = "Email o contraseña incorrectos";
     /** Tiempo para completar nombre y contraseña una vez validado el código de registro. */
     private static final int REGISTRO_VIGENCIA_MINUTOS = 15;
 
@@ -57,15 +57,15 @@ public class AuthService {
     // ─── Login ───────────────────────────────────────────────────────
 
     public AuthResponse login(LoginRequest request) {
+        // Mismo mensaje si el email no existe o la contraseña no coincide:
+        // así el login no revela qué emails están registrados.
         Optional<User> encontrado = userRepository.findByEmail(request.getEmail());
-        if (encontrado.isEmpty()) {
-            return AuthResponse.error(USUARIO_NO_ENCONTRADO);
+        if (encontrado.isEmpty()
+                || !passwordEncoder.matches(request.getPassword(), encontrado.get().getPassword())) {
+            return AuthResponse.error(CREDENCIALES_INVALIDAS);
         }
 
         User user = encontrado.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return AuthResponse.error("Contraseña incorrecta");
-        }
 
         // Cuentas creadas con el flujo anterior que nunca verificaron su email.
         if (!user.isEmailVerified()) {
@@ -93,6 +93,7 @@ public class AuthService {
         String otp = generarOtp();
         registro.setOtpCode(otp);
         registro.setOtpExpiresAt(LocalDateTime.now().plusMinutes(OTP_VIGENCIA_MINUTOS));
+        registro.setOtpAttempts(0);
         pendingRegistrationRepository.save(registro);
         enviarOtp(email, otp);
 
@@ -107,8 +108,9 @@ public class AuthService {
         }
 
         PendingRegistration registro = encontrado.get();
-        String error = errorDeOtp(registro.getOtpCode(), registro.getOtpExpiresAt(), request.getCode());
+        String error = errorDeOtp(registro, request.getCode());
         if (error != null) {
+            pendingRegistrationRepository.save(registro);
             return AuthResponse.error(error);
         }
 
@@ -132,8 +134,9 @@ public class AuthService {
         }
 
         PendingRegistration registro = encontrado.get();
-        String error = errorDeOtp(registro.getOtpCode(), registro.getOtpExpiresAt(), request.getCode());
+        String error = errorDeOtp(registro, request.getCode());
         if (error != null) {
+            pendingRegistrationRepository.save(registro);
             return AuthResponse.error(error);
         }
 
@@ -166,8 +169,9 @@ public class AuthService {
         }
 
         User user = encontrado.get();
-        String error = errorDeOtp(user.getOtpCode(), user.getOtpExpiresAt(), request.getCode());
+        String error = errorDeOtp(user, request.getCode());
         if (error != null) {
+            userRepository.save(user);
             return AuthResponse.error(error);
         }
 
@@ -188,8 +192,12 @@ public class AuthService {
         }
 
         User user = encontrado.get();
-        String error = errorDeOtp(user.getOtpCode(), user.getOtpExpiresAt(), request.getCode());
-        return error == null ? AuthResponse.ok(null, "Código verificado") : AuthResponse.error(error);
+        String error = errorDeOtp(user, request.getCode());
+        if (error != null) {
+            userRepository.save(user);
+            return AuthResponse.error(error);
+        }
+        return AuthResponse.ok(null, "Código verificado");
     }
 
     /** Valida el código y actualiza la contraseña del usuario. */
@@ -200,8 +208,9 @@ public class AuthService {
         }
 
         User user = encontrado.get();
-        String error = errorDeOtp(user.getOtpCode(), user.getOtpExpiresAt(), request.getCode());
+        String error = errorDeOtp(user, request.getCode());
         if (error != null) {
+            userRepository.save(user);
             return AuthResponse.error(error);
         }
 
@@ -214,11 +223,20 @@ public class AuthService {
 
     // ─── OTP ─────────────────────────────────────────────────────────
 
-    /** Devuelve el motivo por el que el código no es válido, o null si es correcto y está vigente. */
-    private String errorDeOtp(String esperado, LocalDateTime vence, String recibido) {
-        if (esperado == null || !esperado.equals(recibido)) {
-            return "Código incorrecto";
+    /**
+     * Devuelve el motivo por el que el código no es válido, o null si es correcto y está vigente.
+     * Cada código admite MAX_INTENTOS_OTP intentos fallidos; después hay que pedir uno nuevo.
+     * Si devuelve un error, quien llama guarda la entidad para persistir el contador.
+     */
+    private String errorDeOtp(OtpHolder holder, String recibido) {
+        if (holder.getOtpCode() == null || holder.getOtpAttempts() >= MAX_INTENTOS_OTP) {
+            return OTP_BLOQUEADO;
         }
+        if (!holder.getOtpCode().equals(recibido)) {
+            holder.setOtpAttempts(holder.getOtpAttempts() + 1);
+            return holder.getOtpAttempts() >= MAX_INTENTOS_OTP ? OTP_BLOQUEADO : "Código incorrecto";
+        }
+        LocalDateTime vence = holder.getOtpExpiresAt();
         if (vence == null || !vence.isAfter(LocalDateTime.now())) {
             return "El código expiró. Solicitá uno nuevo.";
         }
@@ -242,17 +260,18 @@ public class AuthService {
         String otp = generarOtp();
         user.setOtpCode(otp);
         user.setOtpExpiresAt(LocalDateTime.now().plusMinutes(OTP_VIGENCIA_MINUTOS));
+        user.setOtpAttempts(0);
         enviarOtp(user.getEmail(), otp);
     }
 
     private void consumirOtp(User user) {
         user.setOtpCode(null);
         user.setOtpExpiresAt(null);
+        user.setOtpAttempts(0);
     }
 
     private void enviarOtp(String email, String otp) {
         emailService.enviarOtp(email, otp);
-        log.debug("OTP para {}: {}", email, otp);
     }
 
     private String generarOtp() {

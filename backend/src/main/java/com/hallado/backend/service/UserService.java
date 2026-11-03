@@ -74,7 +74,7 @@ public class UserService {
         PublicProfileDTO dto = new PublicProfileDTO();
         dto.setId(user.getId());
         dto.setNombre(user.getNombre());
-        dto.setBarrio(resolverBarrio(user));
+        dto.setBarrio(user.getBarrio());
         dto.setProfileImageUrl(user.getProfileImageUrl());
         dto.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
         dto.setDevolucionesConcretadas(user.getDevolucionesConcretadas());
@@ -96,7 +96,7 @@ public class UserService {
         response.setEmail(user.getEmail());
         response.setTelefono(user.getTelefono());
         response.setTelefonoVisible(user.isTelefonoVisible());
-        response.setBarrio(resolverBarrio(user));
+        response.setBarrio(user.getBarrio());
         response.setProfileImageUrl(user.getProfileImageUrl());
         response.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
         response.setDevolucionesConcretadas(user.getDevolucionesConcretadas());
@@ -105,13 +105,6 @@ public class UserService {
         response.setPorcentajePositivo(calcularPorcentajePositivo(user));
         response.setInsignias(calcularInsignias(user));
         return response;
-    }
-
-    private String resolverBarrio(User user) {
-        if (user.getBarrio() != null && !user.getBarrio().isEmpty()) {
-            return user.getBarrio();
-        }
-        return user.getZona();
     }
 
     private List<String> calcularInsignias(User user) {
@@ -171,4 +164,4 @@ public class UserService {
         return buildUserProfileResponse(updatedUser);
     }
 
-}
+}

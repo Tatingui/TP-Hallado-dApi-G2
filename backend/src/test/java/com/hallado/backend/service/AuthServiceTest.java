@@ -3,6 +3,7 @@ package com.hallado.backend.service;
 import com.hallado.backend.config.JwtUtil;
 import com.hallado.backend.dto.AuthResponse;
 import com.hallado.backend.dto.CompleteRegistrationRequest;
+import com.hallado.backend.dto.LoginRequest;
 import com.hallado.backend.dto.OtpRequest;
 import com.hallado.backend.dto.OtpSendRequest;
 import com.hallado.backend.dto.ResetPasswordRequest;
@@ -129,6 +130,37 @@ class AuthServiceTest {
         User user = users.findByEmail(email).orElseThrow();
         assertTrue(passwordEncoder.matches("Nueva2@x", user.getPassword()));
         assertNull(user.getOtpCode(), "el código se consume al cambiar la contraseña");
+    }
+
+    @Test
+    void elCodigoSeInvalidaDespuesDeCincoIntentosFallidos() {
+        String email = usuarioExistente();
+        auth.sendOtp(new OtpSendRequest(email));
+        String codigo = ultimoCodigoEnviadoA(email);
+        String incorrecto = codigo.equals("000000") ? "111111" : "000000";
+
+        for (int intento = 0; intento < 5; intento++) {
+            assertFalse(auth.verifyResetCode(new OtpRequest(email, incorrecto)).isSuccess());
+        }
+        AuthResponse conElCorrecto = auth.verifyResetCode(new OtpRequest(email, codigo));
+        assertFalse(conElCorrecto.isSuccess(), "después de 5 fallos ni el código correcto sirve");
+        assertTrue(conElCorrecto.getMessage().contains("Solicitá un código nuevo"));
+
+        auth.resendOtp(new OtpSendRequest(email));
+        assertTrue(auth.verifyResetCode(new OtpRequest(email, ultimoCodigoEnviadoA(email))).isSuccess(),
+                "un código nuevo vuelve a habilitar los intentos");
+    }
+
+    @Test
+    void elLoginNoRevelaSiElEmailEstaRegistrado() {
+        String registrado = usuarioExistente();
+
+        AuthResponse sinCuenta = auth.login(new LoginRequest(emailNuevo(), PASSWORD));
+        AuthResponse claveIncorrecta = auth.login(new LoginRequest(registrado, "Otra1!xx"));
+
+        assertFalse(sinCuenta.isSuccess());
+        assertFalse(claveIncorrecta.isSuccess());
+        assertEquals(sinCuenta.getMessage(), claveIncorrecta.getMessage());
     }
 
     private String emailNuevo() {
