@@ -14,7 +14,9 @@ export function usePublications(searchCriteria = {}, enabled = true) {
     setState(prev => ({ ...prev, loading: true }));
     try {
       const criteria = JSON.parse(key);
-      const result = await searchPublicationsApi({ ...criteria, type: criteria.type === 'LOST' ? 'FOUND' : 'LOST', page, size: 10 });
+      // El tipo viaja tal como lo eligió la persona ("perdí" / "encontré"):
+      // el backend es quien busca el tipo opuesto, igual que en las alertas.
+      const result = await searchPublicationsApi({ ...criteria, page, size: 10 });
       if (!current()) return;
       const items = result.content || [];
       setState(prev => ({ publications: page ? [...prev.publications, ...items] : items, loading: false, isOfflineMode: false, last: result.last, page }));
