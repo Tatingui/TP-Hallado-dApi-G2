@@ -9,10 +9,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Repository
 public interface PublicationRepository extends JpaRepository<Publication, Long>, JpaSpecificationExecutor<Publication> {
 
     Page<Publication> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
     Page<Publication> findByUserAndStatusOrderByCreatedAtDesc(User user, PublicationStatus status, Pageable pageable);
+
+    List<Publication> findByStatusAndExpiresAtLessThanEqual(PublicationStatus status, LocalDateTime date);
 }

@@ -449,6 +449,26 @@ public class PublicationService {
     }
 
     /**
+     * Punto 5: renueva una publicación vencida por otros 30 días. Solo puede hacerlo su dueño.
+     */
+    @Transactional
+    public PublicationResponseDTO renewPublication(Long publicationId, String ownerEmail) {
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
+        if (!publication.getUser().getId().equals(owner.getId())) {
+            throw new ForbiddenException("No tenés permiso para renovar esta publicación.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (!publication.isRenewable(now)) {
+            throw new BadRequestException("Solo se pueden renovar publicaciones vencidas.");
+        }
+        publication.renew(now);
+        return PublicationResponseDTO.fromEntity(publicationRepository.save(publication));
+    }
+
+    /**
      * La fecha y hora del suceso no pueden ser futuras. Se tolera una diferencia
      * de unos minutos entre el reloj del celular y el del servidor.
      */

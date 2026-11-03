@@ -158,3 +158,11 @@ export const deletePublicationApi = async (id) => {
   const token = await getToken();
   return apiDelete(`/publications/${id}`, token);
 };
+
+/**
+ * Punto 5: renueva por otros 30 días una publicación vencida.
+ */
+export const renewPublicationApi = async (id) => {
+  const token = await getToken();
+  return apiPost(`/publications/${id}/renew`, {}, token);
+};
