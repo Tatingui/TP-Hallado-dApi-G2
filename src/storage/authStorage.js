@@ -5,14 +5,25 @@ import * as SecureStore from "expo-secure-store";
 const TOKEN_KEY = "auth_token";
 const USER_EMAIL_KEY = "user_email";
 
+export function isValidTokenFormat(token) {
+  if (typeof token !== 'string') return false;
+  const trimmed = token.trim();
+  if (!trimmed) return false;
+  const parts = trimmed.split('.');
+  return parts.length === 3 && parts.every((part) => part.length > 0);
+}
+
 /**
  * Guarda el token JWT en SecureStore (cifrado) y el email en AsyncStorage.
  * SecureStore tiene un limite de 2KB por clave — un JWT entra sin problemas.
  */
 export async function saveSession(token, email) {
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
+  if (!isValidTokenFormat(token)) {
+    throw new Error('El token de autenticación provisto no tiene un formato JWT válido.');
+  }
+  await SecureStore.setItemAsync(TOKEN_KEY, token.trim());
   if (email) {
-    await AsyncStorage.setItem(USER_EMAIL_KEY, email);
+    await AsyncStorage.setItem(USER_EMAIL_KEY, email.trim());
   }
 }
 
