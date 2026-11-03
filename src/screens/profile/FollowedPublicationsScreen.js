@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,10 +11,7 @@ import {
 import PublicationCard from "../../components/PublicationCard";
 import { Colors } from "../../constants/theme";
 import { getStatusLabel } from "../../constants/publicationConstants";
-import {
-  getFollowedPublicationsApi,
-  markPublicationAsSeenApi,
-} from "../../services/publicationService";
+import useFollowedPublications from "../../hooks/useFollowedPublications";
 
 /**
  * Punto 9: Sección "Seguidas" con todas las publicaciones que la persona sigue.
@@ -23,62 +19,18 @@ import {
  */
 export default function FollowedPublicationsScreen() {
   const navigation = useNavigation();
-  const [publications, setPublications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(0);
-  const [isLastPage, setIsLastPage] = useState(true);
-  const [error, setError] = useState(null);
-
-  const loadFirstPage = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await getFollowedPublicationsApi(0, 10);
-      setPublications(data?.content || []);
-      setPage(data?.pageNumber || 0);
-      setIsLastPage(data?.last ?? true);
-    } catch (err) {
-      setError(err?.message || "No se pudieron cargar las publicaciones seguidas.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Se recarga al volver del detalle (por si se dejó de seguir o se vio una novedad)
-  useFocusEffect(
-    useCallback(() => {
-      loadFirstPage();
-    }, [loadFirstPage]),
-  );
-
-  const handleLoadMore = async () => {
-    if (loadingMore || isLastPage || loading) return;
-    try {
-      setLoadingMore(true);
-      const data = await getFollowedPublicationsApi(page + 1, 10);
-      setPublications((prev) => [...prev, ...(data?.content || [])]);
-      setPage(data?.pageNumber || page + 1);
-      setIsLastPage(data?.last ?? true);
-    } catch (err) {
-      console.warn("Error cargando más seguidas:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const {
+    publications,
+    loading,
+    loadingMore,
+    error,
+    loadFirstPage,
+    loadMore,
+    markAsSeen,
+  } = useFollowedPublications();
 
   const handleOpen = async (publication) => {
-    if (publication.hasNewUpdates) {
-      try {
-        await markPublicationAsSeenApi(publication.id);
-      } catch (err) {
-        console.warn("Error marcando publicación como vista:", err);
-      }
-      setPublications((prev) =>
-        prev.map((item) =>
-          item.id === publication.id ? { ...item, hasNewUpdates: false } : item,
-        ),
-      );
-    }
+    await markAsSeen(publication);
     navigation.navigate("PublicationDetail", { id: String(publication.id) });
   };
 
@@ -123,7 +75,7 @@ export default function FollowedPublicationsScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderPublication}
           contentContainerStyle={styles.listContent}
-          onEndReached={handleLoadMore}
+          onEndReached={loadMore}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
             <View style={styles.center}>

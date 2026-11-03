@@ -1,116 +1,58 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  Alert,
-  Modal,
   Pressable,
   SectionList,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
-import {
-  getResolvedHistoryApi,
-  rateResolvedCaseApi,
-} from "../../services/claimService";
-import { formatDate, toLocalDateString } from "../../utils/date";
+import useResolvedHistory from "../../hooks/useResolvedHistory";
+import HistoryFilters from "../../components/history/HistoryFilters";
+import ResolvedCaseCard from "../../components/history/ResolvedCaseCard";
+import RatingModal from "../../components/history/RatingModal";
 
 
 export default function ResolvedHistoryScreen() {
   const navigation = useNavigation();
-  const [cases, setCases] = useState([]);
-  const [type, setType] = useState("ALL");
-  const [from, setFrom] = useState(null);
-  const [to, setTo] = useState(null);
+  const {
+    cases,
+    loading,
+    type,
+    setType,
+    from,
+    setFrom,
+    to,
+    setTo,
+    reload,
+    rateCase,
+  } = useResolvedHistory();
   const [picker, setPicker] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [positive, setPositive] = useState(true);
   const [message, setMessage] = useState("");
   const [thanks, setThanks] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setCases(
-        await getResolvedHistoryApi({
-          type,
-          from: from && toLocalDateString(from),
-          to: to && toLocalDateString(to),
-        }),
-      );
-    } catch (error) {
-      Alert.alert("Error", error?.message || "No se pudo cargar el historial.");
-    } finally {
-      setLoading(false);
-    }
-  }, [type, from, to]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
   const submitRating = async () => {
-    try {
-      await rateResolvedCaseApi(selected.claimId, {
-        positive,
-        message,
-        publicThanks: selected.canThank ? thanks : null,
-      });
+    const saved = await rateCase(selected, { positive, message, thanks });
+    if (saved) {
       setSelected(null);
       setMessage("");
       setThanks("");
-      load();
-    } catch (error) {
-      Alert.alert(
-        "No se pudo guardar",
-        error?.message || "Intentá nuevamente.",
-      );
     }
   };
 
   const renderCase = ({ item }) => (
-    <View style={styles.card}>
-      <Pressable
-        onPress={() => navigation.navigate("PublicationDetail", { id: String(item.publicationId) })}
-      >
-        <View style={styles.cardHeader}>
-          <Text style={styles.title} numberOfLines={1}>
-            {item.publicationTitle}
-          </Text>
-          <Ionicons name="open-outline" size={18} color={Colors.primary} />
-        </View>
-        <Text style={styles.meta}>
-          {item.role === "DEVOLVI" ? "Devolví" : "Recuperé"} ·{" "}
-          {formatDate(item.resolvedAt)}
-        </Text>
-        <Text style={styles.counterpart}>
-          Contraparte: {item.counterpartName}
-        </Text>
-        {item.ratingMessage ? (
-          <View style={styles.ratingMessage}>
-            <Ionicons name="chatbubble-outline" size={15} color={Colors.primary} />
-            <Text style={styles.ratingMessageText}>{item.ratingMessage}</Text>
-          </View>
-        ) : null}
-      </Pressable>
-      {item.canRate ? (
-        <Pressable style={styles.rateButton} onPress={() => setSelected(item)}>
-          <Ionicons name="star-outline" size={17} color="#fff" />
-          <Text style={styles.rateButtonText}>Valorar caso</Text>
-        </Pressable>
-      ) : (
-        <Text style={styles.rated}>
-          {item.rated
-            ? "Ya valoraste este caso"
-            : "Plazo de valoración vencido"}
-        </Text>
-      )}
-    </View>
+    <ResolvedCaseCard
+      item={item}
+      onOpen={(caseItem) =>
+        navigation.navigate("PublicationDetail", { id: String(caseItem.publicationId) })
+      }
+      onRate={setSelected}
+    />
   );
 
   return (
@@ -121,49 +63,13 @@ export default function ResolvedHistoryScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>Casos resueltos</Text>
       </View>
-      <View style={styles.filters}>
-        <Text style={styles.filterLabel}>Tipo de publicación</Text>
-        <View style={styles.segment}>
-          <Pressable
-            onPress={() => setType("ALL")}
-            style={[
-              styles.segmentButton,
-              type === "ALL" && styles.activeSegment,
-            ]}
-          >
-            <Text>Todos</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setType("LOST")}
-            style={[
-              styles.segmentButton,
-              type === "LOST" && styles.activeSegment,
-            ]}
-          >
-            <Text>Devolví</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setType("FOUND")}
-            style={[
-              styles.segmentButton,
-              type === "FOUND" && styles.activeSegment,
-            ]}
-          >
-            <Text>Recuperé</Text>
-          </Pressable>
-        </View>
-        <View style={styles.dateRow}>
-          <Pressable
-            style={styles.dateButton}
-            onPress={() => setPicker("from")}
-          >
-            <Text>Desde: {from ? formatDate(from) : "cualquiera"}</Text>
-          </Pressable>
-          <Pressable style={styles.dateButton} onPress={() => setPicker("to")}>
-            <Text>Hasta: {to ? formatDate(to) : "cualquiera"}</Text>
-          </Pressable>
-        </View>
-      </View>
+      <HistoryFilters
+        type={type}
+        from={from}
+        to={to}
+        onTypeChange={setType}
+        onOpenPicker={setPicker}
+      />
       {picker && (
         <DateTimePicker
           value={picker === "from" ? from || new Date() : to || new Date()}
@@ -192,65 +98,24 @@ export default function ResolvedHistoryScreen() {
         keyExtractor={(item) => String(item.claimId)}
         contentContainerStyle={styles.list}
         refreshing={loading}
-        onRefresh={load}
+        onRefresh={reload}
         ListEmptyComponent={
           <Text style={styles.empty}>
             Todavía no tenés casos resueltos con estos filtros.
           </Text>
         }
       />
-      <Modal
-        visible={!!selected}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelected(null)}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>
-              Valorar a {selected?.counterpartName}
-            </Text>
-            <View style={styles.segment}>
-              <Pressable
-                onPress={() => setPositive(true)}
-                style={positive && styles.activePositive}
-              >
-                <Text>Positiva</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setPositive(false)}
-                style={!positive && styles.activeNegative}
-              >
-                <Text>Negativa</Text>
-              </Pressable>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Mensaje breve opcional"
-              value={message}
-              onChangeText={setMessage}
-              maxLength={280}
-              multiline
-            />
-            {selected?.canThank && (
-              <TextInput
-                style={styles.input}
-                placeholder="Agradecimiento público opcional"
-                value={thanks}
-                onChangeText={setThanks}
-                maxLength={280}
-                multiline
-              />
-            )}
-            <Pressable style={styles.submit} onPress={submitRating}>
-              <Text style={styles.submitText}>Guardar valoración</Text>
-            </Pressable>
-            <Pressable onPress={() => setSelected(null)}>
-              <Text style={styles.cancel}>Cancelar</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <RatingModal
+        selected={selected}
+        positive={positive}
+        onChangePositive={setPositive}
+        message={message}
+        onChangeMessage={setMessage}
+        thanks={thanks}
+        onChangeThanks={setThanks}
+        onSubmit={submitRating}
+        onClose={() => setSelected(null)}
+      />
     </View>
   );
 }
@@ -274,47 +139,6 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: "800",
   },
-  filters: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.gray200,
-  },
-  filterLabel: {
-    fontWeight: "700",
-    marginBottom: 8,
-    color: Colors.gray700,
-  },
-  segment: {
-    flexDirection: "row",
-    gap: 6,
-    backgroundColor: Colors.gray100,
-    padding: 4,
-    borderRadius: 8,
-  },
-  segmentButton: {
-    flex: 1,
-    minHeight: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  activeSegment: {
-    backgroundColor: "#fff",
-  },
-  dateRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-  },
-  dateButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    padding: 10,
-    borderRadius: 7,
-  },
   list: {
     padding: 16,
     gap: 10,
@@ -326,117 +150,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  title: {
-    flex: 1,
-    fontWeight: "800",
-    color: Colors.gray900,
-  },
-  meta: {
-    color: Colors.primary,
-    marginTop: 6,
-    fontWeight: "600",
-  },
-  counterpart: {
-    color: Colors.gray500,
-    marginTop: 5,
-  },
-  ratingMessage: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.purple50,
-  },
-  ratingMessageText: {
-    flex: 1,
-    color: Colors.gray600,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  rateButton: {
-    marginTop: 12,
-    backgroundColor: Colors.primary,
-    borderRadius: 7,
-    padding: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
-  },
-  rateButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  rated: {
-    color: Colors.gray500,
-    marginTop: 12,
-    fontSize: 12,
-  },
   empty: {
     textAlign: "center",
     marginTop: 60,
     color: Colors.gray500,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,.4)",
-  },
-  modal: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  },
-  modalTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    marginBottom: 14,
-  },
-  activePositive: {
-    backgroundColor: "#DCFCE7",
-    padding: 10,
-    borderRadius: 6,
-  },
-  activeNegative: {
-    backgroundColor: "#FEE2E2",
-    padding: 10,
-    borderRadius: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 12,
-    minHeight: 48,
-  },
-  submit: {
-    backgroundColor: Colors.primary,
-    padding: 13,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 14,
-  },
-  submitText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  cancel: {
-    textAlign: "center",
-    marginTop: 14,
-    color: Colors.primary,
   },
 });
