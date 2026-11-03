@@ -20,6 +20,8 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Punto 7: Cada persona tiene un máximo de 3 intentos de reclamo por publicación.
     long countByPublicationAndClaimant(Publication publication, User claimant);
 
+    List<Claim> findByPublication(Publication publication);
+
     // Mis reclamos enviados (yo soy el claimant)
     Page<Claim> findByClaimantOrderByClaimDateDesc(User claimant, Pageable pageable);
 
@@ -32,7 +34,9 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Obtener el resto de los reclamos pendientes de una publicación (para rechazarlos si acepto uno)
     List<Claim> findByPublicationAndStatusAndIdNot(Publication publication, ClaimStatus status, Long idToExclude);
 
+    // Un caso es historial cuando el publicador confirmó la entrega (publicación resuelta).
     @Query("select c from Claim c where c.status = com.hallado.backend.model.ClaimStatus.ACCEPTED " +
+           "and c.publication.status = com.hallado.backend.model.PublicationStatus.RESOLVED " +
            "and (c.claimant = :user or c.publication.user = :user) " +
            "and (:fromDate is null or c.resolvedAt >= :fromDate) " +
            "and (:toDate is null or c.resolvedAt < :toDate) " +

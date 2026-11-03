@@ -28,6 +28,8 @@ import com.hallado.backend.model.Publication;
 import com.hallado.backend.model.PublicationStatus;
 import com.hallado.backend.model.PublicationType;
 import com.hallado.backend.model.User;
+import com.hallado.backend.repository.ClaimRepository;
+import com.hallado.backend.repository.PublicationFollowRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
 import com.hallado.backend.exception.BadRequestException;
@@ -41,14 +43,20 @@ public class PublicationService {
     private static final String UPLOAD_DIR = "uploads/publications/";
     private static final int TOLERANCIA_RELOJ_MINUTOS = 5;
     private final PublicationRepository publicationRepository;
+    private final ClaimRepository claimRepository;
+    private final PublicationFollowRepository followRepository;
     private final UserLookupService userLookupService;
     private final FileStorageService fileStorageService;
 
 
     public PublicationService(PublicationRepository publicationRepository,
                               UserLookupService userLookupService,
-                              FileStorageService fileStorageService) {
+                              FileStorageService fileStorageService,
+                              ClaimRepository claimRepository,
+                              PublicationFollowRepository followRepository) {
         this.publicationRepository = publicationRepository;
+        this.claimRepository = claimRepository;
+        this.followRepository = followRepository;
         this.userLookupService = userLookupService;
         this.fileStorageService = fileStorageService;
     }
@@ -314,6 +322,18 @@ public class PublicationService {
         if (publication.getStatus() != PublicationStatus.OPEN) {
             throw new BadRequestException("Solo se pueden eliminar publicaciones abiertas.");
         }
+        deleteWithDependencies(publication);
+    }
+
+    /**
+     * Borra la publicación junto con sus reclamos y seguimientos, que la referencian
+     * y de otro modo impedirían el borrado. Las valoraciones solo existen en casos
+     * resueltos, que no se pueden borrar.
+     */
+    @Transactional
+    public void deleteWithDependencies(Publication publication) {
+        followRepository.deleteAll(followRepository.findByPublication(publication));
+        claimRepository.deleteAll(claimRepository.findByPublication(publication));
         publicationRepository.delete(publication);
     }
 

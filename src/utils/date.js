@@ -14,6 +14,15 @@ export function toLocalDateString(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/**
+ * Lee "2026-11-02" como medianoche local. new Date("2026-11-02") la toma como
+ * medianoche UTC, que en Argentina es el día anterior a las 21:00.
+ */
+export function fromLocalDateString(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+}
+
 /** "2026-11-02T21:30:00" en hora local y sin zona, el formato que espera el backend. */
 export function toLocalDateTimeString(date) {
   return `${toLocalDateString(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;

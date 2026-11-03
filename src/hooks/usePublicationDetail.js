@@ -147,7 +147,8 @@ export default function usePublicationDetail() {
         publication.id,
         claimData.proofMessage,
         claimData.verificationAnswer,
-        claimData.imageUri
+        claimData.imageUri,
+        claimData.barrio
       );
       setClaimModalVisible(false);
       Alert.alert(

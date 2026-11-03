@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import useLocation from '../hooks/useLocation';
 import useRecentSearches from '../hooks/useRecentSearches';
-import { PublicationType } from '../constants/publicationConstants';
+import { DateFilterOption, PublicationType } from '../constants/publicationConstants';
 import { Colors } from '../constants/theme';
+import { fromLocalDateString, toLocalDateString } from '../utils/date';
 import GuidedSearchFooter from './guidedSearch/GuidedSearchFooter';
 import GuidedSearchHeader from './guidedSearch/GuidedSearchHeader';
 import RecentSearchesSection from './guidedSearch/RecentSearchesSection';
@@ -25,6 +27,10 @@ export default function GuidedSearchModal({
   const [query, setQuery] = useState(initialCriteria.query || '');
   const [barrio, setBarrio] = useState(initialCriteria.barrio || 'Todos los barrios');
   const [dateFilter, setDateFilter] = useState(initialCriteria.dateFilter || 'ALL');
+  // Rango de fechas: Date locales; viajan como "YYYY-MM-DD"
+  const [startDate, setStartDate] = useState(fromLocalDateString(initialCriteria.startDate));
+  const [endDate, setEndDate] = useState(fromLocalDateString(initialCriteria.endDate));
+  const [datePicker, setDatePicker] = useState(null); // 'start' | 'end' | null
   const {
     location: userLocation,
     loading: loadingLocation,
@@ -47,6 +53,8 @@ export default function GuidedSearchModal({
       setQuery(initialCriteria.query || '');
       setBarrio(initialCriteria.barrio || 'Todos los barrios');
       setDateFilter(initialCriteria.dateFilter || 'ALL');
+      setStartDate(fromLocalDateString(initialCriteria.startDate));
+      setEndDate(fromLocalDateString(initialCriteria.endDate));
       setUserLocation(
         initialCriteria.lat != null
           ? { latitude: initialCriteria.lat, longitude: initialCriteria.lng }
@@ -82,6 +90,18 @@ export default function GuidedSearchModal({
     setQuery(item.query || '');
     setBarrio(item.barrio || 'Todos los barrios');
     setDateFilter(item.dateFilter || 'ALL');
+    setStartDate(fromLocalDateString(item.startDate));
+    setEndDate(fromLocalDateString(item.endDate));
+  };
+
+  const isCustomRange = dateFilter === DateFilterOption.CUSTOM_RANGE;
+
+  const handleDatePicked = (_, date) => {
+    const which = datePicker;
+    setDatePicker(null);
+    if (!date) return;
+    if (which === 'start') setStartDate(date);
+    else setEndDate(date);
   };
 
   const buildSearchParams = () => ({
@@ -90,11 +110,21 @@ export default function GuidedSearchModal({
     query: query.trim(),
     barrio: barrio === 'Todos los barrios' ? '' : barrio,
     dateFilter,
+    startDate: isCustomRange && startDate ? toLocalDateString(startDate) : null,
+    endDate: isCustomRange && endDate ? toLocalDateString(endDate) : null,
     lat: userLocation ? userLocation.latitude : null,
     lng: userLocation ? userLocation.longitude : null,
   });
 
   const handleSubmitSearch = async () => {
+    if (isCustomRange && !startDate && !endDate) {
+      Alert.alert('Rango de fechas', 'Elegí al menos la fecha desde o la fecha hasta.');
+      return;
+    }
+    if (isCustomRange && startDate && endDate && startDate > endDate) {
+      Alert.alert('Rango de fechas', 'La fecha desde no puede ser posterior a la fecha hasta.');
+      return;
+    }
     const searchParams = buildSearchParams();
     await addRecentSearch(searchParams);
     onApplySearch(searchParams);
@@ -131,13 +161,28 @@ export default function GuidedSearchModal({
             onSelectBarrio={handleSelectBarrio}
             onGetCurrentLocation={handleGetCurrentLocation}
           />
-          <SearchDateSection dateFilter={dateFilter} onChangeDateFilter={setDateFilter} />
+          <SearchDateSection
+            dateFilter={dateFilter}
+            onChangeDateFilter={setDateFilter}
+            startDate={startDate}
+            endDate={endDate}
+            onOpenPicker={setDatePicker}
+          />
           <RecentSearchesSection
             recentSearches={recentSearches}
             onClear={clearRecent}
             onSelect={handleSelectRecentSearch}
           />
         </ScrollView>
+
+        {datePicker && (
+          <DateTimePicker
+            value={(datePicker === 'start' ? startDate : endDate) || new Date()}
+            mode="date"
+            maximumDate={new Date()}
+            onChange={handleDatePicked}
+          />
+        )}
 
         <GuidedSearchFooter
           onSaveAlert={onSaveAlert}

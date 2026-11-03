@@ -27,6 +27,7 @@ export const ClaimStatus = {
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED',
   EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
 };
 
 /** Estado del punto de encuentro (MeetingPointStatus en el backend). */
@@ -137,6 +138,7 @@ export const getClaimStatusColor = (status) => {
     case ClaimStatus.REJECTED:
       return '#EF4444';
     case ClaimStatus.EXPIRED:
+    case ClaimStatus.CANCELLED:
       return '#6B7280';
     case ClaimStatus.PENDING:
     default:
@@ -152,6 +154,8 @@ export const getClaimStatusLabel = (status) => {
       return 'Rechazado';
     case ClaimStatus.EXPIRED:
       return 'Vencido';
+    case ClaimStatus.CANCELLED:
+      return 'Cancelado';
     case ClaimStatus.PENDING:
     default:
       return 'Pendiente';

@@ -1,6 +1,8 @@
 package com.hallado.backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,14 +21,21 @@ public class Claim {
     @JoinColumn(name = "claimant_id", nullable = false)
     private User claimant;
 
+    // VARCHAR en lugar del ENUM nativo de MySQL: así sumar un estado no requiere
+    // modificar la columna (ver ClaimStatusColumnMigration para las bases existentes).
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
     private ClaimStatus status = ClaimStatus.PENDING;
 
     @Column(columnDefinition = "TEXT")
     private String proofMessage;
 
     private String proofImageUrl;
+
+    /** "Lo encontré": barrio donde quien reclama encontró el objeto. */
+    @Column(length = 100)
+    private String barrio;
 
     @Column(columnDefinition = "TEXT")
     private String verificationAnswer;
@@ -70,6 +79,8 @@ public class Claim {
     public ClaimStatus getStatus() { return status; }
     public void setStatus(ClaimStatus status) { this.status = status; }
 
+    public String getBarrio() { return barrio; }
+    public void setBarrio(String barrio) { this.barrio = barrio; }
     public String getProofMessage() { return proofMessage; }
     public void setProofMessage(String proofMessage) { this.proofMessage = proofMessage; }
 
@@ -94,4 +105,4 @@ public class Claim {
     public String getVerificationAnswer() { return verificationAnswer; }
     public void setVerificationAnswer(String verificationAnswer) { this.verificationAnswer = verificationAnswer; }
 
-}
+}
