@@ -1,7 +1,3 @@
-import { database } from '../../database';
-import { Q } from '@nozbe/watermelondb';
-import { getDatabaseSession, isCurrentSession } from '../../database/session';
-import { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,16 +8,12 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { shared } from "../../constants/sharedStyles";
-import { useAuth } from "../../hooks/useAuth";
-import { getMyPublicationsApi, deletePublicationApi, renewPublicationApi } from "../../services/publicationService";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
+import useMyPublications from "../../hooks/useMyPublications";
 import { getPublicationStatusColor } from "../../constants/publicationConstants";
-import { getPendingPublications } from "../../storage/pendingSyncStorage";
-import { syncPendingPublications } from "../../services/offlineSyncService";
 import {
   PublicationStatus,
   getStatusLabel,
@@ -50,104 +42,20 @@ function isRenewable(publication) {
 
 export default function MyPublicationsScreen() {
   const navigation = useNavigation();
-  const { token } = useAuth();
-  const [publications, setPublications] = useState([]);
-  const [pendingPublications, setPendingPublications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [page, setPage] = useState(0);
-  const [isLastPage, setIsLastPage] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const { isConnected } = useNetworkStatus();
-
-  const fetchPublications = useCallback(
-    async (pageNum = 0, append = false) => {
-      try {
-        // Cargar pendientes guardados offline
-        const pending = await getPendingPublications();
-        setPendingPublications(pending || []);
-
-        // Intentar sincronizar si hay pendientes
-        if (pending && pending.length > 0) {
-          await syncPendingPublications();
-          const updatedPending = await getPendingPublications();
-          setPendingPublications(updatedPending || []);
-        }
-
-        const data = await getMyPublicationsApi(pageNum, 10, statusFilter);
-        const items = data.content || [];
-        setPublications(append ? (prev) => [...prev, ...items] : items);
-        setIsLastPage(data.last ?? true);
-        setPage(pageNum);
-      } catch (err) {
-        console.warn("Error cargando mis publicaciones o modo offline:", err);
-        if (!append) setPublications([]);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-        setLoadingMore(false);
-      }
-    },
-    [statusFilter]
-  );
-
-  // Recargar al enfocar la tab o cambiar filtro
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      fetchPublications(0);
-    }, [fetchPublications])
-  );
-
-  useEffect(() => {
-    const session = getDatabaseSession();
-    let previousCount = null;
-    const subscription = database.get('pending_operations').query(Q.where('owner', session.owner))
-      .observeWithColumns(['state', 'last_error']).subscribe(async rows => {
-        if (!isCurrentSession(session)) return;
-        try {
-          const pending = await getPendingPublications();
-          if (!isCurrentSession(session)) return;
-          setPendingPublications(pending);
-          if (previousCount !== null && rows.length < previousCount) {
-            const data = await getMyPublicationsApi(0, 10, statusFilter);
-            if (isCurrentSession(session)) { setPublications(data.content || []); setPage(0); setIsLastPage(data.last ?? true); }
-          }
-          previousCount = rows.length;
-        } catch { /* refresh remains available if the backend is offline */ }
-      });
-    return () => subscription.unsubscribe();
-  }, [token, statusFilter]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchPublications(0);
-  };
-
-  const loadMore = () => {
-    if (isLastPage || loadingMore) return;
-    setLoadingMore(true);
-    fetchPublications(page + 1, true);
-  };
-
-
-  // Combinar publicaciones pendientes offline con las remotas
-  const formattedPendingList = pendingPublications.map((p) => ({
-    id: p.offlineId,
-    title: p.payload?.title || "Sin título",
-    category: p.payload?.category,
-    barrio: p.payload?.barrio,
-    type: p.payload?.type,
-    status: "PENDIENTE_ENVIO",
-    createdAt: p.createdAt,
-    isPending: true,
-    lastError: p.lastError,
-    pendingState: p.status,
-    pendingDraft: { ...p.payload, images: p.images },
-  }));
-
-  const combinedData = [...formattedPendingList, ...publications];
+  const {
+    pendingPublications,
+    combinedPublications,
+    loading,
+    refreshing,
+    statusFilter,
+    setStatusFilter,
+    loadingMore,
+    isConnected,
+    refresh,
+    loadMore,
+    deletePublication,
+    renewPublication,
+  } = useMyPublications();
 
   const handleDelete = (pub) => {
     Alert.alert(
@@ -160,8 +68,7 @@ export default function MyPublicationsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deletePublicationApi(pub.id);
-              fetchPublications(0);
+              await deletePublication(pub.id);
             } catch (err) {
               Alert.alert("Error", err?.message || "No se pudo eliminar la publicación.");
             }
@@ -185,8 +92,7 @@ export default function MyPublicationsScreen() {
           text: "Renovar",
           onPress: async () => {
             try {
-              await renewPublicationApi(pub.id);
-              fetchPublications(0);
+              await renewPublication(pub.id);
             } catch (err) {
               Alert.alert("Error", err?.message || "No se pudo renovar la publicación.");
             }
@@ -348,13 +254,13 @@ export default function MyPublicationsScreen() {
         </View>
       ) : (
         <FlatList
-          data={combinedData}
+          data={combinedPublications}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           ListEmptyComponent={renderEmpty}
-          contentContainerStyle={combinedData.length === 0 ? { flex: 1 } : { padding: 16 }}
+          contentContainerStyle={combinedPublications.length === 0 ? { flex: 1 } : { padding: 16 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+            <RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[Colors.primary]} />
           }
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}
