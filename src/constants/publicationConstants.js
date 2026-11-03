@@ -146,6 +146,12 @@ export const getClaimStatusColor = (status) => {
   }
 };
 
+export const isValidPublicationType = (type) =>
+  type === PublicationType.LOST || type === PublicationType.FOUND;
+
+export const isValidPublicationStatus = (status) =>
+  Object.values(PublicationStatus).includes(status) || status === PENDING_SUBMISSION_STATUS;
+
 export const getClaimStatusLabel = (status) => {
   switch (status) {
     case ClaimStatus.ACCEPTED:
