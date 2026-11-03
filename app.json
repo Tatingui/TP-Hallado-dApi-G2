@@ -20,9 +20,6 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.hallado.app"
     },
-    "web": {
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       [
         "expo-splash-screen",
