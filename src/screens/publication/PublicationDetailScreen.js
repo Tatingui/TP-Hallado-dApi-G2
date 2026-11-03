@@ -20,6 +20,7 @@ import {
   PublicationStatus,
 } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
+import useOpenCoordinates from "../../hooks/useOpenCoordinates";
 import usePublicationDetail from "../../hooks/usePublicationDetail";
 import { formatDateTime } from "../../utils/date";
 
@@ -52,6 +53,11 @@ export default function PublicationDetailScreen() {
   const handleActionFooterLayout = ({ nativeEvent }) => {
     setActionFooterHeight(nativeEvent.layout.height);
   };
+
+  const handleOpenCoordinates = useOpenCoordinates(
+    publication?.latitude,
+    publication?.longitude
+  );
 
   if (loading) {
     return (
@@ -136,9 +142,20 @@ export default function PublicationDetailScreen() {
           <InfoRow
             icon="navigate-outline"
             label="Dirección"
-            value={isMyPublication ? (publication.address || "No especificada") : null}
+            value={publication.addressVisible ? (publication.address || "No especificada") : null}
             placeholder="🔒 Oculta hasta aceptar reclamo"
           />
+          {publication.addressVisible && publication.latitude != null && publication.longitude != null && (
+            <>
+              <View style={styles.divider} />
+              <InfoRow
+                icon="locate-outline"
+                label="Coordenadas"
+                value={`${Number(publication.latitude).toFixed(6)}, ${Number(publication.longitude).toFixed(6)}`}
+                onPress={handleOpenCoordinates}
+              />
+            </>
+          )}
           <View style={styles.divider} />
           <InfoRow
             icon="calendar-outline"
@@ -208,9 +225,17 @@ export default function PublicationDetailScreen() {
 }
 
 /** Mini-componente para las filas de info */
-function InfoRow({ icon, label, value, placeholder }) {
+function InfoRow({ icon, label, value, placeholder, onPress }) {
+  const Row = onPress ? TouchableOpacity : View;
+
   return (
-    <View style={styles.infoRow}>
+    <Row
+      style={styles.infoRow}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityLabel={onPress ? `Abrir coordenadas de ${value}` : undefined}
+    >
       <Ionicons name={icon} size={18} color={Colors.textSecondary} />
       <Text style={styles.infoLabel}>{label}</Text>
       {value ? (
@@ -220,7 +245,7 @@ function InfoRow({ icon, label, value, placeholder }) {
           {placeholder || "—"}
         </Text>
       )}
-    </View>
+    </Row>
   );
 }
 
@@ -258,7 +283,7 @@ const styles = StyleSheet.create({
     padding: 16, borderWidth: 1, borderColor: Colors.border,
   },
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
-  infoLabel: { fontSize: 14, color: Colors.textSecondary, marginLeft: 8, width: 80 },
+  infoLabel: { fontSize: 14, color: Colors.textSecondary, marginLeft: 8, width: 100 },
   infoValue: { fontSize: 14, color: Colors.text, fontWeight: "500", flex: 1 },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 8 },
   actionFooter: {

@@ -24,6 +24,7 @@ import com.hallado.backend.dto.PublicationEditResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.model.CategoryEnum;
+import com.hallado.backend.model.ClaimStatus;
 import com.hallado.backend.model.Publication;
 import com.hallado.backend.model.PublicationStatus;
 import com.hallado.backend.model.PublicationType;
@@ -157,18 +158,24 @@ public class PublicationService {
 
     // ─── Detalle de publicación ──────────────────────────────────────
 
-    /**
-     * Obtiene una publicación por ID.
-     */
-    /**
-     * Punto 4: detalle de una publicación. La dirección exacta no viaja en este DTO:
-     * solo se comparte en el reclamo aceptado (ClaimResponseDTO.exactAddress).
-     */
+    /** Punto 4: obtiene una publicación por ID y revela la dirección a los participantes autorizados. */
     public PublicationResponseDTO getPublicationById(Long id, String viewerEmail) {
         Publication pub = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(pub);
-        dto.setMine(pub.getUser().getEmail().equalsIgnoreCase(viewerEmail));
+        boolean mine = pub.getUser().getEmail().equalsIgnoreCase(viewerEmail);
+        dto.setMine(mine);
+        boolean acceptedClaimant = !mine
+                && claimRepository.existsByPublicationAndClaimant_EmailIgnoreCaseAndStatus(
+                        pub, viewerEmail, ClaimStatus.ACCEPTED);
+        boolean addressVisible = mine || acceptedClaimant;
+        dto.setAddressVisible(addressVisible);
+        if (addressVisible) {
+            dto.setAddress(pub.getAddress());
+        } else {
+            dto.setLatitude(null);
+            dto.setLongitude(null);
+        }
         return dto;
     }
 

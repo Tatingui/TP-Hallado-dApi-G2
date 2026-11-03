@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/theme';
 import { ClaimStatus, MeetingStatus, PublicationStatus } from '../constants/publicationConstants';
 import { formatDateTime } from '../utils/date';
@@ -18,6 +18,7 @@ export default function ClaimCard({
   onAcceptMeeting,
   onConfirmDelivery,
   onCancelClaim,
+  onOpenPublication,
   isProcessing,
   isOfflineMode = false,
 }) {
@@ -47,7 +48,11 @@ export default function ClaimCard({
   };
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={() => onOpenPublication?.(claim.publicationId)}
+      disabled={!claim.publicationId}
+    >
       <ClaimHeader claim={claim} formattedDate={formatDateTime(claim.claimDate)} />
 
       <ClaimContent claim={claim} isReceived={isReceived} isAccepted={isAccepted} />
@@ -84,7 +89,7 @@ export default function ClaimCard({
           isOfflineMode={isOfflineMode}
         />
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -102,5 +107,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     overflow: 'hidden',
+  },
+  cardPressed: {
+    opacity: 0.92,
   },
 });

@@ -24,6 +24,9 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     List<Claim> findByPublicationAndStatus(Publication publication, ClaimStatus status);
 
+    boolean existsByPublicationAndClaimant_EmailIgnoreCaseAndStatus(
+            Publication publication, String claimantEmail, ClaimStatus status);
+
     // Mis reclamos enviados (yo soy el claimant)
     Page<Claim> findByClaimantOrderByClaimDateDesc(User claimant, Pageable pageable);
 

@@ -98,6 +98,9 @@ export default function ClaimsScreen() {
               isOfflineMode={isOfflineMode}
               claim={item}
               type={activeTab}
+              onOpenPublication={(publicationId) =>
+                navigation.navigate("PublicationDetail", { id: String(publicationId) })
+              }
               isProcessing={processingId === item.id}
               onAccept={(id) => handleRespond(id, ClaimStatus.ACCEPTED)}
               onReject={(id) => handleRespond(id, ClaimStatus.REJECTED)}
