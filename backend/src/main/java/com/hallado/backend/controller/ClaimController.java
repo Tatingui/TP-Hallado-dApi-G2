@@ -1,6 +1,5 @@
 package com.hallado.backend.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hallado.backend.dto.ClaimRequestDTO;
 import com.hallado.backend.dto.ClaimResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
@@ -24,11 +23,9 @@ import java.time.LocalDate;
 public class ClaimController {
 
     private final ClaimService claimService;
-    private final ObjectMapper objectMapper;
 
-    public ClaimController(ClaimService claimService, ObjectMapper objectMapper) {
+    public ClaimController(ClaimService claimService) {
         this.claimService = claimService;
-        this.objectMapper = objectMapper;
     }
 
     /**

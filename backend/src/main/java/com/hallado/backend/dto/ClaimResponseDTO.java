@@ -109,8 +109,9 @@ public class ClaimResponseDTO {
         boolean isAccepted = claim.getStatus() == ClaimStatus.ACCEPTED;
 
         // Populate Claimant
-        String claimantPhone = (isAccepted && isPublisher) ? claim.getClaimant().getTelefono() : null;
-        if (!isPublisher && isAccepted) {
+        // El teléfono del reclamante: a él mismo siempre; al publicador, solo si es visible
+        String claimantPhone = null;
+        if (isAccepted && (!isPublisher || claim.getClaimant().isTelefonoVisible())) {
             claimantPhone = claim.getClaimant().getTelefono();
         }
         

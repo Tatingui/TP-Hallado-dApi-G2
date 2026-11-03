@@ -78,7 +78,11 @@ export default function ClaimsScreen() {
       </View>
 
       {isOfflineMode && (
-        <OfflineBanner message="Sin conexión: No se pudieron cargar los reclamos. Se requiere internet para interactuar con los reclamos." />
+        <OfflineBanner
+          message={claims.length > 0
+            ? "Sin conexión: mostrando los últimos reclamos guardados. Se requiere internet para responderlos."
+            : "Sin conexión: no se pudieron cargar los reclamos."}
+        />
       )}
 
       {loading ? (

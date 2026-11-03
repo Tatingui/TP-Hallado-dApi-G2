@@ -12,7 +12,9 @@ export async function checkNetworkConnection() {
   finally { clearTimeout(timer); }
 }
 export function useNetworkStatus() {
-  const [isConnected, setIsConnected] = useState(false);
-  useEffect(() => NetInfo.addEventListener(state => setIsConnected(state.isConnected === true)), []);
-  return { isConnected, isChecking: false, checkConnection: checkNetworkConnection, setIsConnected };
+  // Arranca como conectado: si arrancara en false, cada pantalla mostraría por un
+  // instante el aviso "Sin conexión" hasta que NetInfo informe el estado real.
+  const [isConnected, setIsConnected] = useState(true);
+  useEffect(() => NetInfo.addEventListener(state => setIsConnected(state.isConnected !== false)), []);
+  return { isConnected };
 }

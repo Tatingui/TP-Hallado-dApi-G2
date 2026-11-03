@@ -54,7 +54,13 @@ export default function HomeScreen() {
   // Punto 9: Guardar una búsqueda como alerta (la actual o la armada en el Buscador Guiado)
   const handleSaveAlert = (criteria = searchCriteria) => saveAlert(criteria);
 
-  const handleToggleSort = () => setSortBy(sortBy === 'recent' ? 'distance' : 'recent');
+  const handleToggleSort = () => {
+    if (sortBy === 'recent' && searchCriteria.lat == null) {
+      Alert.alert('Ubicación necesaria', 'Para ordenar por cercanía, activá "Usar mi ubicación actual" en el Buscador Guiado.');
+      return;
+    }
+    setSortBy(sortBy === 'recent' ? 'distance' : 'recent');
+  };
 
   const openGuidedSearch = () => setSearchModalVisible(true);
 
@@ -68,6 +74,7 @@ export default function HomeScreen() {
   );
 
   const handleClearFilters = () => {
+    setSortBy('recent');
     setSearchCriteria((prev) => ({
       type: prev.type,
       category: null,
@@ -127,7 +134,12 @@ export default function HomeScreen() {
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
         initialCriteria={searchCriteria}
-        onApplySearch={(newCriteria) => { setHasSearched(true); setSearchCriteria(newCriteria); }}
+        onApplySearch={(newCriteria) => {
+          setHasSearched(true);
+          setSearchCriteria(newCriteria);
+          // Con ubicación se ordena por cercanía; sin ella, por fecha.
+          setSortBy(newCriteria.lat != null ? 'distance' : 'recent');
+        }}
         onSaveAlert={handleSaveAlert}
         isSavingAlert={savingAlert}
       />

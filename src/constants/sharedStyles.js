@@ -16,18 +16,6 @@ export const shared = StyleSheet.create({
     marginBottom: 12,
   },
 
-  cardElevated: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    overflow: "hidden",
-  },
 
   // --- Top bar (pantallas internas con flecha atrás) ---
   topBar: {
@@ -92,17 +80,6 @@ export const shared = StyleSheet.create({
     gap: 6,
   },
 
-  actionBtnPrimary: {
-    backgroundColor: Colors.primary,
-  },
 
-  actionBtnDanger: {
-    backgroundColor: Colors.errorLight,
-  },
 
-  actionBtnText: {
-    color: Colors.surface,
-    fontWeight: "700",
-    fontSize: 14,
-  },
 });

@@ -1,8 +1,6 @@
 export const Colors = {
   primary: '#1A56DB',
-  primaryDark: '#1342B0',
   primaryLight: '#E1EFFE',
-  accent: '#0EA5E9',
   background: '#F8FAFC',
   surface: '#FFFFFF',
   text: '#1E293B',
@@ -28,14 +26,11 @@ export const Colors = {
   gray500: '#6B7280',
   gray600: '#4B5563',
   gray700: '#374151',
-  gray800: '#1F2937',
   gray900: '#111827',
 
   // Semánticos extra
   warning: '#F59E0B',
-  warningLight: '#FEF3C7',
   successDark: '#15803D',
-  errorDark: '#B91C1C',
 
   // Claim / encuentro (violeta)
   purple50: '#F5F3FF',
@@ -60,6 +55,3 @@ export const FontSize = {
   xl: 24,
   xxl: 32,
 };
-
-// Alias para compatibilidad con componentes que usan COLORS (ej: punto 3)
-export const COLORS = Colors;

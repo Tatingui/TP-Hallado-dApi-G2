@@ -3,7 +3,7 @@ import { Q } from '@nozbe/watermelondb';
 import { assertCurrentSession, getDatabaseSession } from '../database/session';
 import { PublicationStatus } from '../constants/publicationConstants';
 
-export async function getLocalPublications(criteria = {}, session = getDatabaseSession()) {
+export async function getLocalPublications(session = getDatabaseSession()) {
   const rows = await database.get('publications').query(Q.where('owner', session.owner)).fetch();
   assertCurrentSession(session);
   return rows.filter(row => row.syncStatus === 'synced' && row.snapshotJson).map(row => JSON.parse(row.snapshotJson));

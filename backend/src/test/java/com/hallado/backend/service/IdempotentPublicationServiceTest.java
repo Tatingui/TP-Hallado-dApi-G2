@@ -45,7 +45,7 @@ class IdempotentPublicationServiceTest {
         var first = service.create(request, null, email, "stable");
         var replay = service.create(request, null, email, "stable");
         assertEquals(first.getId(), replay.getId());
-        assertEquals(first.getPublisher().getEmail(), replay.getPublisher().getEmail());
+        assertEquals(first.getPublisher().getId(), replay.getPublisher().getId());
         request.setTitle("Otra publicación");
         assertThrows(ResponseStatusException.class, () -> service.create(request, null, email, "stable"));
     }

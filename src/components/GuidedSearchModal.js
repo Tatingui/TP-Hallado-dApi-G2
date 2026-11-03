@@ -76,7 +76,7 @@ export default function GuidedSearchModal({
 
       Alert.alert(
         'Ubicación obtenida',
-        'Usaremos tus coordenadas GPS actuales para ordenar y filtrar los resultados por cercanía.'
+        'Los resultados se van a ordenar por cercanía a tu ubicación.'
       );
     } catch (error) {
       console.error('Error getting position:', error);
@@ -84,14 +84,22 @@ export default function GuidedSearchModal({
     }
   };
 
-  const handleSelectRecentSearch = (item) => {
-    setType(item.type || PublicationType.LOST);
-    setCategory(item.category || null);
-    setQuery(item.query || '');
-    setBarrio(item.barrio || 'Todos los barrios');
-    setDateFilter(item.dateFilter || 'ALL');
-    setStartDate(fromLocalDateString(item.startDate));
-    setEndDate(fromLocalDateString(item.endDate));
+  // Punto 3: una búsqueda reciente se repite con un toque
+  const handleSelectRecentSearch = async (item) => {
+    const searchParams = {
+      type: item.type || PublicationType.LOST,
+      category: item.category || null,
+      query: item.query || '',
+      barrio: item.barrio || '',
+      dateFilter: item.dateFilter || 'ALL',
+      startDate: item.startDate || null,
+      endDate: item.endDate || null,
+      lat: null,
+      lng: null,
+    };
+    await addRecentSearch(searchParams);
+    onApplySearch(searchParams);
+    onClose();
   };
 
   const isCustomRange = dateFilter === DateFilterOption.CUSTOM_RANGE;

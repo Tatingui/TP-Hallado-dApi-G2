@@ -112,6 +112,51 @@ class ClaimLifecycleTest {
     }
 
     @Test
+    void noSeAceptaUnReclamoSiLaPublicacionYaVencio() {
+        Caso caso = casoPendiente();
+        caso.publicacion.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+        publications.saveAndFlush(caso.publicacion);
+
+        assertThrows(BadRequestException.class,
+                () -> claims.respondToClaim(caso.reclamo.getId(), ClaimStatus.ACCEPTED, caso.publicador.getEmail()));
+    }
+
+    @Test
+    void volverAPublicarRenuevaSiElPlazoTerminoDuranteElReclamo() {
+        Caso caso = casoAceptado();
+        caso.publicacion.setExpiresAt(LocalDateTime.now().minusDays(1));
+        publications.saveAndFlush(caso.publicacion);
+
+        claims.cancelAcceptedClaim(caso.reclamo.getId(), true, caso.publicador.getEmail());
+
+        Publication reabierta = publications.findById(caso.publicacion.getId()).orElseThrow();
+        assertEquals(PublicationStatus.OPEN, reabierta.getStatus());
+        assertTrue(reabierta.getExpiresAt().isAfter(LocalDateTime.now().plusDays(Publication.VIGENCIA_DIAS - 1)));
+    }
+
+    @Test
+    void noSeAceptaElPuntoDeEncuentroDeUnReclamoCancelado() {
+        Caso caso = casoAceptado();
+        claims.proposeMeetingPoint(caso.reclamo.getId(), "Plaza Serrano", caso.publicador.getEmail());
+        claims.cancelAcceptedClaim(caso.reclamo.getId(), true, caso.publicador.getEmail());
+
+        assertThrows(BadRequestException.class,
+                () -> claims.acceptMeetingPoint(caso.reclamo.getId(), caso.reclamante.getEmail()));
+    }
+
+    @Test
+    void elTelefonoDelReclamanteRespetaSuVisibilidad() {
+        Caso caso = casoPendiente();
+        caso.reclamante.setTelefono("1122334455");
+        caso.reclamante.setTelefonoVisible(false);
+        users.saveAndFlush(caso.reclamante);
+
+        ClaimResponseDTO aceptado = claims.respondToClaim(caso.reclamo.getId(), ClaimStatus.ACCEPTED, caso.publicador.getEmail());
+
+        assertNull(aceptado.getClaimant().getPhone());
+    }
+
+    @Test
     void loEncontreExigeElBarrioDondeSeEncontro() {
         User publicador = usuario();
         Publication perdida = publications.saveAndFlush(new Publication("Perdí mis llaves", "Llavero rojo",

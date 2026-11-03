@@ -1,8 +1,26 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PublicationType, getCategoryLabel } from '../../constants/publicationConstants';
+import {
+  DATE_FILTER_OPTIONS,
+  DateFilterOption,
+  PublicationType,
+  getCategoryLabel,
+} from '../../constants/publicationConstants';
 import { Colors } from '../../constants/theme';
+import { formatDate, fromLocalDateString } from '../../utils/date';
+
+/** "· Última semana" o "· 01/11/2026 a 03/11/2026" según el filtro de fecha guardado. */
+function getDateLabel(item) {
+  if (!item.dateFilter || item.dateFilter === DateFilterOption.ALL) return '';
+  if (item.dateFilter === DateFilterOption.CUSTOM_RANGE) {
+    const from = item.startDate ? formatDate(fromLocalDateString(item.startDate)) : '…';
+    const to = item.endDate ? formatDate(fromLocalDateString(item.endDate)) : '…';
+    return `· ${from} a ${to}`;
+  }
+  const option = DATE_FILTER_OPTIONS.find((opt) => opt.id === item.dateFilter);
+  return option ? `· ${option.label}` : '';
+}
 
 export default function RecentSearchesSection({ recentSearches, onClear, onSelect }) {
   if (recentSearches.length === 0) return null;
@@ -24,7 +42,8 @@ export default function RecentSearchesSection({ recentSearches, onClear, onSelec
               {item.type === PublicationType.LOST ? 'Perdí ' : 'Encontré '}
               {item.category ? `${getCategoryLabel(item.category)} ` : ''}
               {item.query ? `"${item.query}" ` : ''}
-              {item.barrio ? `en ${item.barrio}` : ''}
+              {item.barrio ? `en ${item.barrio} ` : ''}
+              {getDateLabel(item)}
             </Text>
             <MaterialCommunityIcons name="arrow-top-left" size={16} color={Colors.gray400} />
           </Pressable>

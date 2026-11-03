@@ -22,6 +22,8 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     List<Claim> findByPublication(Publication publication);
 
+    List<Claim> findByPublicationAndStatus(Publication publication, ClaimStatus status);
+
     // Mis reclamos enviados (yo soy el claimant)
     Page<Claim> findByClaimantOrderByClaimDateDesc(User claimant, Pageable pageable);
 

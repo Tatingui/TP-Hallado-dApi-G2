@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, COLORS } from '../constants/theme';
+import { Colors } from '../constants/theme';
 import { resolveImageUrl } from '../utils/imageUrl';
 import {
   getCategoryLabel,
@@ -77,7 +77,7 @@ export default function PublicationCard({ publication, onPress }) {
             <MaterialCommunityIcons
               name={categoryIcon}
               size={14}
-              color={COLORS.primary}
+              color={Colors.primary}
             />
             <Text style={styles.categoryText}>{categoryLabel}</Text>
           </View>
@@ -86,7 +86,7 @@ export default function PublicationCard({ publication, onPress }) {
             <MaterialCommunityIcons
               name="calendar"
               size={12}
-              color={COLORS.subtext || Colors.gray500}
+              color={Colors.gray500}
             />
             <Text style={styles.dateText}>{formattedDate}</Text>
           </View>
@@ -107,7 +107,7 @@ export default function PublicationCard({ publication, onPress }) {
             <MaterialCommunityIcons
               name="map-marker"
               size={14}
-              color={COLORS.primary}
+              color={Colors.primary}
             />
             <View style={styles.locationTexts}>
               <Text style={styles.locationText} numberOfLines={1}>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryText: {
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
     fontSize: 11,
     fontWeight: '600',
   },

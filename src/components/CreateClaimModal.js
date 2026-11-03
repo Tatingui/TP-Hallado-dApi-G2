@@ -14,7 +14,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
 import { BARRIOS_LIST, PublicationType } from '../constants/publicationConstants';
 import { checkNetworkConnection } from '../hooks/useNetworkStatus';
@@ -32,25 +31,18 @@ export default function CreateClaimModal({
   const [verificationAnswer, setVerificationAnswer] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [barrio, setBarrio] = useState(null);
-  const { takePhoto: takePhotoFromCamera } = useImagePicker();
+  const { pickImage: pickImageFromGallery, takePhoto: takePhotoFromCamera } = useImagePicker();
 
   const isFound = publicationType === PublicationType.FOUND;
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    const result = await pickImageFromGallery({ allowsEditing: true, quality: 0.7 });
+    if (result.status === 'denied') {
       Alert.alert('Permiso denegado', 'Necesitamos permisos para acceder a tus fotos.');
       return;
     }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
+    if (result.asset) {
+      setImageUri(result.asset.uri);
     }
   };
 
@@ -93,7 +85,7 @@ export default function CreateClaimModal({
     }
 
     // Validaciones estrictas Punto 7
-    if (isFound && !verificationAnswer.trim()) {
+    if (isFound && verificationQuestion && !verificationAnswer.trim()) {
       Alert.alert('Falta respuesta', 'Debés responder la pregunta de verificación obligatoria.');
       return;
     }

@@ -30,7 +30,7 @@ export function PublicationStatusBadge({ status, label, style }) {
   );
 }
 
-/** Estado de un reclamo (pendiente, aceptado, rechazado o vencido). */
+/** Estado de un reclamo (pendiente, aceptado, rechazado, vencido o cancelado). */
 export function ClaimStatusBadge({ status, style }) {
   return (
     <StatusBadge

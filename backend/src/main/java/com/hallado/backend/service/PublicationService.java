@@ -120,8 +120,8 @@ public class PublicationService {
                     || req.getVerificationAnswer() == null || req.getVerificationAnswer().trim().isEmpty()) {
                 throw new BadRequestException("La pregunta y respuesta de verificación son obligatorias para publicaciones encontradas");
             }
-            pub.setVerificationQuestion(req.getVerificationQuestion());
-            pub.setVerificationAnswer(req.getVerificationAnswer());
+            pub.setVerificationQuestion(req.getVerificationQuestion().trim());
+            pub.setVerificationAnswer(req.getVerificationAnswer().trim());
         }
 
         Publication saved = publicationRepository.save(pub);
@@ -160,10 +160,16 @@ public class PublicationService {
     /**
      * Obtiene una publicación por ID.
      */
-    public PublicationResponseDTO getPublicationById(Long id) {
+    /**
+     * Punto 4: detalle de una publicación. La dirección exacta no viaja en este DTO:
+     * solo se comparte en el reclamo aceptado (ClaimResponseDTO.exactAddress).
+     */
+    public PublicationResponseDTO getPublicationById(Long id, String viewerEmail) {
         Publication pub = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-        return PublicationResponseDTO.fromEntity(pub);
+        PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(pub);
+        dto.setMine(pub.getUser().getEmail().equalsIgnoreCase(viewerEmail));
+        return dto;
     }
 
     public PublicationEditResponseDTO getPublicationForEdit(Long id, String userEmail) {
@@ -171,7 +177,7 @@ public class PublicationService {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         if (!publication.getUser().getId().equals(user.getId())) {
-            throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
+            throw new ForbiddenException("No tenés permiso para editar esta publicación");
         }
         return PublicationEditResponseDTO.fromEntity(publication);
     }
@@ -182,7 +188,7 @@ public class PublicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         if (!publication.getUser().getId().equals(user.getId())) {
-            throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
+            throw new ForbiddenException("No tenés permiso para editar esta publicación");
         }
         if (publication.getStatus() != PublicationStatus.OPEN) {
             throw new BadRequestException("Solo se pueden editar publicaciones abiertas");
@@ -273,30 +279,42 @@ public class PublicationService {
 
         Sort sort = Sort.by(Sort.Direction.DESC, "eventDate");
         Pageable pageable = PageRequest.of(page, size, sort);
+        boolean hasLocation = userLat != null && userLng != null;
+
+        // "Más cercanos": la distancia se calcula en Java, así que se ordenan todos los
+        // resultados y después se pagina. Ordenar solo la página traída por fecha
+        // dejaba publicaciones cercanas en páginas posteriores.
+        if ("distance".equalsIgnoreCase(sortBy) && hasLocation) {
+            List<PublicationResponseDTO> todos = publicationRepository.findAll(spec, sort).stream()
+                    .map(p -> toSearchResult(p, userLat, userLng))
+                    .sorted(Comparator.comparing(PublicationResponseDTO::getDistanceKm,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+            int desde = (int) Math.min(pageable.getOffset(), todos.size());
+            int hasta = Math.min(desde + size, todos.size());
+            return PageResponseDTO.fromPage(new PageImpl<>(todos.subList(desde, hasta), pageable, todos.size()));
+        }
 
         Page<Publication> publicationPage = publicationRepository.findAll(spec, pageable);
-
         List<PublicationResponseDTO> dtoList = publicationPage.getContent().stream()
-                .map(p -> {
-                    PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(p);
-                    if (userLat != null && userLng != null && p.getLatitude() != null && p.getLongitude() != null) {
-                        double dist = calculateDistanceKm(userLat, userLng, p.getLatitude(), p.getLongitude());
-                        dto.setDistanceKm(Math.round(dist * 10.0) / 10.0);
-                    }
-                    return dto;
-                })
+                .map(p -> toSearchResult(p, userLat, userLng))
                 .collect(Collectors.toList());
-
-        if ("distance".equalsIgnoreCase(sortBy) && userLat != null && userLng != null) {
-            dtoList.sort(Comparator.comparing(PublicationResponseDTO::getDistanceKm, Comparator.nullsLast(Comparator.naturalOrder())));
-        }
 
         Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtoList, pageable, publicationPage.getTotalElements());
         return PageResponseDTO.fromPage(dtoPage);
     }
 
-    // ─── Punto 3: Búsqueda (existente) ──────────────────────────────
+    /** Resultado de búsqueda con la distancia a la persona, si mandó su ubicación. */
+    private PublicationResponseDTO toSearchResult(Publication p, Double userLat, Double userLng) {
+        PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(p);
+        if (userLat != null && userLng != null && p.getLatitude() != null && p.getLongitude() != null) {
+            double dist = calculateDistanceKm(userLat, userLng, p.getLatitude(), p.getLongitude());
+            dto.setDistanceKm(Math.round(dist * 10.0) / 10.0);
+        }
+        return dto;
+    }
 
+    /** Distancia en km entre dos coordenadas (fórmula de Haversine). */
     private double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371;
         double latDistance = Math.toRadians(lat2 - lat1);

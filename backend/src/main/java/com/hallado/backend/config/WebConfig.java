@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuración para servir las imágenes subidas como recursos estáticos.
- * Las imágenes se guardan en uploads/publications/ y se sirven en /uploads/publications/*.
+ * Todo lo que está en uploads/ (fotos de publicaciones, de perfil y de reclamos) se sirve en /uploads/**.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

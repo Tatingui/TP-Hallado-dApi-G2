@@ -4,6 +4,7 @@ import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.exception.BadRequestException;
 import com.hallado.backend.exception.ForbiddenException;
 import com.hallado.backend.model.*;
+import com.hallado.backend.repository.ClaimRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
 import com.hallado.backend.repository.UserRepository;
@@ -26,6 +27,7 @@ class PublicationExpirationTest {
     @Autowired PublicationService publications;
     @Autowired PublicationRepository repository;
     @Autowired UserRepository users;
+    @Autowired ClaimRepository claims;
 
     @Test
     void unaPublicacionNuevaVenceALos30Dias() {
@@ -45,6 +47,17 @@ class PublicationExpirationTest {
         assertEquals(PublicationStatus.EXPIRED, estado(vencida));
         assertEquals(PublicationStatus.OPEN, estado(vigente));
         assertEquals(PublicationStatus.IN_CLAIM, estado(enReclamo), "un reclamo en curso no se corta por vencimiento");
+    }
+
+    @Test
+    void alVencerseTambienVencenSusReclamosPendientes() {
+        User duenio = usuario();
+        Publication vencida = publicacion(duenio, PublicationStatus.OPEN, LocalDateTime.now().minusMinutes(1));
+        Claim pendiente = claims.save(new Claim(vencida, usuario(), "Es mío", null));
+
+        expiration.expireOverduePublications();
+
+        assertEquals(ClaimStatus.EXPIRED, claims.findById(pendiente.getId()).orElseThrow().getStatus());
     }
 
     @Test

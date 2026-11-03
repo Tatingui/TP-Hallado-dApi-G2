@@ -38,7 +38,10 @@ export const saveRecentSearch = async (searchCriteria) => {
           item.type === newEntry.type &&
           item.category === newEntry.category &&
           item.query.toLowerCase() === newEntry.query.toLowerCase() &&
-          item.barrio === newEntry.barrio
+          item.barrio === newEntry.barrio &&
+          (item.dateFilter || 'ALL') === newEntry.dateFilter &&
+          (item.startDate || null) === newEntry.startDate &&
+          (item.endDate || null) === newEntry.endDate
         )
     );
 
