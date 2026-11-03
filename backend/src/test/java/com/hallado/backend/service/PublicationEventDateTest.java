@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Fecha y hora del suceso (Punto 5). */
 @DataJpaTest(properties = {"spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop"})
-@Import(PublicationService.class)
+@Import({PublicationService.class, UserLookupService.class, FileStorageService.class})
 class PublicationEventDateTest {
 
     private final ObjectMapper json = JsonMapper.builder().addModule(new JavaTimeModule()).build();
