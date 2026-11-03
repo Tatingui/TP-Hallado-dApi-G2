@@ -2,6 +2,7 @@ import { setDatabaseSession, subscribeSession, getDatabaseSession, markDatabaseR
 import { migrateAsyncStorageToWatermelon } from '../database/dataMigration';
 import { createContext, useState, useEffect } from "react";
 import { resetTo } from "../navigation/navigationRef";
+import { clearBiometricEnabled } from "../services/biometricService";
 import {
   saveSession,
   getToken,
@@ -64,11 +65,14 @@ export function AuthProvider({ children }) {
   }
 
   /**
-   * Limpia storage y estado — cierra sesion.
+   * Limpia storage y estado — cierra sesión.
+   * La preferencia de desbloqueo biométrico es de la persona, no del dispositivo:
+   * se borra para que quien inicie sesión después no herede el bloqueo.
    */
   async function logout(loginParams) {
     setDatabaseSession(null, null);
     await clearSession();
+    await clearBiometricEnabled();
     setToken(null);
     setUser(null);
     resetTo("Login", loginParams);
