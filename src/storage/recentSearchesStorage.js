@@ -18,13 +18,16 @@ export const getRecentSearches = async () => {
 
 export const saveRecentSearch = async (searchCriteria) => {
   try {
+    if (!searchCriteria) return await getRecentSearches();
     const current = await getRecentSearches();
+    const cleanQuery = (searchCriteria.query || '').trim();
+    const cleanBarrio = (searchCriteria.barrio || '').trim();
     const newEntry = {
       id: Date.now().toString(),
       type: searchCriteria.type,
       category: searchCriteria.category || null,
-      query: searchCriteria.query || '',
-      barrio: searchCriteria.barrio || '',
+      query: cleanQuery,
+      barrio: cleanBarrio,
       dateFilter: searchCriteria.dateFilter || 'ALL',
       startDate: searchCriteria.startDate || null,
       endDate: searchCriteria.endDate || null,
@@ -32,13 +35,14 @@ export const saveRecentSearch = async (searchCriteria) => {
     };
 
     // Una búsqueda repetida sube al principio en lugar de duplicarse.
-    const withoutDuplicate = current.filter(
+    const withoutDuplicate = (Array.isArray(current) ? current : []).filter(
       (item) =>
         !(
+          item &&
           item.type === newEntry.type &&
           item.category === newEntry.category &&
-          item.query.toLowerCase() === newEntry.query.toLowerCase() &&
-          item.barrio === newEntry.barrio &&
+          (item.query || '').trim().toLowerCase() === newEntry.query.toLowerCase() &&
+          (item.barrio || '').trim() === newEntry.barrio &&
           (item.dateFilter || 'ALL') === newEntry.dateFilter &&
           (item.startDate || null) === newEntry.startDate &&
           (item.endDate || null) === newEntry.endDate
