@@ -157,18 +157,16 @@ public class PublicationService {
 
     // ─── Detalle de publicación ──────────────────────────────────────
 
-    /**
-     * Obtiene una publicación por ID.
-     */
-    /**
-     * Punto 4: detalle de una publicación. La dirección exacta no viaja en este DTO:
-     * solo se comparte en el reclamo aceptado (ClaimResponseDTO.exactAddress).
-     */
+    /** Punto 4: obtiene una publicación por ID y revela la dirección solo a su dueño. */
     public PublicationResponseDTO getPublicationById(Long id, String viewerEmail) {
         Publication pub = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(pub);
-        dto.setMine(pub.getUser().getEmail().equalsIgnoreCase(viewerEmail));
+        boolean mine = pub.getUser().getEmail().equalsIgnoreCase(viewerEmail);
+        dto.setMine(mine);
+        if (mine) {
+            dto.setAddress(pub.getAddress());
+        }
         return dto;
     }
 

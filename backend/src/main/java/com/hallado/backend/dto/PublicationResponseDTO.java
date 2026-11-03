@@ -81,6 +81,7 @@ public class PublicationResponseDTO {
     private PublicationType type;
     private CategoryEnum category;
     private String barrio;
+    private String address;
     /** true si quien consulta el detalle es el publicador (la app no recibe emails ajenos). */
     private boolean mine;
     private Double latitude;
@@ -103,6 +104,7 @@ public class PublicationResponseDTO {
     public PublicationResponseDTO() {}
 
     public String getBarrio() { return barrio; }
+    public String getAddress() { return address; }
     public boolean isMine() { return mine; }
     public CategoryEnum getCategory() { return category; }
 
@@ -131,6 +133,7 @@ public class PublicationResponseDTO {
 
     public boolean isHasNewUpdates() { return hasNewUpdates; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
+    public void setAddress(String address) { this.address = address; }
     public void setMine(boolean mine) { this.mine = mine; }
 
     public void setCategory(CategoryEnum category) { this.category = category; }
