@@ -1,5 +1,7 @@
 package com.hallado.backend.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hallado.backend.dto.ClaimRequestDTO;
 import com.hallado.backend.dto.ClaimResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
@@ -38,15 +40,17 @@ public class ClaimService {
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
     private final ClaimRatingRepository claimRatingRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String UPLOAD_DIR = "uploads/";
 
     public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository,
-                        ClaimRatingRepository claimRatingRepository) {
+                        ClaimRatingRepository claimRatingRepository, ObjectMapper objectMapper) {
         this.claimRepository = claimRepository;
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.claimRatingRepository = claimRatingRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -100,6 +104,25 @@ public class ClaimService {
         claimRepository.save(newClaim);
 
         return ClaimResponseDTO.fromEntity(newClaim, false);
+    }
+
+    public ClaimResponseDTO createClaim(Long publicationId, String claimJson, MultipartFile image, String claimantEmail) {
+        try {
+            return createClaim(publicationId, objectMapper.readValue(claimJson, ClaimRequestDTO.class), image, claimantEmail);
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException("El reclamo contiene un JSON inválido.");
+        }
+    }
+
+    public ClaimStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new BadRequestException("Debes indicar el estado del reclamo.");
+        }
+        try {
+            return ClaimStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Estado de reclamo inválido.");
+        }
     }
 
     /**

@@ -41,14 +41,8 @@ public class ClaimController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             Authentication authentication
     ) {
-        try {
-            ClaimRequestDTO request = objectMapper.readValue(claimJson, ClaimRequestDTO.class);
-            String userEmail = authentication.getName();
-            ClaimResponseDTO created = claimService.createClaim(publicationId, request, image, userEmail);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ClaimResponseDTO created = claimService.createClaim(publicationId, claimJson, image, authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     /**
@@ -61,9 +55,7 @@ public class ClaimController {
             Authentication authentication
     ) {
         String statusStr = body.get("status");
-        if (statusStr == null) return ResponseEntity.badRequest().build();
-
-        ClaimStatus newStatus = ClaimStatus.valueOf(statusStr.toUpperCase());
+        ClaimStatus newStatus = claimService.parseStatus(statusStr);
         String userEmail = authentication.getName();
         ClaimResponseDTO updated = claimService.respondToClaim(claimId, newStatus, userEmail);
         return ResponseEntity.ok(updated);

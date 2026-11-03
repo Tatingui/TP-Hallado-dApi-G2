@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hallado.backend.dto.CreatePublicationRequest;
@@ -36,8 +35,6 @@ import com.hallado.backend.service.PublicationService;
 @RequestMapping("/publications")
 public class PublicationController {
 
-    private static final Logger log = LoggerFactory.getLogger(PublicationController.class);
-
     private final PublicationService publicationService;
     private final ObjectMapper objectMapper;
     private final com.hallado.backend.service.IdempotentPublicationService idempotentPublications;
@@ -53,29 +50,14 @@ public class PublicationController {
             @PathVariable Long id,
             @RequestBody UpdatePublicationRequest request,
             Authentication authentication) {
-        try {
-            return ResponseEntity.ok(publicationService.updatePublication(id, request, authentication.getName()));
-        } catch (com.hallado.backend.exception.ForbiddenException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-
+        return ResponseEntity.ok(publicationService.updatePublication(id, request, authentication.getName()));
     }
 
     @GetMapping("/{id}/edit")
     public ResponseEntity<PublicationEditResponseDTO> getPublicationForEdit(
             @PathVariable Long id,
             Authentication authentication) {
-        try {
-            return ResponseEntity.ok(publicationService.getPublicationForEdit(id, authentication.getName()));
-        } catch (com.hallado.backend.exception.ForbiddenException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(publicationService.getPublicationForEdit(id, authentication.getName()));
     }
 
     /**
@@ -88,21 +70,11 @@ public class PublicationController {
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
             Authentication authentication
-    ) {
-        try {
-            CreatePublicationRequest request = objectMapper.readValue(publicationJson, CreatePublicationRequest.class);
-            String userEmail = authentication.getName();
-            PublicationResponseDTO created = idempotentPublications.create(request, images, userEmail, idempotencyKey);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (org.springframework.web.server.ResponseStatusException e) {
-            return ResponseEntity.status(e.getStatusCode()).build();
-        } catch (Exception e) {
-            log.error("Error al crear publicación: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
-        }
+    ) throws JsonProcessingException {
+        CreatePublicationRequest request = objectMapper.readValue(publicationJson, CreatePublicationRequest.class);
+        PublicationResponseDTO created = idempotentPublications.create(
+                request, images, authentication.getName(), idempotencyKey);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PostMapping("/{id}/follow")
@@ -110,12 +82,7 @@ public class PublicationController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        try {
-            String userEmail = authentication.getName();
-            return ResponseEntity.ok(publicationService.followPublication(userEmail, id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(publicationService.followPublication(authentication.getName(), id));
     }
 
     @GetMapping("/followed")
@@ -142,12 +109,7 @@ public class PublicationController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        try {
-            String userEmail = authentication.getName();
-            return ResponseEntity.ok(publicationService.getFollowStatus(userEmail, id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(publicationService.getFollowStatus(authentication.getName(), id));
     }
 
     /**
@@ -172,12 +134,7 @@ public class PublicationController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<PublicationResponseDTO> getPublicationById(@PathVariable Long id) {
-        try {
-            PublicationResponseDTO dto = publicationService.getPublicationById(id);
-            return ResponseEntity.ok(dto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(publicationService.getPublicationById(id));
     }
 
     @PostMapping("/{id}/seen")
@@ -185,12 +142,7 @@ public class PublicationController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        try {
-            String userEmail = authentication.getName();
-            return ResponseEntity.ok(publicationService.markPublicationAsSeen(userEmail, id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(publicationService.markPublicationAsSeen(authentication.getName(), id));
     }
 
     /**
@@ -222,12 +174,7 @@ public class PublicationController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        try {
-            String userEmail = authentication.getName();
-            return ResponseEntity.ok(publicationService.unfollowPublication(userEmail, id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(publicationService.unfollowPublication(authentication.getName(), id));
     }
 
     /**
