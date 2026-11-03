@@ -344,8 +344,15 @@ public class ClaimService {
         LocalDateTime fromDate = from == null ? null : from.atStartOfDay();
         LocalDateTime toDate = to == null ? null : to.plusDays(1).atStartOfDay();
         return claimRepository.findResolvedHistory(user, fromDate, toDate, type).stream()
-                .map(claim -> ResolvedCaseDTO.from(claim, user,
-                        claimRatingRepository.findByClaimAndAuthor(claim, user).orElse(null)))
+                .map(claim -> {
+                    ClaimRating rating = claimRatingRepository.findByClaimAndAuthor(claim, user).orElse(null);
+                    User counterpart = claim.getPublication().getUser().getId().equals(user.getId())
+                            ? claim.getClaimant()
+                            : claim.getPublication().getUser();
+                    ClaimRating counterpartRating = claimRatingRepository.findByClaimAndAuthor(claim, counterpart)
+                            .orElse(null);
+                    return ResolvedCaseDTO.from(claim, user, rating, counterpartRating);
+                })
                 .collect(Collectors.toList());
     }
 
