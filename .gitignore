@@ -46,3 +46,6 @@ backend/*.iml
 
 # Local review bundle
 dist-review/
+
+# JetBrains
+.idea
