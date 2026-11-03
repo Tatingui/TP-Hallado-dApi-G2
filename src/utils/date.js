@@ -19,8 +19,15 @@ export function toLocalDateString(date) {
  * medianoche UTC, que en Argentina es el día anterior a las 21:00.
  */
 export function fromLocalDateString(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
-  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const parsed = new Date(year, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /** "2026-11-02T21:30:00" en hora local y sin zona, el formato que espera el backend. */

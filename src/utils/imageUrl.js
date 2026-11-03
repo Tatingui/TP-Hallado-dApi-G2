@@ -8,9 +8,18 @@ import { IMAGE_BASE_URL } from '../services/api';
  * @returns {string|null}
  */
 export function resolveImageUrl(url) {
-  if (!url) return null;
-  if (url.startsWith('http') || url.startsWith('file://') || url.startsWith('data:')) {
-    return url;
+  if (typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('file://') ||
+    trimmed.startsWith('data:')
+  ) {
+    return trimmed;
   }
-  return `${IMAGE_BASE_URL}${url}`;
+  const base = IMAGE_BASE_URL.endsWith('/') ? IMAGE_BASE_URL.slice(0, -1) : IMAGE_BASE_URL;
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${base}${path}`;
 }
