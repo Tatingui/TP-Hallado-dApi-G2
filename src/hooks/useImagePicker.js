@@ -57,5 +57,26 @@ export default function useImagePicker() {
     }
   }, [normalizeAsset]);
 
-  return { pickImages, pickImage, loading };
+  const takePhoto = useCallback(async (options = {}) => {
+    setLoading(true);
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") return { status: "denied", asset: null };
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: options.allowsEditing ?? true,
+        quality: options.quality ?? 0.7,
+      });
+
+      if (result.canceled || !result.assets?.[0]) {
+        return { status: "cancelled", asset: null };
+      }
+
+      return { status: "selected", asset: normalizeAsset(result.assets[0]) };
+    } finally {
+      setLoading(false);
+    }
+  }, [normalizeAsset]);
+
+  return { pickImages, pickImage, takePhoto, loading };
 }
