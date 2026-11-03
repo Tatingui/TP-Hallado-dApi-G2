@@ -63,3 +63,19 @@ test('valida barrio y permite una publicación LOST completa', () => {
   assert.equal(Object.keys(validation.validatePublication(complete)).length, 0);
   assert.equal(validation.validatePublication({ ...complete, barrio: '' }).barrio, 'Seleccioná un barrio.');
 });
+
+test('valida límites máximos de título y descripción y maneja formulación nula', () => {
+  const nullErrors = validation.validatePublication(null);
+  assert.equal(nullErrors.title, 'El título es obligatorio.');
+  assert.equal(validation.hasValidationErrors(nullErrors), true);
+
+  const longTitle = 'a'.repeat(101);
+  const longDesc = 'b'.repeat(1001);
+  const errors = validation.validatePublicationDetails({
+    title: longTitle,
+    description: longDesc,
+    type: constants.PublicationType.LOST,
+  });
+  assert.equal(errors.title, 'Máximo 100 caracteres.');
+  assert.equal(errors.description, 'Máximo 1000 caracteres.');
+});
