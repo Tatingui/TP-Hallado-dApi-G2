@@ -3,13 +3,13 @@ import { Colors, Spacing, FontSize } from "../constants/theme";
 
 const CRITERIA = [
   { key: "length", label: "Al menos 6 caracteres", test: (p) => p.length >= 6 },
-  { key: "upper", label: "Una letra mayuscula", test: (p) => /[A-Z]/.test(p) },
-  { key: "number", label: "Un numero", test: (p) => /[0-9]/.test(p) },
-  { key: "special", label: "Un caracter especial (!@#$...)", test: (p) => /[^A-Za-z0-9]/.test(p) },
+  { key: "upper", label: "Una letra mayúscula", test: (p) => /[A-Z]/.test(p) },
+  { key: "number", label: "Un número", test: (p) => /[0-9]/.test(p) },
+  { key: "special", label: "Un carácter especial (!@#$...)", test: (p) => /[^A-Za-z0-9]/.test(p) },
 ];
 
 /**
- * Muestra los criterios de seguridad de la contrasena con feedback visual.
+ * Muestra los criterios de seguridad de la contraseña con feedback visual.
  * Props:
  *   password: string
  */
@@ -36,7 +36,7 @@ export default function PasswordCriteria({ password }) {
 }
 
 /**
- * Valida si la contrasena cumple todos los criterios.
+ * Valida si la contraseña cumple todos los criterios.
  * Retorna { valid: boolean, errors: string[] }
  */
 export function validatePassword(password) {
@@ -47,6 +47,24 @@ export function validatePassword(password) {
     }
   }
   return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Valida una contraseña nueva junto con su confirmación.
+ * Retorna el mensaje de error a mostrar, o null si es válida.
+ */
+export function validateNewPassword(password, confirmation) {
+  if (!password.trim() || !confirmation.trim()) {
+    return "Completá la contraseña y su confirmación";
+  }
+  const { valid, errors } = validatePassword(password);
+  if (!valid) {
+    return "La contraseña no cumple: " + errors[0];
+  }
+  if (password !== confirmation) {
+    return "Las contraseñas no coinciden";
+  }
+  return null;
 }
 
 const styles = StyleSheet.create({

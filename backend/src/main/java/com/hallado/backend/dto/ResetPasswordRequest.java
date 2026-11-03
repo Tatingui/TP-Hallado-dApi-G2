@@ -9,15 +9,12 @@ public class ResetPasswordRequest {
     @NotBlank(message = "El email es obligatorio")
     private String email;
 
-    @NotBlank(message = "El codigo es obligatorio")
+    @NotBlank(message = "El código es obligatorio")
     private String code;
 
-    @NotBlank(message = "La nueva password es obligatoria")
-    @Size(min = 6, message = "La contrasena debe tener al menos 6 caracteres")
-    @Pattern(
-        regexp = "^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$",
-        message = "La contrasena debe contener al menos una mayuscula, un numero y un caracter especial"
-    )
+    @NotBlank(message = "La nueva contraseña es obligatoria")
+    @Size(min = PasswordRules.MIN_LENGTH, message = PasswordRules.MIN_LENGTH_MESSAGE)
+    @Pattern(regexp = PasswordRules.PATTERN, message = PasswordRules.PATTERN_MESSAGE)
     private String newPassword;
 
     public ResetPasswordRequest() {}

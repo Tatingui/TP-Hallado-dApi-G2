@@ -16,7 +16,6 @@ import { useCountdown } from "../../hooks/useCountdown";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
-const CONNECTION_ERROR = "Error de conexión con el servidor";
 
 /**
  * Pantalla de ingreso de un código OTP de 6 dígitos, con verificación y reenvío.
@@ -62,8 +61,8 @@ export default function OtpVerificationView({
         setError(response.message || "Código inválido");
         otp.clear();
       }
-    } catch {
-      setError(CONNECTION_ERROR);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setVerifying(false);
     }
@@ -84,8 +83,8 @@ export default function OtpVerificationView({
       } else {
         setError(response.message || "No se pudo reenviar el código");
       }
-    } catch {
-      setError(CONNECTION_ERROR);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setResending(false);
     }

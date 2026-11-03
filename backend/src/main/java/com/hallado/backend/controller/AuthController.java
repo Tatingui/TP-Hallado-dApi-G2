@@ -1,10 +1,10 @@
 package com.hallado.backend.controller;
 
 import com.hallado.backend.dto.AuthResponse;
+import com.hallado.backend.dto.CompleteRegistrationRequest;
 import com.hallado.backend.dto.LoginRequest;
 import com.hallado.backend.dto.OtpRequest;
 import com.hallado.backend.dto.OtpSendRequest;
-import com.hallado.backend.dto.RegisterRequest;
 import com.hallado.backend.dto.ResetPasswordRequest;
 import com.hallado.backend.service.AuthService;
 
@@ -31,9 +31,21 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    // Registro (Punto 1): email → código OTP → nombre y contraseña
+
+    @PostMapping("/register/start")
+    public ResponseEntity<AuthResponse> startRegistration(@Valid @RequestBody OtpSendRequest request) {
+        return ResponseEntity.ok(authService.startRegistration(request));
+    }
+
+    @PostMapping("/register/verify")
+    public ResponseEntity<AuthResponse> verifyRegistrationCode(@Valid @RequestBody OtpRequest request) {
+        return ResponseEntity.ok(authService.verifyRegistrationCode(request));
+    }
+
+    @PostMapping("/register/complete")
+    public ResponseEntity<AuthResponse> completeRegistration(@Valid @RequestBody CompleteRegistrationRequest request) {
+        return ResponseEntity.ok(authService.completeRegistration(request));
     }
 
     @PostMapping("/otp/send")
@@ -49,6 +61,11 @@ public class AuthController {
     @PostMapping("/otp/resend")
     public ResponseEntity<AuthResponse> resendOtp(@Valid @RequestBody OtpSendRequest request) {
         return ResponseEntity.ok(authService.resendOtp(request));
+    }
+
+    @PostMapping("/password/verify")
+    public ResponseEntity<AuthResponse> verifyResetCode(@Valid @RequestBody OtpRequest request) {
+        return ResponseEntity.ok(authService.verifyResetCode(request));
     }
 
     @PostMapping("/password/reset")
