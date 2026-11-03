@@ -7,7 +7,6 @@ import {
   getToken,
   getUserEmail,
   clearSession,
-  isLoggedIn,
 } from "../storage/authStorage";
 
 export const AuthContext = createContext(null);

@@ -11,7 +11,7 @@ import {
   renewPublicationApi,
 } from "../services/publicationService";
 import { getPendingPublications } from "../storage/pendingSyncStorage";
-import { syncPendingPublications } from "../services/offlineSyncService";
+import { triggerSyncProcess } from "../sync/syncCoordinator";
 
 export default function useMyPublications() {
   const { token } = useAuth();
@@ -32,7 +32,7 @@ export default function useMyPublications() {
         setPendingPublications(pending || []);
 
         if (pending && pending.length > 0) {
-          await syncPendingPublications();
+          await triggerSyncProcess();
           const updatedPending = await getPendingPublications();
           setPendingPublications(updatedPending || []);
         }
