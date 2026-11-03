@@ -1,6 +1,7 @@
 import { database } from '../database';
 import { Q } from '@nozbe/watermelondb';
 import { assertCurrentSession, getDatabaseSession } from '../database/session';
+import { PublicationStatus } from '../constants/publicationConstants';
 
 export async function getLocalPublications(criteria = {}, session = getDatabaseSession()) {
   const rows = await database.get('publications').query(Q.where('owner', session.owner)).fetch();
@@ -24,7 +25,7 @@ export async function savePublicationsToLocal(items, session = getDatabaseSessio
         pub.type = item.type || '';
         pub.category = item.category || '';
         pub.barrio = item.barrio || '';
-        pub.status = item.status || 'OPEN';
+        pub.status = item.status || PublicationStatus.OPEN;
         pub.snapshotJson = JSON.stringify(item);
         pub.updatedAt = new Date();
         pub.syncStatus = 'synced';

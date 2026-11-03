@@ -29,19 +29,6 @@ export const shared = StyleSheet.create({
     overflow: "hidden",
   },
 
-  // --- Status badges ---
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  statusText: {
-    color: Colors.surface,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-
   // --- Top bar (pantallas internas con flecha atrás) ---
   topBar: {
     backgroundColor: Colors.primary,

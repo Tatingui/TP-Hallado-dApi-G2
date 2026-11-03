@@ -19,6 +19,22 @@ export const PublicationStatus = {
   EXPIRED: 'EXPIRED',
 };
 
+/** Estado local de una publicación guardada en el dispositivo que todavía no se envió. */
+export const PENDING_SUBMISSION_STATUS = 'PENDIENTE_ENVIO';
+
+export const ClaimStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED',
+};
+
+/** Estado del punto de encuentro (MeetingPointStatus en el backend). */
+export const MeetingStatus = {
+  PROPOSED: 'PROPOSED',
+  ACCEPTED: 'ACCEPTED',
+};
+
 export const DateFilterOption = {
   ALL: 'ALL',
   TODAY: 'TODAY',
@@ -97,7 +113,7 @@ export const getStatusLabel = (status) => {
 
 export const getPublicationStatusColor = (status) => {
   switch (status) {
-    case 'PENDIENTE_ENVIO':
+    case PENDING_SUBMISSION_STATUS:
       return '#D97706';
     case PublicationStatus.OPEN:
       return '#1A56DB'; // Colors.primary
@@ -116,13 +132,13 @@ export const getPublicationStatusColor = (status) => {
 
 export const getClaimStatusColor = (status) => {
   switch (status) {
-    case 'ACCEPTED':
+    case ClaimStatus.ACCEPTED:
       return '#16A34A';
-    case 'REJECTED':
+    case ClaimStatus.REJECTED:
       return '#EF4444';
-    case 'EXPIRED':
+    case ClaimStatus.EXPIRED:
       return '#6B7280';
-    case 'PENDING':
+    case ClaimStatus.PENDING:
     default:
       return '#F59E0B';
   }
@@ -130,13 +146,13 @@ export const getClaimStatusColor = (status) => {
 
 export const getClaimStatusLabel = (status) => {
   switch (status) {
-    case 'ACCEPTED':
+    case ClaimStatus.ACCEPTED:
       return 'Aceptado';
-    case 'REJECTED':
+    case ClaimStatus.REJECTED:
       return 'Rechazado';
-    case 'EXPIRED':
+    case ClaimStatus.EXPIRED:
       return 'Vencido';
-    case 'PENDING':
+    case ClaimStatus.PENDING:
     default:
       return 'Pendiente';
   }

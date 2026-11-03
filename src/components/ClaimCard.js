@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/theme';
+import { ClaimStatus, MeetingStatus } from '../constants/publicationConstants';
 import { formatDateTime } from '../utils/date';
 import ClaimActions from './claim/ClaimActions';
 import ClaimContent from './claim/ClaimContent';
@@ -22,11 +23,11 @@ export default function ClaimCard({
   const isReceived = type === 'RECEIVED';
   const counterpartName =
     (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
-  const isAccepted = claim.status === 'ACCEPTED';
-  const isPending = claim.status === 'PENDING';
+  const isAccepted = claim.status === ClaimStatus.ACCEPTED;
+  const isPending = claim.status === ClaimStatus.PENDING;
 
   const getMeetingStatusText = () => {
-    if (claim.meetingStatus === 'ACCEPTED') return 'Confirmado por ambas partes';
+    if (claim.meetingStatus === MeetingStatus.ACCEPTED) return 'Confirmado por ambas partes';
     if (claim.meetingProposedByMe) return `Esperando respuesta de ${counterpartName}`;
     return `${counterpartName} propuso este lugar`;
   };
