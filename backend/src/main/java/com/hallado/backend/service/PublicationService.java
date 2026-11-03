@@ -1,9 +1,5 @@
 package com.hallado.backend.service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,7 +8,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -39,7 +34,6 @@ import com.hallado.backend.model.User;
 import com.hallado.backend.repository.PublicationFollowRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
-import com.hallado.backend.repository.UserRepository;
 import com.hallado.backend.exception.BadRequestException;
 import com.hallado.backend.exception.ForbiddenException;
 import com.hallado.backend.exception.ResourceNotFoundException;
@@ -51,16 +45,19 @@ public class PublicationService {
     private static final String UPLOAD_DIR = "uploads/publications/";
     private static final int TOLERANCIA_RELOJ_MINUTOS = 5;
     private final PublicationRepository publicationRepository;
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
+    private final FileStorageService fileStorageService;
 
     private final PublicationFollowRepository publicationFollowRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
-                              UserRepository userRepository,
-                              PublicationFollowRepository publicationFollowRepository) {
+                              PublicationFollowRepository publicationFollowRepository,
+                              UserLookupService userLookupService,
+                              FileStorageService fileStorageService) {
         this.publicationRepository = publicationRepository;
-        this.userRepository = userRepository;
         this.publicationFollowRepository = publicationFollowRepository;
+        this.userLookupService = userLookupService;
+        this.fileStorageService = fileStorageService;
     }
 
     // ─── Punto 5: Crear publicación ───────────────────────────────────
@@ -74,8 +71,7 @@ public class PublicationService {
     public PublicationResponseDTO createPublication(CreatePublicationRequest req,
                                                      List<MultipartFile> images,
                                                      String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         // Validaciones
         if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
@@ -97,7 +93,7 @@ public class PublicationService {
         if (images != null && !images.isEmpty()) {
             List<String> savedPaths = new ArrayList<>();
             for (MultipartFile file : images) {
-                String savedPath = saveImage(file);
+                String savedPath = fileStorageService.store(file, UPLOAD_DIR, "/uploads/publications/");
                 savedPaths.add(savedPath);
             }
             imageUrlsStr = String.join(",", savedPaths);
@@ -132,8 +128,7 @@ public class PublicationService {
     }
 
     public Map<String, Object> followPublication(String userEmail, Long publicationId) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
@@ -149,8 +144,7 @@ public class PublicationService {
     // ─── Punto 5: Mis publicaciones ──────────────────────────────────
 
     public PageResponseDTO<PublicationResponseDTO> getFollowedPublications(String userEmail, int page, int size) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<PublicationFollow> followPage = publicationFollowRepository.findByUserOrderByCreatedAtDesc(user, pageable);
@@ -172,8 +166,7 @@ public class PublicationService {
      * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado desde la última vez que se vieron.
      */
     public long countFollowedWithUpdates(String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
         return publicationFollowRepository.findByUser(user).stream()
                 .filter(follow -> hasStatusChangedSinceSeen(follow.getPublication(), follow))
                 .count();
@@ -189,8 +182,7 @@ public class PublicationService {
      * Devuelve si un usuario sigue la publicación y cuántos seguidores tiene.
      */
     public Map<String, Object> getFollowStatus(String userEmail, Long publicationId) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
@@ -216,8 +208,7 @@ public class PublicationService {
     public PageResponseDTO<PublicationResponseDTO> getMyPublications(String userEmail,
                                                                       PublicationStatus status,
                                                                       int page, int size) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Publication> pubPage;
@@ -248,8 +239,7 @@ public class PublicationService {
     }
 
     public PublicationEditResponseDTO getPublicationForEdit(Long id, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         if (!publication.getUser().getId().equals(user.getId())) {
@@ -259,8 +249,7 @@ public class PublicationService {
     }
 
     public PublicationResponseDTO updatePublication(Long id, UpdatePublicationRequest request, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
@@ -302,8 +291,7 @@ public class PublicationService {
     }
 
     public Map<String, Object> markPublicationAsSeen(String userEmail, Long publicationId) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
@@ -405,8 +393,7 @@ public class PublicationService {
     }
 
     public Map<String, Object> unfollowPublication(String userEmail, Long publicationId) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
 
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
@@ -435,8 +422,7 @@ public class PublicationService {
      */
     @Transactional
     public void deletePublication(Long publicationId, String ownerEmail) {
-        User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User owner = userLookupService.getByEmailOrThrow(ownerEmail);
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         if (!publication.getUser().getId().equals(owner.getId())) {
@@ -453,8 +439,7 @@ public class PublicationService {
      */
     @Transactional
     public PublicationResponseDTO renewPublication(Long publicationId, String ownerEmail) {
-        User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User owner = userLookupService.getByEmailOrThrow(ownerEmail);
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         if (!publication.getUser().getId().equals(owner.getId())) {
@@ -479,38 +464,4 @@ public class PublicationService {
         }
     }
 
-    /**
-     * Guarda una imagen en el filesystem y devuelve la ruta relativa.
-     */
-    private String saveImage(MultipartFile file) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String originalName = file.getOriginalFilename();
-            String extension = "";
-            if (originalName != null && originalName.contains(".")) {
-                extension = originalName.substring(originalName.lastIndexOf("."));
-            }
-            String fileName = UUID.randomUUID() + extension;
-            Path filePath = uploadPath.resolve(fileName);
-            try (var stream = file.getInputStream()) { Files.copy(stream, filePath); }
-            if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
-                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                    new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override public void afterCompletion(int status) {
-                            if (status != STATUS_COMMITTED) {
-                                try { Files.deleteIfExists(filePath); } catch (IOException ignored) { }
-                            }
-                        }
-                    });
-            }
-
-            return "/uploads/publications/" + fileName;
-        } catch (IOException e) {
-            throw new BadRequestException("No se pudo guardar la imagen: " + e.getMessage());
-        }
-    }
 }

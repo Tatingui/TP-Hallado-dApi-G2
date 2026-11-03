@@ -14,7 +14,6 @@ import com.hallado.backend.model.User;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
 import com.hallado.backend.repository.SearchAlertRepository;
-import com.hallado.backend.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,14 +29,14 @@ import java.util.stream.Collectors;
 public class AlertService {
 
     private final SearchAlertRepository searchAlertRepository;
-    private final UserRepository userRepository;
     private final PublicationRepository publicationRepository;
+    private final UserLookupService userLookupService;
 
-    public AlertService(SearchAlertRepository searchAlertRepository, UserRepository userRepository,
-                        PublicationRepository publicationRepository) {
+    public AlertService(SearchAlertRepository searchAlertRepository,
+                        PublicationRepository publicationRepository, UserLookupService userLookupService) {
         this.searchAlertRepository = searchAlertRepository;
-        this.userRepository = userRepository;
         this.publicationRepository = publicationRepository;
+        this.userLookupService = userLookupService;
     }
 
     /**
@@ -129,8 +128,7 @@ public class AlertService {
     }
 
     private User findUser(String userEmail) {
-        return userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        return userLookupService.getByEmailOrThrow(userEmail);
     }
 
     /**

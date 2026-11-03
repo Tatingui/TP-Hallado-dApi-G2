@@ -22,13 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.UUID;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -41,16 +35,19 @@ public class ClaimService {
     private final UserRepository userRepository;
     private final ClaimRatingRepository claimRatingRepository;
     private final ObjectMapper objectMapper;
-
-    private static final String UPLOAD_DIR = "uploads/";
+    private final UserLookupService userLookupService;
+    private final FileStorageService fileStorageService;
 
     public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository,
-                        ClaimRatingRepository claimRatingRepository, ObjectMapper objectMapper) {
+                        ClaimRatingRepository claimRatingRepository, ObjectMapper objectMapper,
+                        UserLookupService userLookupService, FileStorageService fileStorageService) {
         this.claimRepository = claimRepository;
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.claimRatingRepository = claimRatingRepository;
         this.objectMapper = objectMapper;
+        this.userLookupService = userLookupService;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -59,8 +56,7 @@ public class ClaimService {
      */
     @Transactional
     public ClaimResponseDTO createClaim(Long publicationId, ClaimRequestDTO request, MultipartFile image, String claimantEmail) {
-        User claimant = userRepository.findByEmail(claimantEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User claimant = userLookupService.getByEmailOrThrow(claimantEmail);
 
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
@@ -92,7 +88,7 @@ public class ClaimService {
 
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
-            imageUrl = saveImage(image);
+            imageUrl = fileStorageService.store(image, "uploads/", "/uploads/");
         } else if (publication.getType() == PublicationType.LOST) {
             throw new BadRequestException("Debes adjuntar una foto para demostrar que lo encontraste.");
         }
@@ -130,8 +126,7 @@ public class ClaimService {
      */
     @Transactional
     public ClaimResponseDTO respondToClaim(Long claimId, ClaimStatus newStatus, String publisherEmail) {
-        User publisher = userRepository.findByEmail(publisherEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User publisher = userLookupService.getByEmailOrThrow(publisherEmail);
 
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
@@ -177,8 +172,7 @@ public class ClaimService {
      */
     @Transactional
     public ClaimResponseDTO proposeMeetingPoint(Long claimId, String address, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
 
@@ -224,8 +218,7 @@ public class ClaimService {
      */
     @Transactional
     public ClaimResponseDTO acceptMeetingPoint(Long claimId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(userEmail);
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
 
@@ -253,8 +246,7 @@ public class ClaimService {
 
     @Transactional(readOnly = true)
     public List<ResolvedCaseDTO> getResolvedHistory(String email, LocalDate from, LocalDate to, PublicationType type) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User user = userLookupService.getByEmailOrThrow(email);
         LocalDateTime fromDate = from == null ? null : from.atStartOfDay();
         LocalDateTime toDate = to == null ? null : to.plusDays(1).atStartOfDay();
         return claimRepository.findResolvedHistory(user, fromDate, toDate, type).stream()
@@ -265,8 +257,7 @@ public class ClaimService {
 
     @Transactional
     public void rateResolvedCase(Long claimId, RatingRequestDTO request, String email) {
-        User author = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User author = userLookupService.getByEmailOrThrow(email);
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
         if (claim.getStatus() != ClaimStatus.ACCEPTED || claim.getResolvedAt() == null ||
@@ -309,8 +300,7 @@ public class ClaimService {
     }
 
     public PageResponseDTO<ClaimResponseDTO> getMySentClaims(String userEmail, int page, int size) {
-        User claimant = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User claimant = userLookupService.getByEmailOrThrow(userEmail);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Claim> claims = claimRepository.findByClaimantOrderByClaimDateDesc(claimant, pageable);
@@ -323,8 +313,7 @@ public class ClaimService {
     }
 
     public PageResponseDTO<ClaimResponseDTO> getMyReceivedClaims(String userEmail, int page, int size) {
-        User publisher = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        User publisher = userLookupService.getByEmailOrThrow(userEmail);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Claim> claims = claimRepository.findByPublicationUserOrderByClaimDateDesc(publisher, pageable);
@@ -336,20 +325,4 @@ public class ClaimService {
         return new PageResponseDTO<>(dtos, claims.getNumber(), claims.getSize(), claims.getTotalElements(), claims.getTotalPages(), claims.isLast());
     }
 
-    private String saveImage(MultipartFile file) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            return "/uploads/" + filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Error al guardar la imagen", e);
-        }
-    }
 }
