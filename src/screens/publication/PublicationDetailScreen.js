@@ -139,6 +139,16 @@ export default function PublicationDetailScreen() {
             value={isMyPublication ? (publication.address || "No especificada") : null}
             placeholder="🔒 Oculta hasta aceptar reclamo"
           />
+          {publication.latitude != null && publication.longitude != null && (
+            <>
+              <View style={styles.divider} />
+              <InfoRow
+                icon="locate-outline"
+                label="Coordenadas"
+                value={`${Number(publication.latitude).toFixed(6)}, ${Number(publication.longitude).toFixed(6)}`}
+              />
+            </>
+          )}
           <View style={styles.divider} />
           <InfoRow
             icon="calendar-outline"
@@ -258,7 +268,7 @@ const styles = StyleSheet.create({
     padding: 16, borderWidth: 1, borderColor: Colors.border,
   },
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
-  infoLabel: { fontSize: 14, color: Colors.textSecondary, marginLeft: 8, width: 80 },
+  infoLabel: { fontSize: 14, color: Colors.textSecondary, marginLeft: 8, width: 100 },
   infoValue: { fontSize: 14, color: Colors.text, fontWeight: "500", flex: 1 },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 8 },
   actionFooter: {
