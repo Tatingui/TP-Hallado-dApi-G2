@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
 import { PublicationType } from '../constants/publicationConstants';
 import { checkNetworkConnection } from '../hooks/useNetworkStatus';
+import useImagePicker from '../hooks/useImagePicker';
 
 export default function CreateClaimModal({
   visible,
@@ -30,6 +31,7 @@ export default function CreateClaimModal({
   const [proofMessage, setProofMessage] = useState('');
   const [verificationAnswer, setVerificationAnswer] = useState('');
   const [imageUri, setImageUri] = useState(null);
+  const { takePhoto: takePhotoFromCamera } = useImagePicker();
 
   const isFound = publicationType === PublicationType.FOUND;
 
@@ -52,19 +54,20 @@ export default function CreateClaimModal({
   };
 
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permiso denegado', 'Necesitamos permisos para usar la cámara.');
-      return;
-    }
-
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
+    try {
+      const result = await takePhotoFromCamera({
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (result.status === 'denied') {
+        Alert.alert('Permiso denegado', 'Necesitamos permisos para usar la cámara.');
+        return;
+      }
+      if (result.asset) {
+        setImageUri(result.asset.uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', error?.message || 'No se pudo abrir la cámara.');
     }
   };
 

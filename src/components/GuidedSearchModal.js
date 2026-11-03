@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+import useLocation from '../hooks/useLocation';
 import { Colors, COLORS } from '../constants/theme';
 import {
   PublicationType,
@@ -39,8 +39,12 @@ export default function GuidedSearchModal({
   const [query, setQuery] = useState(initialCriteria.query || '');
   const [barrio, setBarrio] = useState(initialCriteria.barrio || 'Todos los barrios');
   const [dateFilter, setDateFilter] = useState(initialCriteria.dateFilter || 'ALL');
-  const [userLocation, setUserLocation] = useState(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const {
+    location: userLocation,
+    loading: loadingLocation,
+    getLocation,
+    setLocation: setUserLocation,
+  } = useLocation();
 
   const [recentSearches, setRecentSearches] = useState([]);
   const [showBarrioPicker, setShowBarrioPicker] = useState(false);
@@ -69,25 +73,14 @@ export default function GuidedSearchModal({
 
   const handleGetCurrentLocation = async () => {
     try {
-      setLoadingLocation(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      const currentLocation = await getLocation();
+      if (!currentLocation) {
         Alert.alert(
           'Permiso denegado',
           'No pudimos acceder a tu ubicación. Podés seleccionar tu barrio manualmente de la lista.'
         );
-        setLoadingLocation(false);
         return;
       }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
 
       Alert.alert(
         'Ubicación obtenida',
@@ -95,9 +88,7 @@ export default function GuidedSearchModal({
       );
     } catch (error) {
       console.error('Error getting position:', error);
-      Alert.alert('Error', 'No se pudo obtener la ubicación actual.');
-    } finally {
-      setLoadingLocation(false);
+      Alert.alert('Error', error?.message || 'No se pudo obtener la ubicación actual.');
     }
   };
 

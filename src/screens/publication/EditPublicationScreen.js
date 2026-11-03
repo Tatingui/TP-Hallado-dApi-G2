@@ -1,4 +1,3 @@
-import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
@@ -24,6 +23,7 @@ import {
 } from "../../services/publicationService";
 import { toLocalDateTimeString } from "../../utils/date";
 import EventDateTimeField from "../../components/publication/EventDateTimeField";
+import useLocation from "../../hooks/useLocation";
 
 export default function EditPublicationScreen() {
   const navigation = useNavigation();
@@ -31,7 +31,7 @@ export default function EditPublicationScreen() {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const { loading: loadingLocation, getLocation } = useLocation();
 
   useEffect(() => {
     getPublicationForEditApi(id)
@@ -53,31 +53,16 @@ export default function EditPublicationScreen() {
 
   const useCurrentLocation = async () => {
     if (loadingLocation) return;
-    setLoadingLocation(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const location = await getLocation();
+      if (!location) {
         Alert.alert("Permiso necesario", "Necesitamos acceso a tu ubicación.");
         return;
       }
-
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (!servicesEnabled) {
-        Alert.alert(
-          "GPS desactivado",
-          "Activá la ubicación del dispositivo e intentá nuevamente.",
-        );
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        mayShowUserSettingsDialog: true,
-      });
       setForm((current) => ({
         ...current,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: location.latitude,
+        longitude: location.longitude,
       }));
       Alert.alert("Ubicación obtenida", "Se registró tu ubicación actual.");
     } catch (error) {
@@ -85,8 +70,6 @@ export default function EditPublicationScreen() {
         "Error",
         error?.message || "No se pudo obtener la ubicación.",
       );
-    } finally {
-      setLoadingLocation(false);
     }
   };
 

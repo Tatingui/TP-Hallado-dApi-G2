@@ -13,10 +13,10 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "../../services/userService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
+import useImagePicker from "../../hooks/useImagePicker";
 import { shared } from "../../constants/sharedStyles";
 import {
   hasBiometricHardware,
@@ -33,6 +33,7 @@ export default function EditProfileScreen() {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [barrio, setBarrio] = useState("");
+  const { pickImage: pickImageFromGallery } = useImagePicker();
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -85,24 +86,17 @@ export default function EditProfileScreen() {
   }
 
   async function pickImage() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a tu galería para elegir una foto.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+    const result = await pickImageFromGallery({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
     });
-    if (!result.canceled && result.assets?.[0]) {
-      const asset = result.assets[0];
-      setSelectedImage({
-        uri: asset.uri,
-        type: asset.mimeType || "image/jpeg",
-        fileName: asset.fileName || `profile_${Date.now()}.jpg`,
-      });
+    if (result.status === "denied") {
+      Alert.alert("Permiso necesario", "Necesitamos acceso a tu galería para elegir una foto.");
+      return;
+    }
+    if (result.asset) {
+      setSelectedImage(result.asset);
     }
   }
 
