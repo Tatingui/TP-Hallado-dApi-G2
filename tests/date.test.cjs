@@ -47,3 +47,10 @@ test('un valor vacío o inválido muestra el texto alternativo', () => {
   assert.equal(date.formatDate(null), '-');
   assert.equal(date.formatDateTime('no es fecha', 'Sin fecha'), 'Sin fecha');
 });
+
+test('un día del filtro se lee como fecha local y vuelve igual', () => {
+  const dia = date.fromLocalDateString('2026-11-02');
+  assert.equal(date.formatDate(dia), '02/11/2026');
+  assert.equal(date.toLocalDateString(dia), '2026-11-02');
+  assert.equal(date.fromLocalDateString('no es fecha'), null);
+});
