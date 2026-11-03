@@ -2,16 +2,16 @@
 
 Aplicación Android con Expo development build, WatermelonDB (SQLite local) y API Spring Boot + MySQL. **No se ejecuta en Expo Go.**
 
-## Instalación
+## Instalación y arranque
 
-1. Ejecutar `npm ci` en la raíz.
-2. Copiar `.env.example` a `.env.local` y configurar `EXPO_PUBLIC_API_URL`.
-3. Preparar MySQL 8 con `backend/setup-db.sql`, JDK 17 o superior y las variables SMTP del entorno.
-4. En `backend`, ejecutar `.\mvnw.cmd spring-boot:run` (Windows) o `./mvnw spring-boot:run`.
-5. Con Android SDK y un dispositivo/emulador configurados, ejecutar `npm run android`.
-6. Para las siguientes sesiones de desarrollo, ejecutar `npm start`.
+La guía completa, con requisitos y solución de problemas, está en **[docs/INSTALACION.md](docs/INSTALACION.md)**.
 
-El backend usa el puerto 8081 y el prefijo `/api`. En el emulador Android se usa `http://10.0.2.2:8081/api`; en un teléfono físico, la IP LAN de la computadora. Los cambios nativos requieren recompilar el cliente.
+| Cuándo | Comando |
+|---|---|
+| Primera vez (después de los requisitos de la guía) y cuando cambian dependencias nativas | `instalar.bat` |
+| Día a día: backend + Metro + app en el emulador | `iniciar.bat` |
+
+El backend usa el puerto 8081 con el prefijo `/api`, y Metro el 8082. En el emulador Android la app usa `http://10.0.2.2:8081/api`; en un teléfono físico, la IP LAN de la computadora (`.env.local`).
 
 Ver [guía de development builds](docs/DEVELOPMENT.md) para compilación local o EAS. El proyecto EAS se vincula con la cuenta del equipo; no se incluyen credenciales.
 
