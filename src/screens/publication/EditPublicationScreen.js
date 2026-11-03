@@ -24,6 +24,9 @@ import {
 import { toLocalDateTimeString } from "../../utils/date";
 import EventDateTimeField from "../../components/publication/EventDateTimeField";
 import useLocation from "../../hooks/useLocation";
+import {
+  validatePublication,
+} from "../../utils/validation/publicationValidation";
 
 export default function EditPublicationScreen() {
   const navigation = useNavigation();
@@ -75,21 +78,19 @@ export default function EditPublicationScreen() {
 
   const save = async () => {
     const questionRequired = form.type === PublicationType.FOUND;
-    if (form.title.trim().length < 5 || form.description.trim().length < 10) {
+    const errors = validatePublication(form);
+    if (errors.title || errors.description) {
       Alert.alert(
         "Datos incompletos",
         "El título debe tener 5 caracteres y la descripción 10 como mínimo.",
       );
       return;
     }
-    if (!form.barrio?.trim()) {
+    if (errors.barrio) {
       Alert.alert("Datos incompletos", "Seleccioná un barrio.");
       return;
     }
-    if (
-      questionRequired &&
-      (!form.verificationQuestion.trim() || !form.verificationAnswer.trim())
-    ) {
+    if (questionRequired && (errors.verificationQuestion || errors.verificationAnswer)) {
       Alert.alert(
         "Datos incompletos",
         "La pregunta y la respuesta de verificación son obligatorias.",
