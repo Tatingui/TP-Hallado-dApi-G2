@@ -54,3 +54,11 @@ test('un día del filtro se lee como fecha local y vuelve igual', () => {
   assert.equal(date.toLocalDateString(dia), '2026-11-02');
   assert.equal(date.fromLocalDateString('no es fecha'), null);
 });
+
+test('soporta parseo flexible de fechas de un dígito en mes o día y valida límites', () => {
+  const diaFlexible = date.fromLocalDateString(' 2026-1-5 ');
+  assert.equal(date.formatDate(diaFlexible), '05/01/2026');
+  assert.equal(date.fromLocalDateString('2026-13-01'), null);
+  assert.equal(date.fromLocalDateString('2026-00-01'), null);
+  assert.equal(date.fromLocalDateString('2026-01-32'), null);
+});
