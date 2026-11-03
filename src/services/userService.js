@@ -1,18 +1,15 @@
-import { apiGet, apiPostMultipart, apiPut } from "./api";
-import { getToken } from "../storage/authStorage";
+import { authGet, authPostMultipart, authPut } from "./api";
 
 /**
  * Servicio de Usuario y Perfil para comunicarse con el backend de Hallado.
  */
 
 export async function getMyProfile() {
-  const token = await getToken();
-  return apiGet("/usuarios/me", token);
+  return authGet("/usuarios/me");
 }
 
 export async function updateMyProfile(profileData) {
-  const token = await getToken();
-  return apiPut("/usuarios/me", profileData, token);
+  return authPut("/usuarios/me", profileData);
 }
 
 /**
@@ -21,17 +18,15 @@ export async function updateMyProfile(profileData) {
  * @returns {Promise<Object>} perfil actualizado con la nueva URL
  */
 export async function uploadProfileImage(image) {
-  const token = await getToken();
   const formData = new FormData();
   formData.append("image", {
     uri: image.uri,
     type: image.type || "image/jpeg",
     name: image.fileName || `profile_${Date.now()}.jpg`,
   });
-  return apiPostMultipart("/usuarios/me/imagen", formData, token);
+  return authPostMultipart("/usuarios/me/imagen", formData);
 }
 
 export async function getPublicProfile(userId) {
-  const token = await getToken();
-  return apiGet(`/usuarios/${userId}/publico`, token);
+  return authGet(`/usuarios/${userId}/publico`);
 }

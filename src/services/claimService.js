@@ -1,12 +1,10 @@
-import { apiGet, apiPatch, apiPost, apiPostMultipart, apiPut } from "./api";
-import { getToken } from "../storage/authStorage";
+import { authGet, authPatch, authPost, authPostMultipart, authPut } from "./api";
 
 /**
  * Crea un nuevo reclamo ("Es mío" / "Lo encontré") enviando los datos en FormData multipart.
  */
 export const createClaimApi = async (publicationId, proofMessage, verificationAnswer, imageUri, tokenParam) => {
   const formData = new FormData();
-  const token = tokenParam || (await getToken());
 
   const claimRequest = {
     proofMessage: proofMessage || "",
@@ -27,59 +25,52 @@ export const createClaimApi = async (publicationId, proofMessage, verificationAn
     });
   }
 
-  return apiPostMultipart(`/claims/${publicationId}`, formData, token);
+  return authPostMultipart(`/claims/${publicationId}`, formData, tokenParam);
 };
 
 /**
  * Obtiene las publicaciones donde el usuario realizó un reclamo (Enviados).
  */
 export const getMySentClaimsApi = async (page = 0, size = 10, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiGet(`/claims/my-sent?page=${page}&size=${size}`, token);
+  return authGet(`/claims/my-sent?page=${page}&size=${size}`, tokenParam);
 };
 
 /**
  * Obtiene los reclamos recibidos en publicaciones del usuario (Recibidos).
  */
 export const getMyReceivedClaimsApi = async (page = 0, size = 10, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiGet(`/claims/my-received?page=${page}&size=${size}`, token);
+  return authGet(`/claims/my-received?page=${page}&size=${size}`, tokenParam);
 };
 
 /**
  * Responde a un reclamo (ACCEPT / REJECT) actualizando su estado.
  */
 export const respondToClaimApi = async (claimId, status, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiPatch(`/claims/${claimId}/respond`, { status }, token);
+  return authPatch(`/claims/${claimId}/respond`, { status }, tokenParam);
 };
 
 /**
  * Punto 8: Propone un punto de encuentro o sugiere uno alternativo.
  */
 export const proposeMeetingPointApi = async (claimId, address, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiPut(`/claims/${claimId}/meeting-point`, { address }, token);
+  return authPut(`/claims/${claimId}/meeting-point`, { address }, tokenParam);
 };
 
 /**
  * Punto 8: Acepta el punto de encuentro propuesto por la otra parte.
  */
 export const acceptMeetingPointApi = async (claimId, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiPost(`/claims/${claimId}/meeting-point/accept`, {}, token);
+  return authPost(`/claims/${claimId}/meeting-point/accept`, {}, tokenParam);
 };
 
 export const getResolvedHistoryApi = async (filters = {}, tokenParam) => {
-  const token = tokenParam || (await getToken());
   const params = new URLSearchParams();
   if (filters.from) params.append("from", filters.from);
   if (filters.to) params.append("to", filters.to);
   if (filters.type && filters.type !== "ALL") params.append("type", filters.type);
-  return apiGet(`/claims/resolved-history?${params.toString()}`, token);
+  return authGet(`/claims/resolved-history?${params.toString()}`, tokenParam);
 };
 
 export const rateResolvedCaseApi = async (claimId, rating, tokenParam) => {
-  const token = tokenParam || (await getToken());
-  return apiPost(`/claims/${claimId}/rating`, rating, token);
+  return authPost(`/claims/${claimId}/rating`, rating, tokenParam);
 };
