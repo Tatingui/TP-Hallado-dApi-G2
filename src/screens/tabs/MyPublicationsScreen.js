@@ -13,8 +13,9 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { shared } from "../../constants/sharedStyles";
 import useMyPublications from "../../hooks/useMyPublications";
-import { getPublicationStatusColor } from "../../constants/publicationConstants";
+import { PublicationStatusBadge } from "../../components/StatusBadge";
 import {
+  PENDING_SUBMISSION_STATUS,
   PublicationStatus,
   getStatusLabel,
   getTypeLabel,
@@ -35,9 +36,9 @@ const STATUS_FILTERS = [
  * (la tarea programada todavía no la marcó como vencida).
  */
 function isRenewable(publication) {
-  if (publication.status === "EXPIRED") return true;
+  if (publication.status === PublicationStatus.EXPIRED) return true;
   const expiresAt = parseDate(publication.expiresAt);
-  return publication.status === "OPEN" && expiresAt !== null && expiresAt <= new Date();
+  return publication.status === PublicationStatus.OPEN && expiresAt !== null && expiresAt <= new Date();
 }
 
 export default function MyPublicationsScreen() {
@@ -117,9 +118,7 @@ export default function MyPublicationsScreen() {
           }
         >
           <View style={styles.cardHeader}>
-            <View style={[shared.statusBadge, { backgroundColor: getPublicationStatusColor("PENDIENTE_ENVIO") }]}>
-              <Text style={shared.statusText}>Pendiente de envío ⏳</Text>
-            </View>
+            <PublicationStatusBadge status={PENDING_SUBMISSION_STATUS} label="Pendiente de envío ⏳" />
             <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
           </View>
 
@@ -146,9 +145,7 @@ export default function MyPublicationsScreen() {
     return (
       <TouchableOpacity style={shared.card} activeOpacity={0.7} onPress={() => navigation.navigate("PublicationDetail", { id: String(item.id) })}>
         <View style={styles.cardHeader}>
-          <View style={[shared.statusBadge, { backgroundColor: getPublicationStatusColor(item.status) }]}>
-            <Text style={shared.statusText}>{getStatusLabel(item.status)}</Text>
-          </View>
+          <PublicationStatusBadge status={item.status} />
           <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
         </View>
 
@@ -172,7 +169,7 @@ export default function MyPublicationsScreen() {
             {item.createdAt && (
               <Text style={styles.dateText}>Publicada el {formatDate(item.createdAt)}</Text>
             )}
-            {(item.status === "OPEN" || item.status === "EXPIRED") && item.expiresAt && (
+            {(item.status === PublicationStatus.OPEN || item.status === PublicationStatus.EXPIRED) && item.expiresAt && (
               <Text style={styles.dateText}>
                 {isRenewable(item) ? "Venció" : "Vence"} el {formatDate(item.expiresAt)}
               </Text>
@@ -188,7 +185,7 @@ export default function MyPublicationsScreen() {
               <Text style={styles.renewText}>Renovar</Text>
             </TouchableOpacity>
           )}
-          {item.status === "OPEN" && !isRenewable(item) && (
+          {item.status === PublicationStatus.OPEN && !isRenewable(item) && (
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation(); handleDelete(item); }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

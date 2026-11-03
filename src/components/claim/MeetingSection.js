@@ -2,6 +2,7 @@ import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/theme';
+import { MeetingStatus } from '../../constants/publicationConstants';
 
 export default function MeetingSection({
   claim,
@@ -25,7 +26,7 @@ export default function MeetingSection({
           <Text
             style={[
               styles.meetingStatusText,
-              claim.meetingStatus === 'ACCEPTED' && styles.meetingStatusConfirmed,
+              claim.meetingStatus === MeetingStatus.ACCEPTED && styles.meetingStatusConfirmed,
             ]}
           >
             {getMeetingStatusText()}

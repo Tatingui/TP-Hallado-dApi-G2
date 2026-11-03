@@ -1,5 +1,4 @@
-import { getToken } from "../storage/authStorage";
-import { apiDelete, apiGet, apiPost, apiPostMultipart, apiPut } from "./api";
+import { authDelete, authGet, authPost, authPostMultipart, authPut } from "./api";
 
 /**
  * Busca publicaciones en el backend (endpoint de Agus).
@@ -32,9 +31,7 @@ export const searchPublicationsApi = async ({
   if (sortBy) params.append("sortBy", sortBy);
   params.append("page", String(page));
   params.append("size", String(size));
-
-  const token = await getToken();
-  const data = await apiGet(`/publications/search?${params.toString()}`, token);
+  const data = await authGet(`/publications/search?${params.toString()}`);
   return data;
 };
 
@@ -58,7 +55,6 @@ export const searchPublicationsApi = async ({
  * @param {Array} [images] - Array de objetos { uri, type, fileName }
  */
 export const createPublicationApi = async (publication, images = [], tokenParam = null, idempotencyKey = null) => {
-  const token = tokenParam || await getToken();
 
   // Los datos viajan como una parte más del formulario: así el multipart nunca
   // queda vacío. En Android, un multipart sin partes (publicación sin fotos)
@@ -74,7 +70,7 @@ export const createPublicationApi = async (publication, images = [], tokenParam 
     });
   });
 
-  return apiPostMultipart("/publications", formData, token, idempotencyKey);
+  return authPostMultipart("/publications", formData, tokenParam, idempotencyKey);
 };
 
 /**
@@ -86,31 +82,28 @@ export const createPublicationApi = async (publication, images = [], tokenParam 
  * @param {string} [status] - Filtro opcional por estado
  */
 export const getMyPublicationsApi = async (page = 0, size = 10, status = null) => {
-  const token = await getToken();
   const params = new URLSearchParams();
   params.append("page", String(page));
   params.append("size", String(size));
   if (status) params.append("status", status);
 
-  const data = await apiGet(`/publications/mine?${params.toString()}`, token);
+  const data = await authGet(`/publications/mine?${params.toString()}`);
   return data;
 };
 
 export const getFollowedPublicationsApi = async (page = 0, size = 3) => {
-  const token = await getToken();
   const params = new URLSearchParams();
   params.append("page", String(page));
   params.append("size", String(size));
 
-  return apiGet(`/publications/followed?${params.toString()}`, token);
+  return authGet(`/publications/followed?${params.toString()}`);
 };
 
 /**
  * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado desde la última vez que se vieron.
  */
 export const getFollowedUpdatesCountApi = async () => {
-  const token = await getToken();
-  return apiGet("/publications/followed/updates-count", token);
+  return authGet("/publications/followed/updates-count");
 };
 
 /**
@@ -119,50 +112,41 @@ export const getFollowedUpdatesCountApi = async () => {
  * @param {number} id
  */
 export const getPublicationByIdApi = async (id) => {
-  const token = await getToken();
-  const data = await apiGet(`/publications/${id}`, token);
+  const data = await authGet(`/publications/${id}`);
   return data;
 };
 
 export const updatePublicationApi = async (id, publication) => {
-  const token = await getToken();
-  return apiPut(`/publications/${id}`, publication, token);
+  return authPut(`/publications/${id}`, publication);
 };
 
 export const getPublicationForEditApi = async (id) => {
-  const token = await getToken();
-  return apiGet(`/publications/${id}/edit`, token);
+  return authGet(`/publications/${id}/edit`);
 };
 
 export const getPublicationFollowStatusApi = async (id) => {
-  const token = await getToken();
-  return apiGet(`/publications/${id}/follow`, token);
+  return authGet(`/publications/${id}/follow`);
 };
 
 export const markPublicationAsSeenApi = async (id) => {
-  const token = await getToken();
-  return apiPost(`/publications/${id}/seen`, {}, token);
+  return authPost(`/publications/${id}/seen`, {});
 };
 
 export const followPublicationApi = async (id) => {
-  const token = await getToken();
-  return apiPost(`/publications/${id}/follow`, {}, token);
+  return authPost(`/publications/${id}/follow`, {});
 };
 
 export const unfollowPublicationApi = async (id) => {
-  const token = await getToken();
-  return apiDelete(`/publications/${id}/follow`, token);
+  return authDelete(`/publications/${id}/follow`);
 };
 
 export const deletePublicationApi = async (id) => {
-  const token = await getToken();
-  return apiDelete(`/publications/${id}`, token);
+  return authDelete(`/publications/${id}`);
 };
 
 /**
  * Punto 5: renueva por otros 30 días una publicación vencida.
  */
 export const renewPublicationApi = async (id) => {
-  const token = await getToken();
-  return apiPost(`/publications/${id}/renew`, {}, token);
+  return authPost(`/publications/${id}/renew`, {});
 };

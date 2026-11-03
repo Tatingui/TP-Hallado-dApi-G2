@@ -2,6 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 import { randomUUID } from 'expo-crypto';
 import { database } from '../database';
 import { getDatabaseSession, assertCurrentSession } from '../database/session';
+import { PENDING_SUBMISSION_STATUS } from '../constants/publicationConstants';
 import { persistImages } from '../services/files/fileSystemManager';
 
 export async function enqueuePublication(payload, images = [], options = {}) {
@@ -26,7 +27,7 @@ export async function enqueuePublication(payload, images = [], options = {}) {
       row.type = payload.type || '';
       row.category = payload.category || '';
       row.barrio = payload.barrio || '';
-      row.status = 'PENDIENTE_ENVIO';
+      row.status = PENDING_SUBMISSION_STATUS;
       row.snapshotJson = JSON.stringify(payload);
       row.syncStatus = 'pending_create';
       row.createdAt = new Date();

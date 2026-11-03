@@ -1,13 +1,18 @@
 package com.hallado.backend.exception;
 
 import com.hallado.backend.dto.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.server.ResponseStatusException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -36,10 +41,25 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Errores que ya indican su código HTTP (por ejemplo, 409 cuando una clave de
+     * idempotencia corresponde a otra publicación). Sin este handler terminaban en 500.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex) {
+        String message = ex.getReason() != null ? ex.getReason() : "No se pudo completar la operación";
+        ErrorResponse error = new ErrorResponse(ex.getStatusCode().value(), message);
+        return new ResponseEntity<>(error, ex.getStatusCode());
+    }
+
+    /**
+     * Errores no previstos: se registran con su detalle en el log del servidor y al
+     * cliente se le devuelve un mensaje genérico, sin exponer información interna.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-        ex.printStackTrace();
-        ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ocurrió un error inesperado: " + ex.getMessage());
+        log.error("Error no controlado", ex);
+        ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ocurrió un error inesperado. Intentá de nuevo más tarde.");
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

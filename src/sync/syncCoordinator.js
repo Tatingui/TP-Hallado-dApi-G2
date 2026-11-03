@@ -2,7 +2,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { AppState } from 'react-native';
 import { database } from '../database';
 import { getDatabaseSession, isCurrentSession, assertCurrentSession } from '../database/session';
-import { getPendingOperations, completeOperation, enqueuePublication } from '../repositories/pendingRepository';
+import { getPendingOperations, completeOperation } from '../repositories/pendingRepository';
 import { createPublicationApi } from '../services/publicationService';
 import { isTokenExpired } from '../storage/authStorage';
 import { createSyncEngine } from './syncEngine';
@@ -28,13 +28,6 @@ export const triggerSyncProcess = createSyncEngine({
     });
   }),
 });
-
-export async function queuePendingOperation(type, payload) {
-  if (type !== 'CREATE_PUBLICATION') throw new Error('Los reclamos y sus respuestas requieren conexión.');
-  const id = await enqueuePublication(payload.publication || payload, payload.images || []);
-  triggerSyncProcess().catch(() => {});
-  return id;
-}
 
 export function startSyncCoordinator() {
   const run = () => { if (AppState.currentState === 'active') triggerSyncProcess().catch(error => console.warn('No se pudo sincronizar:', error.message)); };

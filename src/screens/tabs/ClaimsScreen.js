@@ -23,6 +23,7 @@ import {
   acceptMeetingPointApi
 } from '../../services/claimService';
 import ClaimCard from '../../components/ClaimCard';
+import { ClaimStatus } from '../../constants/publicationConstants';
 import MeetingPointModal from '../../components/MeetingPointModal';
 
 export default function ClaimsScreen() {
@@ -110,16 +111,16 @@ export default function ClaimsScreen() {
       return;
     }
 
-    const actionText = newStatus === 'ACCEPTED' ? 'aceptar' : 'rechazar';
+    const actionText = newStatus === ClaimStatus.ACCEPTED ? 'aceptar' : 'rechazar';
 
     Alert.alert(
       "Confirmar acción",
-      `¿Estás seguro de que querés ${actionText} este reclamo? ${newStatus === 'ACCEPTED' ? 'Los demás reclamos pendientes para esta publicación serán rechazados automáticamente.' : ''}`,
+      `¿Estás seguro de que querés ${actionText} este reclamo? ${newStatus === ClaimStatus.ACCEPTED ? 'Los demás reclamos pendientes para esta publicación serán rechazados automáticamente.' : ''}`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar",
-          style: newStatus === 'ACCEPTED' ? "default" : "destructive",
+          style: newStatus === ClaimStatus.ACCEPTED ? "default" : "destructive",
           onPress: async () => {
             try {
               setProcessingId(claimId);
@@ -218,8 +219,8 @@ export default function ClaimsScreen() {
               claim={item}
               type={activeTab}
               isProcessing={processingId === item.id}
-              onAccept={(id) => handleRespond(id, 'ACCEPTED')}
-              onReject={(id) => handleRespond(id, 'REJECTED')}
+              onAccept={(id) => handleRespond(id, ClaimStatus.ACCEPTED)}
+              onReject={(id) => handleRespond(id, ClaimStatus.REJECTED)}
               onProposeMeeting={(claim) => setMeetingClaim(claim)}
               onAcceptMeeting={handleAcceptMeeting}
             />

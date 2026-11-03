@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hallado.backend.dto.CreatePublicationRequest;
 import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.service.IdempotentPublicationService;
+import com.hallado.backend.service.PublicationFollowService;
 import com.hallado.backend.service.PublicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ class PublicationControllerCreateTest {
         idempotentPublications = mock(IdempotentPublicationService.class);
         when(idempotentPublications.create(any(), any(), any(), any())).thenReturn(new PublicationResponseDTO());
         PublicationController controller =
-                new PublicationController(mock(PublicationService.class), json, idempotentPublications);
+                new PublicationController(mock(PublicationService.class), mock(PublicationFollowService.class), json, idempotentPublications);
         mvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

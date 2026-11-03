@@ -11,7 +11,8 @@ import {
   renewPublicationApi,
 } from "../services/publicationService";
 import { getPendingPublications } from "../storage/pendingSyncStorage";
-import { syncPendingPublications } from "../services/offlineSyncService";
+import { triggerSyncProcess } from "../sync/syncCoordinator";
+import { PENDING_SUBMISSION_STATUS } from "../constants/publicationConstants";
 
 export default function useMyPublications() {
   const { token } = useAuth();
@@ -32,7 +33,7 @@ export default function useMyPublications() {
         setPendingPublications(pending || []);
 
         if (pending && pending.length > 0) {
-          await syncPendingPublications();
+          await triggerSyncProcess();
           const updatedPending = await getPendingPublications();
           setPendingPublications(updatedPending || []);
         }
@@ -120,7 +121,7 @@ export default function useMyPublications() {
     category: pending.payload?.category,
     barrio: pending.payload?.barrio,
     type: pending.payload?.type,
-    status: "PENDIENTE_ENVIO",
+    status: PENDING_SUBMISSION_STATUS,
     createdAt: pending.createdAt,
     isPending: true,
     lastError: pending.lastError,

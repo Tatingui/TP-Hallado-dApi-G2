@@ -5,9 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -27,11 +25,9 @@ import com.hallado.backend.dto.PageResponseDTO;
 import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.model.CategoryEnum;
 import com.hallado.backend.model.Publication;
-import com.hallado.backend.model.PublicationFollow;
 import com.hallado.backend.model.PublicationStatus;
 import com.hallado.backend.model.PublicationType;
 import com.hallado.backend.model.User;
-import com.hallado.backend.repository.PublicationFollowRepository;
 import com.hallado.backend.repository.PublicationRepository;
 import com.hallado.backend.repository.PublicationSpecification;
 import com.hallado.backend.exception.BadRequestException;
@@ -48,14 +44,11 @@ public class PublicationService {
     private final UserLookupService userLookupService;
     private final FileStorageService fileStorageService;
 
-    private final PublicationFollowRepository publicationFollowRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
-                              PublicationFollowRepository publicationFollowRepository,
                               UserLookupService userLookupService,
                               FileStorageService fileStorageService) {
         this.publicationRepository = publicationRepository;
-        this.publicationFollowRepository = publicationFollowRepository;
         this.userLookupService = userLookupService;
         this.fileStorageService = fileStorageService;
     }
@@ -127,80 +120,7 @@ public class PublicationService {
         return PublicationResponseDTO.fromEntity(saved);
     }
 
-    public Map<String, Object> followPublication(String userEmail, Long publicationId) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-
-        if (publicationFollowRepository.existsByUserAndPublication(user, publication)) {
-            return getFollowStatus(userEmail, publicationId);
-        }
-
-        publicationFollowRepository.save(new PublicationFollow(user, publication));
-        return getFollowStatus(userEmail, publicationId);
-    }
-
     // ─── Punto 5: Mis publicaciones ──────────────────────────────────
-
-    public PageResponseDTO<PublicationResponseDTO> getFollowedPublications(String userEmail, int page, int size) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PublicationFollow> followPage = publicationFollowRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-
-        List<PublicationResponseDTO> dtos = followPage.getContent().stream()
-                .map(follow -> {
-                    Publication publication = follow.getPublication();
-                    PublicationResponseDTO dto = PublicationResponseDTO.fromEntity(publication);
-                    dto.setHasNewUpdates(hasStatusChangedSinceSeen(publication, follow));
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtos, pageable, followPage.getTotalElements());
-        return PageResponseDTO.fromPage(dtoPage);
-    }
-
-    /**
-     * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado desde la última vez que se vieron.
-     */
-    public long countFollowedWithUpdates(String userEmail) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-        return publicationFollowRepository.findByUser(user).stream()
-                .filter(follow -> hasStatusChangedSinceSeen(follow.getPublication(), follow))
-                .count();
-    }
-
-    // Punto 9: hay novedad solo cuando la publicación cambió de estado (no por ediciones de texto)
-    private boolean hasStatusChangedSinceSeen(Publication publication, PublicationFollow follow) {
-        return publication.getStatusChangedAt() != null &&
-                (follow.getLastSeenAt() == null || publication.getStatusChangedAt().isAfter(follow.getLastSeenAt()));
-    }
-
-    /**
-     * Devuelve si un usuario sigue la publicación y cuántos seguidores tiene.
-     */
-    public Map<String, Object> getFollowStatus(String userEmail, Long publicationId) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-
-        boolean followed = publicationFollowRepository.existsByUserAndPublication(user, publication);
-        long followersCount = publicationFollowRepository.countByPublication(publication);
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("followed", followed);
-        payload.put("followersCount", followersCount);
-        if (followed) {
-            publicationFollowRepository.findByUserAndPublication(user, publication)
-                    .ifPresent(follow -> payload.put("hasNewUpdates", hasStatusChangedSinceSeen(publication, follow)));
-        } else {
-            payload.put("hasNewUpdates", false);
-        }
-        return payload;
-    }
 
     /**
      * Obtiene las publicaciones del usuario autenticado, con filtro opcional por estado.
@@ -290,31 +210,6 @@ public class PublicationService {
         return PublicationResponseDTO.fromEntity(publicationRepository.save(publication));
     }
 
-    public Map<String, Object> markPublicationAsSeen(String userEmail, Long publicationId) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-
-        PublicationFollow follow = publicationFollowRepository.findByUserAndPublication(user, publication)
-                .orElse(null);
-
-        if (follow == null) {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("seen", false);
-            payload.put("message", "La publicación no está siendo seguida por este usuario.");
-            return payload;
-        }
-
-        follow.setLastSeenAt(publication.getUpdatedAt() != null ? publication.getUpdatedAt() : LocalDateTime.now());
-        publicationFollowRepository.save(follow);
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("seen", true);
-        payload.put("lastSeenAt", follow.getLastSeenAt());
-        return payload;
-    }
-
     public PageResponseDTO<PublicationResponseDTO> searchPublications(
             PublicationType userActionType,
             CategoryEnum category,
@@ -390,18 +285,6 @@ public class PublicationService {
 
         Page<PublicationResponseDTO> dtoPage = new PageImpl<>(dtoList, pageable, publicationPage.getTotalElements());
         return PageResponseDTO.fromPage(dtoPage);
-    }
-
-    public Map<String, Object> unfollowPublication(String userEmail, Long publicationId) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-
-        publicationFollowRepository.findByUserAndPublication(user, publication)
-                .ifPresent(publicationFollowRepository::delete);
-
-        return getFollowStatus(userEmail, publicationId);
     }
 
     // ─── Punto 3: Búsqueda (existente) ──────────────────────────────

@@ -20,7 +20,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = {"spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop"})
-@Import({PublicationService.class, IdempotentPublicationService.class, IdempotentPublicationServiceTest.JsonConfig.class})
+@Import({PublicationService.class, UserLookupService.class, FileStorageService.class, IdempotentPublicationService.class, IdempotentPublicationServiceTest.JsonConfig.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class IdempotentPublicationServiceTest {
     @TestConfiguration static class JsonConfig {

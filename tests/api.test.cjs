@@ -16,10 +16,10 @@ function load(file, mocks) {
  * Carga api.js y publicationService.js con dependencias simuladas y reemplaza
  * XMLHttpRequest y FormData para inspeccionar lo que se envía.
  */
-async function withPublicationTransport(run) {
+async function withPublicationTransport(run, { storedToken = 'different-token' } = {}) {
   const state = { expired: 0, requests: [] };
   const session = { owner: 'a', token: 'captured-token' };
-  const auth = { getToken: async () => 'different-token', clearSession: async () => { state.expired++; } };
+  const auth = { getToken: async () => storedToken, clearSession: async () => { state.expired++; } };
   const api = load('src/services/api.js', {
     '../storage/authStorage': auth, '../navigation/navigationRef': { resetTo() {} },
     '../constants/apiConfig': { API_URL: 'http://backend/api' },
@@ -91,3 +91,20 @@ test('las fotos viajan junto a los datos de la publicación', async () => {
     assert.deepEqual(parts[2][1], { uri: 'file:///b.png', type: 'image/png', name: 'image_1.jpg' });
   });
 });
+
+test('las peticiones autenticadas usan el token guardado y respetan uno explícito', async () => {
+  await withPublicationTransport(async ({ api, session }) => {
+    const headers = [];
+    global.fetch = async (url, options) => {
+      headers.push(options.headers.Authorization);
+      return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({}) };
+    };
+
+    await api.authGet('/usuarios/me');
+    await api.authPost('/alerts', {}, session.token);
+    await api.apiPost('/auth/login', {});
+
+    assert.deepEqual(headers, ['Bearer captured-token', 'Bearer captured-token', undefined]);
+  }, { storedToken: 'captured-token' });
+});
+

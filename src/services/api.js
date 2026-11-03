@@ -1,4 +1,4 @@
-import { clearSession } from '../storage/authStorage';
+import { clearSession, getToken } from '../storage/authStorage';
 import { resetTo } from '../navigation/navigationRef';
 import { API_URL } from '../constants/apiConfig';
 import { getDatabaseSession, assertCurrentSession, isCurrentSession } from '../database/session';
@@ -99,3 +99,17 @@ export function apiPostMultipart(endpoint, formData, token = null, idempotencyKe
     xhr.send(formData);
   });
 }
+
+// ─── Peticiones autenticadas ───
+// Usan el token de la sesión guardada, salvo que se indique otro: la sincronización
+// envía con el token de la sesión dueña de cada operación pendiente.
+
+const resolveToken = async (token) => token || (await getToken());
+
+export const authGet = async (endpoint, token) => apiGet(endpoint, await resolveToken(token));
+export const authPost = async (endpoint, body, token) => apiPost(endpoint, body, await resolveToken(token));
+export const authPut = async (endpoint, body, token) => apiPut(endpoint, body, await resolveToken(token));
+export const authPatch = async (endpoint, body, token) => apiPatch(endpoint, body, await resolveToken(token));
+export const authDelete = async (endpoint, token) => apiDelete(endpoint, await resolveToken(token));
+export const authPostMultipart = async (endpoint, formData, token, idempotencyKey = null) =>
+  apiPostMultipart(endpoint, formData, await resolveToken(token), idempotencyKey);

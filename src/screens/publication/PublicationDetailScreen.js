@@ -10,13 +10,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreateClaimModal from "../../components/CreateClaimModal";
 import OfflineBanner from "../../components/OfflineBanner";
+import { PublicationStatusBadge } from "../../components/StatusBadge";
 import ImageGallery from "../../components/publication/ImageGallery";
 import PublisherCard from "../../components/publication/PublisherCard";
 import {
   getCategoryLabel,
-  getStatusLabel,
   getTypeLabel,
-  getPublicationStatusColor,
   PublicationStatus,
 } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
@@ -107,9 +106,7 @@ export default function PublicationDetailScreen() {
             <Ionicons name={isLost ? "search-outline" : "eye-outline"} size={14} color={Colors.surface} />
             <Text style={styles.badgeText}>{getTypeLabel(publication.type)}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getPublicationStatusColor(publication.status) }]}>
-            <Text style={styles.badgeText}>{getStatusLabel(publication.status)}</Text>
-          </View>
+          <PublicationStatusBadge status={publication.status} />
         </View>
 
         {/* Título y descripción */}
@@ -235,7 +232,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 32 },
   badgeRow: { flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 16 },
   typeBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   badgeText: { fontSize: 12, fontWeight: "600", color: Colors.surface },
   title: { fontSize: 22, fontWeight: "700", color: Colors.text, paddingHorizontal: 20, paddingTop: 12 },
   description: { fontSize: 15, color: Colors.textSecondary, lineHeight: 22, paddingHorizontal: 20, paddingTop: 8 },

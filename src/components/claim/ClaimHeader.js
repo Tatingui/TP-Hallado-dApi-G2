@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../../constants/theme';
-import { getClaimStatusColor, getClaimStatusLabel } from '../../constants/publicationConstants';
+import { ClaimStatusBadge } from '../StatusBadge';
 
 export default function ClaimHeader({ claim, formattedDate }) {
   return (
@@ -12,9 +12,7 @@ export default function ClaimHeader({ claim, formattedDate }) {
         </Text>
         <Text style={styles.dateText}>{formattedDate}</Text>
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: getClaimStatusColor(claim.status) }]}>
-        <Text style={styles.statusText}>{getClaimStatusLabel(claim.status)}</Text>
-      </View>
+      <ClaimStatusBadge status={claim.status} />
     </View>
   );
 }
@@ -41,15 +39,5 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 12,
     color: Colors.gray500,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: Colors.surface,
-    fontSize: 11,
-    fontWeight: '700',
   },
 });

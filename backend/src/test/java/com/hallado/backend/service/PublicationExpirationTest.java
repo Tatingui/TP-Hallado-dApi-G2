@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Punto 5: vencimiento a los 30 días y renovación. */
 @DataJpaTest(properties = {"spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop"})
-@Import({PublicationService.class, PublicationExpirationService.class})
+@Import({PublicationService.class, UserLookupService.class, FileStorageService.class, PublicationExpirationService.class})
 class PublicationExpirationTest {
 
     @Autowired PublicationExpirationService expiration;
