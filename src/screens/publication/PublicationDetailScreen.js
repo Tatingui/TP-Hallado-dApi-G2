@@ -136,10 +136,10 @@ export default function PublicationDetailScreen() {
           <InfoRow
             icon="navigate-outline"
             label="Dirección"
-            value={isMyPublication ? (publication.address || "No especificada") : null}
+            value={publication.addressVisible ? (publication.address || "No especificada") : null}
             placeholder="🔒 Oculta hasta aceptar reclamo"
           />
-          {publication.latitude != null && publication.longitude != null && (
+          {publication.addressVisible && publication.latitude != null && publication.longitude != null && (
             <>
               <View style={styles.divider} />
               <InfoRow

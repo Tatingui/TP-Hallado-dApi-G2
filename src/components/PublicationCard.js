@@ -113,11 +113,6 @@ export default function PublicationCard({ publication, onPress }) {
               <Text style={styles.locationText} numberOfLines={1}>
                 {publication.barrio || 'Buenos Aires'}
               </Text>
-              {publication.latitude != null && publication.longitude != null && (
-                <Text style={styles.coordsText} numberOfLines={1}>
-                  {Number(publication.latitude).toFixed(4)}, {Number(publication.longitude).toFixed(4)}
-                </Text>
-              )}
             </View>
           </View>
 
@@ -268,10 +263,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: Colors.gray700,
-  },
-  coordsText: {
-    fontSize: 10,
-    color: Colors.gray500,
   },
   publisherContainer: {
     flexDirection: 'row',
