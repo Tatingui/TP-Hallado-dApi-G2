@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from './useAuth';
 import { checkNetworkConnection, useNetworkStatus } from './useNetworkStatus';
 import {
@@ -35,11 +36,20 @@ export default function useClaims(activeTab) {
   const [meetingClaim, setMeetingClaim] = useState(null);
   const [isSubmittingMeeting, setIsSubmittingMeeting] = useState(false);
 
-  useEffect(() => {
-    fetchClaims(0, true);
-  }, [activeTab]);
+  // Solo se aplica la respuesta del último pedido: al cambiar rápido de pestaña,
+  // una respuesta vieja de Enviados no puede pisar la lista de Recibidos.
+  const requestRef = useRef(0);
+
+  // Punto 7 "siempre actualizados": recarga al entrar a la pestaña y al cambiar entre Enviados y Recibidos.
+  useFocusEffect(
+    useCallback(() => {
+      fetchClaims(0, true);
+    }, [activeTab])
+  );
 
   const fetchClaims = async (pageToFetch = 0, isInitial = false) => {
+    const request = ++requestRef.current;
+    const isCurrent = () => request === requestRef.current;
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
     setIsOfflineMode(false);
@@ -51,6 +61,7 @@ export default function useClaims(activeTab) {
       } else {
         response = await getMyReceivedClaimsApi(pageToFetch, 10, token);
       }
+      if (!isCurrent()) return;
 
       setIsOfflineMode(Boolean(response.__offline));
       const newContent = response.content || [];
@@ -63,12 +74,15 @@ export default function useClaims(activeTab) {
       setPage(response.pageNumber || 0);
       setIsLastPage(response.last ?? true);
     } catch (err) {
+      if (!isCurrent()) return;
       console.error("Error loading claims", err);
       setIsOfflineMode(true);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (isCurrent()) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   };
 

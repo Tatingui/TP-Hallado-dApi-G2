@@ -23,7 +23,9 @@ export default function SearchResultsList({
   onStartSearch,
   onPressPublication,
 }) {
-  if (loading) {
+  // El indicador a pantalla completa solo en la primera carga; al paginar o
+  // refrescar se mantiene la lista y el indicador va al pie.
+  if (loading && publications.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />

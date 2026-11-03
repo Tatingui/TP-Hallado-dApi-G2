@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CATEGORY_OPTIONS } from '../../constants/publicationConstants';
-import { COLORS, Colors } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 export default function SearchDetailsSection({ category, query, onChangeCategory, onChangeQuery }) {
   return (
@@ -26,7 +26,7 @@ export default function SearchDetailsSection({ category, query, onChangeCategory
             <MaterialCommunityIcons
               name={cat.icon}
               size={16}
-              color={category === cat.id ? Colors.surface : COLORS.primary || Colors.purple700}
+              color={category === cat.id ? Colors.surface : Colors.primary}
             />
             <Text style={[styles.chipText, category === cat.id && styles.textWhite]}>{cat.label}</Text>
           </Pressable>
@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   chipActive: {
-    backgroundColor: COLORS.primary || Colors.purple700,
-    borderColor: COLORS.primary || Colors.purple700,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
   },
   textWhite: {
     color: Colors.surface,

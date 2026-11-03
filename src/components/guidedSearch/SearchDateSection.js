@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DATE_FILTER_OPTIONS, DateFilterOption } from '../../constants/publicationConstants';
-import { COLORS, Colors } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { formatDate } from '../../utils/date';
 
 /**
@@ -34,7 +34,7 @@ export default function SearchDateSection({ dateFilter, onChangeDateFilter, star
             { key: 'end', label: 'Hasta', value: endDate },
           ].map(({ key, label, value }) => (
             <Pressable key={key} style={styles.rangeButton} onPress={() => onOpenPicker(key)}>
-              <MaterialCommunityIcons name="calendar" size={16} color={COLORS.primary || Colors.purple700} />
+              <MaterialCommunityIcons name="calendar" size={16} color={Colors.primary} />
               <Text style={styles.rangeButtonText}>
                 {label}: {value ? formatDate(value) : 'elegir'}
               </Text>
@@ -75,8 +75,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray50,
   },
   dateOptionActive: {
-    backgroundColor: COLORS.primary || Colors.purple700,
-    borderColor: COLORS.primary || Colors.purple700,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   dateOptionText: {
     fontSize: 12,

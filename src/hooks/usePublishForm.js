@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { PublicationType } from "../constants/publicationConstants";
-import { useAuth } from "./useAuth";
 import { clearDraft, loadDraft, saveDraft } from "../storage/draftStorage";
 import { savePendingPublication, removePendingPublication } from "../storage/pendingSyncStorage";
 import { toLocalDateTimeString } from "../utils/date";
@@ -36,12 +35,10 @@ const INITIAL_FORM = {
 export default function usePublishForm() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { token } = useAuth();
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(() => ({ ...INITIAL_FORM, operationKey: randomUUID() }));
   const [submitting, setSubmitting] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
   const [touched, setTouched] = useState({});
   const { getLocation: readLocation } = useLocation();
   const { pickImages: pickImagesFromGallery } = useImagePicker();
@@ -56,7 +53,6 @@ export default function usePublishForm() {
       if (route.params?.pendingDraft) return;
       const draft = await loadDraft();
       if (draft && (draft.title || draft.type || draft.category)) {
-        setHasDraft(true);
         Alert.alert(
           "Borrador encontrado",
           "Tenés una publicación sin terminar. ¿Querés continuar?",
@@ -66,7 +62,6 @@ export default function usePublishForm() {
               style: "destructive",
               onPress: () => {
                 clearDraft();
-                setHasDraft(false);
               },
             },
             {
@@ -75,7 +70,6 @@ export default function usePublishForm() {
                 setForm({ ...INITIAL_FORM, operationKey: randomUUID(), ...draft });
                 setStep(draft.currentStep || 0);
                 if (draft.recoveryWarning) Alert.alert("Revisá las fotos", draft.recoveryWarning);
-                setHasDraft(false);
               },
             },
           ],

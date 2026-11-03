@@ -4,12 +4,12 @@ import { formatDate } from "../../utils/date";
 
 const TYPE_OPTIONS = [
   { value: "ALL", label: "Todos" },
-  { value: "LOST", label: "Devolví" },
-  { value: "FOUND", label: "Recuperé" },
+  { value: "DEVOLVI", label: "Devolví" },
+  { value: "RECUPERE", label: "Recuperé" },
 ];
 
 /**
- * Barra de filtros del historial: tipo de publicación y rango de fechas.
+ * Barra de filtros del historial: tipo de caso (Devolví / Recuperé) y rango de fechas.
  * Al tocar una fecha avisa cuál picker abrir ("from" o "to").
  */
 export default function HistoryFilters({ type, from, to, onTypeChange, onOpenPicker }) {

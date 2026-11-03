@@ -22,7 +22,7 @@ export default function ClaimActions({
       <TouchableOpacity
         style={[styles.actionBtn, styles.acceptBtn]}
         onPress={() => onAccept(claim.id)}
-        disabled={isProcessing}
+        disabled={isProcessing || isOfflineMode}
       >
         {isProcessing ? (
           <ActivityIndicator color={Colors.surface} size="small" />

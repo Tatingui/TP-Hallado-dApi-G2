@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BARRIOS_LIST } from '../../constants/publicationConstants';
-import { COLORS, Colors } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 export default function SearchLocationSection({
   barrio,
@@ -18,7 +18,7 @@ export default function SearchLocationSection({
       <Text style={styles.sectionTitle}>3. ¿Dónde ocurrió?</Text>
       <Pressable style={styles.pickerSelector} onPress={onToggleBarrioPicker}>
         <View style={styles.pickerSelectorLeft}>
-          <MaterialCommunityIcons name="map-marker" size={20} color={COLORS.primary || Colors.purple700} />
+          <MaterialCommunityIcons name="map-marker" size={20} color={Colors.primary} />
           <Text style={styles.pickerSelectorText}>{barrio}</Text>
         </View>
         <MaterialCommunityIcons
@@ -46,13 +46,13 @@ export default function SearchLocationSection({
 
       <Pressable style={styles.gpsButton} onPress={onGetCurrentLocation} disabled={loadingLocation}>
         {loadingLocation ? (
-          <ActivityIndicator size="small" color={COLORS.primary || Colors.purple700} />
+          <ActivityIndicator size="small" color={Colors.primary} />
         ) : (
           <>
             <MaterialCommunityIcons
               name={userLocation ? 'crosshairs-gps' : 'navigation'}
               size={18}
-              color={COLORS.primary || Colors.purple700}
+              color={Colors.primary}
             />
             <Text style={styles.gpsButtonText}>
               {userLocation ? 'GPS Activado (Ordenará por cercanía)' : 'Usar mi ubicación actual'}
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   barrioItemTextActive: {
     fontWeight: '700',
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
   },
   gpsButton: {
     flexDirection: 'row',
@@ -140,6 +140,6 @@ const styles = StyleSheet.create({
   gpsButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
   },
 });

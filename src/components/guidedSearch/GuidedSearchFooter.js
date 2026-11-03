@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, Colors } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 export default function GuidedSearchFooter({
   onSaveAlert,
@@ -18,12 +18,12 @@ export default function GuidedSearchFooter({
           disabled={isSavingAlert}
         >
           {isSavingAlert ? (
-            <ActivityIndicator size="small" color={COLORS.primary || Colors.purple700} />
+            <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
             <MaterialCommunityIcons
               name="bell-plus"
               size={20}
-              color={COLORS.primary || Colors.purple700}
+              color={Colors.primary}
             />
           )}
           <Text style={styles.saveAlertButtonText}>Guardar como alerta</Text>
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.gray200,
   },
   submitButton: {
-    backgroundColor: COLORS.primary || Colors.purple700,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -72,13 +72,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.primary || Colors.purple700,
+    borderColor: Colors.primary,
     backgroundColor: Colors.surface,
     marginBottom: 10,
     gap: 8,
   },
   saveAlertButtonText: {
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
     fontSize: 15,
     fontWeight: '700',
   },

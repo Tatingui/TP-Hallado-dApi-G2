@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, COLORS } from '../constants/theme';
+import { Colors } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 
 export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
@@ -11,21 +11,12 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
     navigation.navigate('PublishTab');
   };
 
-  const handleSaveAlert = () => {
-    if (onSaveAlert) {
-      onSaveAlert(searchCriteria);
-    } else {
-      Alert.alert(
-        'Alerta Guardada',
-        'Te notificaremos cuando alguien publique algo que coincida con tus criterios de búsqueda.'
-      );
-    }
-  };
+  const handleSaveAlert = () => onSaveAlert(searchCriteria);
 
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>
-        <MaterialCommunityIcons name="magnify-remove-outline" size={48} color={COLORS.primary || Colors.purple700} />
+        <MaterialCommunityIcons name="magnify-remove-outline" size={48} color={Colors.primary} />
       </View>
 
       <Text style={styles.title}>No encontramos publicaciones</Text>
@@ -52,7 +43,7 @@ export default function EmptySearchResults({ searchCriteria, onSaveAlert }) {
           ]}
           onPress={handleSaveAlert}
         >
-          <MaterialCommunityIcons name="bell-plus" size={18} color={COLORS.primary || Colors.purple700} />
+          <MaterialCommunityIcons name="bell-plus" size={18} color={Colors.primary} />
           <Text style={styles.secondaryButtonText}>Guardar búsqueda como alerta</Text>
         </Pressable>
       </View>
@@ -101,7 +92,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary || Colors.purple700,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -128,7 +119,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryButtonText: {
-    color: COLORS.primary || Colors.purple700,
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },

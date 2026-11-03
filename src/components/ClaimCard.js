@@ -62,7 +62,7 @@ export default function ClaimCard({
         />
       )}
 
-      {isAccepted && (
+      {isAccepted && !isDelivered && (
         <MeetingSection
           claim={claim}
           counterpartName={counterpartName}

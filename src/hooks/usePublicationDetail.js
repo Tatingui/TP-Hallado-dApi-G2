@@ -164,14 +164,12 @@ export default function usePublicationDetail() {
   };
 
   // Derivaciones
-  const normalizedUserEmail = typeof user === "string" ? user.toLowerCase() : "";
-  const isMyPublication =
-    publication?.publisher?.email?.toLowerCase() === normalizedUserEmail ||
-    publication?.publisher?.nombre === user;
+  // El backend indica si quien mira es el publicador; la API ya no expone emails.
+  const isMyPublication = publication?.mine === true;
   const isFound = publication?.type === PublicationType.FOUND;
   const isLost = publication?.type === PublicationType.LOST;
   const canInteract = !isMyPublication && publication?.status === PublicationStatus.OPEN;
-  const images = publication?.imageUrls || publication?.images || [];
+  const images = publication?.imageUrls || [];
 
   return {
     id,

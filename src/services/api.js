@@ -61,7 +61,11 @@ export async function apiGet(endpoint, token = null) {
   catch (error) {
     if (cacheable && (error.status === 0 || error.status >= 500)) {
       const cached = await readLocal('http:' + endpoint, null, session);
-      if (cached) return { ...cached, __offline: true };
+      if (cached) {
+        // Las listas (alertas, historial) siguen siendo arrays: la marca va como propiedad.
+        if (Array.isArray(cached)) return Object.assign([...cached], { __offline: true });
+        return { ...cached, __offline: true };
+      }
     }
     throw error;
   }
