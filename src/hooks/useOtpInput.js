@@ -11,15 +11,36 @@ export function useOtpInput(length) {
   const focus = useCallback((index) => inputRefs.current[index]?.focus(), []);
 
   const changeDigit = useCallback((text, index) => {
-    const digit = text.replace(/[^0-9]/g, "");
-    if (digit.length > 1) return;
+    const cleaned = (text || "").replace(/[^0-9]/g, "");
+    if (!cleaned) {
+      setDigits((prev) => {
+        const next = [...prev];
+        next[index] = "";
+        return next;
+      });
+      return;
+    }
+
+    if (cleaned.length > 1) {
+      const pastedDigits = cleaned.slice(0, length - index).split("");
+      setDigits((prev) => {
+        const next = [...prev];
+        pastedDigits.forEach((d, i) => {
+          next[index + i] = d;
+        });
+        return next;
+      });
+      const nextIndex = Math.min(length - 1, index + pastedDigits.length);
+      focus(nextIndex);
+      return;
+    }
 
     setDigits((prev) => {
       const next = [...prev];
-      next[index] = digit;
+      next[index] = cleaned;
       return next;
     });
-    if (digit && index < length - 1) focus(index + 1);
+    if (cleaned && index < length - 1) focus(index + 1);
   }, [focus, length]);
 
   const handleKeyPress = useCallback((event, index) => {
