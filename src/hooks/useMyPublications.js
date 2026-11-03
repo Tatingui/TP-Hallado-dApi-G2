@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Q } from "@nozbe/watermelondb";
 import { database } from "../database";
-import { getDatabaseSession, isCurrentSession } from "../database/session";
+import { isCurrentSession, peekDatabaseSession } from "../database/session";
 import { useAuth } from "./useAuth";
 import { useNetworkStatus } from "./useNetworkStatus";
 import {
@@ -63,7 +63,10 @@ export default function useMyPublications() {
   );
 
   useEffect(() => {
-    const session = getDatabaseSession();
+    // Al cerrar sesión el token cambia antes de que se desmonte la pantalla:
+    // sin sesión no hay cola que observar.
+    const session = peekDatabaseSession();
+    if (!session) return undefined;
     let previousCount = null;
     const subscription = database
       .get("pending_operations")
@@ -85,7 +88,7 @@ export default function useMyPublications() {
           }
           previousCount = rows.length;
         } catch {
-          // A manual refresh remains available if the backend is offline.
+          // Si el backend no responde, queda disponible el refresco manual.
         }
       });
     return () => subscription.unsubscribe();

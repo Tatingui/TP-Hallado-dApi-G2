@@ -14,6 +14,14 @@ export function getDatabaseSession() {
   return session;
 }
 
+/**
+ * Devuelve la sesión actual o null, sin lanzar error. Sirve para los efectos
+ * que pueden volver a ejecutarse mientras se cierra la sesión.
+ */
+export function peekDatabaseSession() {
+  return session;
+}
+
 export function isCurrentSession(captured) {
   return Boolean(session && captured && session.generation === captured.generation);
 }
