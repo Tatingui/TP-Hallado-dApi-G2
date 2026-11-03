@@ -54,7 +54,7 @@ async function request(method, endpoint, body, token) {
 }
 export async function apiGet(endpoint, token = null) {
   const session = capture(token);
-  // Search/detail have their own photo-aware repositories and deletion handling.
+  // La búsqueda y el detalle tienen sus propios repositorios, que manejan fotos y eliminaciones.
   const cacheable = session && !endpoint.startsWith('/publications/search') && !/^\/publications\/\d+$/.test(endpoint) && !endpoint.startsWith('/auth/');
   let data;
   try { data = await request('GET', endpoint, undefined, token); }
@@ -85,7 +85,7 @@ export function apiPostMultipart(endpoint, formData, token = null, idempotencyKe
       try {
         check(session);
         let data = null;
-        try { data = JSON.parse(xhr.responseText); } catch { /* empty response */ }
+        try { data = JSON.parse(xhr.responseText); } catch { /* respuesta vacía */ }
         if (xhr.status >= 200 && xhr.status < 300) {
           await invalidate(endpoint, session);
           resolve(data);

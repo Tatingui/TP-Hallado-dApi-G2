@@ -11,7 +11,7 @@ export async function readLocal(key, fallback = null, session = getDatabaseSessi
   return rows.length ? JSON.parse(rows[0].valueJson) : fallback;
 }
 
-// All read-modify-write operations run inside the same database writer.
+// Todas las lecturas-modificaciones-escrituras corren dentro del mismo writer de la base.
 export async function updateLocal(key, updater, fallback = null, session = getDatabaseSession()) {
   return database.write(async () => {
     assertCurrentSession(session);

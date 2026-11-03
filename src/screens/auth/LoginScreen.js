@@ -30,7 +30,7 @@ export default function LoginScreen() {
     setError("");
 
     if (!email.trim() || !password.trim()) {
-      setError("Completa todos los campos");
+      setError("Completá todos los campos");
       return;
     }
 
@@ -44,13 +44,13 @@ export default function LoginScreen() {
       } else if (data.requiresVerification) {
         navigation.navigate("VerifyOtp", { email: email.trim(), fromLogin: "true", nextState });
       } else {
-        setError(data.message || "Error al iniciar sesion");
+        setError(data.message || "Error al iniciar sesión");
       }
     } catch (e) {
       if (e.message) {
         setError(e.message);
       } else {
-        setError("Error de conexion. Verifica que el servidor este corriendo.");
+        setError("Error de conexión. Verificá que el servidor esté funcionando.");
       }
     } finally {
       setLoading(false);
@@ -77,12 +77,12 @@ export default function LoginScreen() {
 
         {/* Formulario */}
         <View style={styles.form}>
-          <Text style={styles.title}>Iniciar Sesion</Text>
+          <Text style={styles.title}>Iniciar sesión</Text>
 
           {resetSuccess ? (
             <View style={styles.successBox}>
               <Text style={styles.successText}>
-                Contrasena restablecida. Inicia sesion con tu nueva contrasena.
+                Contraseña restablecida. Iniciá sesión con tu nueva contraseña.
               </Text>
             </View>
           ) : null}
@@ -102,11 +102,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Contrasena</Text>
+            <Text style={styles.label}>Contraseña</Text>
             <PasswordInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Tu contrasena"
+              placeholder="Tu contraseña"
             />
           </View>
 
@@ -132,7 +132,7 @@ export default function LoginScreen() {
             style={styles.forgotContainer}
             onPress={() => navigation.navigate("ForgotPassword", { nextState })}
           >
-            <Text style={styles.forgotText}>Olvidaste tu contrasena?</Text>
+            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
 
           <Pressable
@@ -140,7 +140,7 @@ export default function LoginScreen() {
             onPress={() => navigation.navigate("Register", { nextState })}
           >
             <Text style={styles.linkText}>
-              No tenes cuenta?{" "}
+              ¿No tenés cuenta?{" "}
               <Text style={styles.linkBold}>Registrate</Text>
             </Text>
           </Pressable>

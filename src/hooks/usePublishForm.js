@@ -179,7 +179,7 @@ export default function usePublishForm() {
         navigation.setParams({pendingId: undefined, pendingDraft: undefined});
       }
       await clearDraft();
-      triggerSyncProcess().catch(() => {});
+      triggerSyncProcess().catch((error) => console.warn("No se pudo sincronizar:", error.message));
       setForm({ ...INITIAL_FORM, operationKey: randomUUID() });
       setTouched({});
       setStep(0);

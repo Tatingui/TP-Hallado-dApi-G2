@@ -1,7 +1,7 @@
 import { authDelete, authGet, authPost, authPostMultipart, authPut } from "./api";
 
 /**
- * Busca publicaciones en el backend (endpoint de Agus).
+ * Punto 3: busca publicaciones en el backend.
  */
 export const searchPublicationsApi = async ({
   type,

@@ -15,12 +15,12 @@ import Profile from './models/Profile';
 const adapter = new SQLiteAdapter({
   schema,
   migrations,
-  // (optional) Database name
+  // Nombre del archivo SQLite
   dbName: 'hallado_local_db',
-  // (optional) Enable JSI for faster queries in Development Build / Native
+  // JSI desactivado: requiere configuración nativa adicional de WatermelonDB
   jsi: false,
   onSetUpError: (error) => {
-    console.error('Error setting up WatermelonDB SQLite adapter:', error);
+    console.error('No se pudo inicializar la base local (WatermelonDB):', error);
   },
 });
 

@@ -110,7 +110,7 @@ export default function ProfileScreen() {
             ))
           ) : (
             <Text style={styles.noInsigniasText}>
-              Completa 5 devoluciones para obtener la insignia "Vecino solidario".
+              Completá 5 devoluciones para obtener la insignia "Vecino solidario".
             </Text>
           )}
         </View>
