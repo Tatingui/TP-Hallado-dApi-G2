@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BARRIOS_LIST } from '../../constants/publicationConstants';
 import { Colors } from '../../constants/theme';
@@ -30,17 +30,23 @@ export default function SearchLocationSection({
 
       {showBarrioPicker && (
         <View style={styles.barriosListContainer}>
-          {BARRIOS_LIST.map((item) => (
-            <Pressable
-              key={item}
-              style={[styles.barrioItem, barrio === item && styles.barrioItemActive]}
-              onPress={() => onSelectBarrio(item)}
-            >
-              <Text style={[styles.barrioItemText, barrio === item && styles.barrioItemTextActive]}>
-                {item}
-              </Text>
-            </Pressable>
-          ))}
+          <ScrollView
+            nestedScrollEnabled={true}
+            style={styles.barriosScrollView}
+            showsVerticalScrollIndicator={true}
+          >
+            {BARRIOS_LIST.map((item) => (
+              <Pressable
+                key={item}
+                style={[styles.barrioItem, barrio === item && styles.barrioItemActive]}
+                onPress={() => onSelectBarrio(item)}
+              >
+                <Text style={[styles.barrioItemText, barrio === item && styles.barrioItemTextActive]}>
+                  {item}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -103,14 +109,23 @@ const styles = StyleSheet.create({
   barriosListContainer: {
     maxHeight: 180,
     borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderColor: Colors.gray300,
     borderRadius: 12,
     marginTop: 8,
     backgroundColor: Colors.surface,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  barriosScrollView: {
+    maxHeight: 180,
   },
   barrioItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray100,
   },
@@ -118,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.purple100,
   },
   barrioItemText: {
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.gray700,
   },
   barrioItemTextActive: {
