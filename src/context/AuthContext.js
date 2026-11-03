@@ -2,6 +2,7 @@ import { setDatabaseSession, subscribeSession, getDatabaseSession, markDatabaseR
 import { migrateAsyncStorageToWatermelon } from '../database/dataMigration';
 import { createContext, useState, useEffect } from "react";
 import { resetTo } from "../navigation/navigationRef";
+import { clearBiometricEnabled } from "../services/biometricService";
 import {
   saveSession,
   getToken,
@@ -10,6 +11,18 @@ import {
 } from "../storage/authStorage";
 
 export const AuthContext = createContext(null);
+
+/**
+ * Importa datos de la versión anterior (AsyncStorage) a la base local.
+ * Un error acá no debe impedir iniciar sesión: se registra y se reintenta en el próximo inicio.
+ */
+async function importLegacyData() {
+  try {
+    await migrateAsyncStorageToWatermelon();
+  } catch (error) {
+    console.warn("No se pudieron importar los datos de la versión anterior:", error.message);
+  }
+}
 
 /**
  * AuthProvider — provee estado de autenticacion a toda la app.
@@ -38,7 +51,7 @@ export function AuthProvider({ children }) {
       if (storedToken) {
         const email = await getUserEmail();
         setDatabaseSession(email, storedToken);
-        await migrateAsyncStorageToWatermelon();
+        await importLegacyData();
         markDatabaseReady();
         setToken(storedToken);
         setUser(email);
@@ -57,18 +70,21 @@ export function AuthProvider({ children }) {
   async function loginContext(newToken, email) {
     await saveSession(newToken, email);
     setDatabaseSession(email, newToken);
-    await migrateAsyncStorageToWatermelon();
-        markDatabaseReady();
+    await importLegacyData();
+    markDatabaseReady();
     setToken(newToken);
     setUser(email);
   }
 
   /**
-   * Limpia storage y estado — cierra sesion.
+   * Limpia storage y estado — cierra sesión.
+   * La preferencia de desbloqueo biométrico es de la persona, no del dispositivo:
+   * se borra para que quien inicie sesión después no herede el bloqueo.
    */
   async function logout(loginParams) {
     setDatabaseSession(null, null);
     await clearSession();
+    await clearBiometricEnabled();
     setToken(null);
     setUser(null);
     resetTo("Login", loginParams);

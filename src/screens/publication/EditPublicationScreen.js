@@ -1,8 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,117 +15,21 @@ import {
   PublicationType,
 } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
-import {
-  getPublicationForEditApi,
-  updatePublicationApi,
-} from "../../services/publicationService";
-import { toLocalDateTimeString } from "../../utils/date";
 import EventDateTimeField from "../../components/publication/EventDateTimeField";
-import useLocation from "../../hooks/useLocation";
-import {
-  validatePublication,
-} from "../../utils/validation/publicationValidation";
+import useEditPublication from "../../hooks/useEditPublication";
 
 export default function EditPublicationScreen() {
   const navigation = useNavigation();
   const { id } = useRoute().params ?? {};
-  const [form, setForm] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { loading: loadingLocation, getLocation } = useLocation();
-
-  useEffect(() => {
-    getPublicationForEditApi(id)
-      .then((publication) =>
-        setForm({
-          ...publication,
-          eventDate: publication.eventDate || toLocalDateTimeString(new Date()),
-          verificationQuestion: publication.verificationQuestion || "",
-          verificationAnswer: publication.verificationAnswer || "",
-          address: publication.address || "",
-        }),
-      )
-      .catch(() => Alert.alert("Error", "No se pudo cargar la publicación."))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  const updateField = (field, value) =>
-    setForm((current) => ({ ...current, [field]: value }));
-
-  const useCurrentLocation = async () => {
-    if (loadingLocation) return;
-    try {
-      const location = await getLocation();
-      if (!location) {
-        Alert.alert("Permiso necesario", "Necesitamos acceso a tu ubicación.");
-        return;
-      }
-      setForm((current) => ({
-        ...current,
-        latitude: location.latitude,
-        longitude: location.longitude,
-      }));
-      Alert.alert("Ubicación obtenida", "Se registró tu ubicación actual.");
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error?.message || "No se pudo obtener la ubicación.",
-      );
-    }
-  };
-
-  const save = async () => {
-    const questionRequired = form.type === PublicationType.FOUND;
-    const errors = validatePublication(form);
-    if (errors.title || errors.description) {
-      Alert.alert(
-        "Datos incompletos",
-        "El título debe tener 5 caracteres y la descripción 10 como mínimo.",
-      );
-      return;
-    }
-    if (errors.barrio) {
-      Alert.alert("Datos incompletos", "Seleccioná un barrio.");
-      return;
-    }
-    if (questionRequired && (errors.verificationQuestion || errors.verificationAnswer)) {
-      Alert.alert(
-        "Datos incompletos",
-        "La pregunta y la respuesta de verificación son obligatorias.",
-      );
-      return;
-    }
-    setSaving(true);
-    try {
-      await updatePublicationApi(id, {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        verificationQuestion: questionRequired
-          ? form.verificationQuestion.trim()
-          : null,
-        verificationAnswer: questionRequired
-          ? form.verificationAnswer.trim()
-          : null,
-        eventDate: form.eventDate,
-        barrio: form.barrio,
-        address: form.address.trim() || null,
-        latitude: form.latitude,
-        longitude: form.longitude,
-      });
-      Alert.alert(
-        "Publicación actualizada",
-        "Los cambios se guardaron correctamente.",
-        [{ text: "OK", onPress: () => navigation.replace("PublicationDetail", { id }) }],
-      );
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error?.message || "No se pudo actualizar la publicación.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    form,
+    loading,
+    saving,
+    loadingLocation,
+    updateField,
+    handleUseCurrentLocation,
+    save,
+  } = useEditPublication(id);
 
   if (loading || !form) {
     return (
@@ -222,7 +124,7 @@ export default function EditPublicationScreen() {
         />
         <Pressable
           style={[styles.locationButton, loadingLocation && styles.disabledButton]}
-          onPress={useCurrentLocation}
+          onPress={handleUseCurrentLocation}
           disabled={loadingLocation}
         >
           {loadingLocation ? (

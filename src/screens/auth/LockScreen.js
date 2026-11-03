@@ -16,11 +16,11 @@ export default function LockScreen() {
   const { nextState } = useRoute().params ?? {};
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [biometricLabel, setBiometricLabel] = useState("Biometria");
+  const [biometricLabel, setBiometricLabel] = useState("Biometría");
 
   useEffect(() => {
     loadBiometricType();
-    // Delay to let navigation finish before invoking native biometric prompt
+    // Se espera a que termine la navegación antes de abrir el diálogo biométrico nativo.
     const timer = setTimeout(() => {
       handleUnlock();
     }, 600);
@@ -62,9 +62,9 @@ export default function LockScreen() {
           </View>
         </View>
 
-        <Text style={styles.title}>Hallado esta bloqueado</Text>
+        <Text style={styles.title}>Hallado está bloqueado</Text>
         <Text style={styles.subtitle}>
-          Usa {biometricLabel} para desbloquear
+          Usá {biometricLabel} para desbloquear
         </Text>
 
         {error ? (

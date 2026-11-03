@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, FontSize } from "../constants/theme";
 
 /**
- * Campo de contrasena con boton de ojito para mostrar/ocultar.
- * Por defecto la contrasena esta oculta (ojo cerrado).
+ * Campo de contraseña con botón de ojito para mostrar/ocultar.
+ * Por defecto la contraseña está oculta (ojo cerrado).
  * Props:
  *   value, onChangeText, placeholder, style (opcional)
  */
@@ -16,7 +16,7 @@ export default function PasswordInput({ value, onChangeText, placeholder, style 
     <View style={[styles.wrapper, style]}>
       <TextInput
         style={styles.input}
-        placeholder={placeholder || "Tu contrasena"}
+        placeholder={placeholder || "Tu contraseña"}
         placeholderTextColor={Colors.disabled}
         value={value}
         onChangeText={onChangeText}

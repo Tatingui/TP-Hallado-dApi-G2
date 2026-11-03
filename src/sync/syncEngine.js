@@ -1,9 +1,9 @@
-// Dependency injection keeps the concurrency/retry rules testable without a native runtime.
+// La inyección de dependencias permite probar las reglas de concurrencia y reintentos sin el runtime nativo.
 export function createSyncEngine({ getSession, isCurrent, isOnline, list, send, complete, fail, now = Date.now }) {
   let running = null;
   return function sync() {
     if (running) return running;
-    // Defer work so the lock is installed before the first asynchronous operation.
+    // Se difiere el trabajo para que el lock quede tomado antes de la primera operación asíncrona.
     running = Promise.resolve().then(async () => {
       const session = getSession();
       if (!session || !(await isOnline()) || !isCurrent(session)) return 0;

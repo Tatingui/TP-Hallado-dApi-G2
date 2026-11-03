@@ -76,7 +76,7 @@ export default function useProfile() {
     } catch (err) {
       Alert.alert(
         "Error",
-        err?.message || "No se pudo cargar el perfil. Revisa tu conexión.",
+        err?.message || "No se pudo cargar el perfil. Revisá tu conexión.",
       );
     } finally {
       setLoading(false);

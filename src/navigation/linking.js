@@ -66,7 +66,7 @@ export function getLinkedPath(state, config = linkConfig) {
 }
 
 export const linking = {
-  prefixes: [Linking.createURL('/'), 'tpreactnative://'],
+  prefixes: [Linking.createURL('/'), 'hallado://'],
   config: linkConfig,
   getStateFromPath: getLinkedState,
   getPathFromState: getLinkedPath,

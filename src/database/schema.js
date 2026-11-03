@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({name: 'cache_entries', columns: [
       {name:'owner',type:'string',isIndexed:true},
@@ -36,34 +36,14 @@ export default appSchema({
       ],
     }),
 
-    tableSchema({
-      name: 'publication_images',
-      columns: [
-        { name: 'owner', type: 'string', isIndexed: true },
-        { name: 'publication_id', type: 'string' },
-        { name: 'local_uri', type: 'string', isOptional: true },
-        { name: 'remote_url', type: 'string', isOptional: true },
-        { name: 'upload_status', type: 'string' }, // 'pending' | 'uploaded' | 'failed'
-        { name: 'created_at', type: 'number' },
-      ],
-    }),
 
-    tableSchema({
-      name: 'drafts',
-      columns: [
-        { name: 'owner', type: 'string', isIndexed: true },
-        { name: 'form_json', type: 'string' },
-        { name: 'current_step', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
 
     tableSchema({
       name: 'pending_operations',
       columns: [
         { name: 'owner', type: 'string', isIndexed: true },
         { name: 'idempotency_key', type: 'string' },
-        { name: 'operation_type', type: 'string' }, // 'CREATE_PUBLICATION' | 'CREATE_CLAIM' | 'RESPOND_CLAIM'
+        { name: 'operation_type', type: 'string' }, // 'CREATE_PUBLICATION' (los reclamos requieren conexión)
         { name: 'payload_json', type: 'string' },
         { name: 'publication_local_id', type: 'string' },
         { name: 'state', type: 'string' },
@@ -75,59 +55,7 @@ export default appSchema({
       ],
     }),
 
-    tableSchema({
-      name: 'recent_searches',
-      columns: [
-        { name: 'owner', type: 'string', isIndexed: true },
-        { name: 'type', type: 'string' },
-        { name: 'category', type: 'string', isOptional: true },
-        { name: 'query', type: 'string', isOptional: true },
-        { name: 'barrio', type: 'string', isOptional: true },
-        { name: 'date_filter', type: 'string', isOptional: true },
-        { name: 'timestamp', type: 'number' },
-      ],
-    }),
 
-    tableSchema({
-      name: 'claims',
-      columns: [
-        { name: 'snapshot_json', type: 'string' },
-        { name: 'owner', type: 'string', isIndexed: true },
-        { name: 'server_id', type: 'number', isOptional: true },
-        { name: 'publication_id', type: 'number' },
-        { name: 'publication_title', type: 'string' },
-        { name: 'publication_type', type: 'string' },
-        { name: 'publication_barrio', type: 'string' },
-        { name: 'claimant_name', type: 'string' },
-        { name: 'claimant_phone', type: 'string', isOptional: true },
-        { name: 'publisher_name', type: 'string' },
-        { name: 'publisher_phone', type: 'string', isOptional: true },
-        { name: 'exact_address', type: 'string', isOptional: true },
-        { name: 'proof_message', type: 'string', isOptional: true },
-        { name: 'proof_image_url', type: 'string', isOptional: true },
-        { name: 'status', type: 'string' }, // 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
-        { name: 'is_received', type: 'boolean' },
-        { name: 'claim_date', type: 'number' },
-        { name: 'sync_status', type: 'string' },
-      ],
-    }),
 
-    tableSchema({
-      name: 'profiles',
-      columns: [
-        { name: 'owner', type: 'string', isIndexed: true },
-        { name: 'server_id', type: 'number' },
-        { name: 'nombre', type: 'string' },
-        { name: 'email', type: 'string' },
-        { name: 'telefono', type: 'string', isOptional: true },
-        { name: 'telefono_visible', type: 'boolean' },
-        { name: 'barrio', type: 'string', isOptional: true },
-        { name: 'profile_image_url', type: 'string', isOptional: true },
-        { name: 'devoluciones_concretadas', type: 'number' },
-        { name: 'valoraciones_positivas', type: 'number' },
-        { name: 'valoraciones_negativas', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
   ],
 });

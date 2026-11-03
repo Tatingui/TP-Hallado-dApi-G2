@@ -25,7 +25,7 @@ export async function getBiometricType() {
   try {
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
     if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-      return "Face ID";
+      return "Reconocimiento facial";
     }
     if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
       return "Huella digital";
@@ -36,17 +36,17 @@ export async function getBiometricType() {
   } catch {
     // ignore
   }
-  return "Biometria";
+  return "Biometría";
 }
 
 /**
- * Realiza la autenticacion biometrica.
+ * Realiza la autenticación biométrica.
  * Retorna { success: true } o { success: false, error: string }.
  */
 export async function authenticate() {
   try {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Desbloquea Hallado",
+      promptMessage: "Desbloqueá Hallado",
       cancelLabel: "Cancelar",
       disableDeviceFallback: false,
       fallbackLabel: "Usar PIN",
@@ -54,7 +54,7 @@ export async function authenticate() {
 
     return {
       success: result.success,
-      error: result.success ? null : "Autenticacion cancelada o fallida",
+      error: result.success ? null : "Autenticación cancelada o fallida",
     };
   } catch (err) {
     return { success: false, error: "Error al autenticar" };

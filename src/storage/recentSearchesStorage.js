@@ -1,15 +1,17 @@
 import { readLocal, writeLocal } from '../database/localStore';
-const AsyncStorage = { getItem: async () => JSON.stringify(await readLocal('recent_searches', [])), setItem: async (_, value) => writeLocal('recent_searches', JSON.parse(value)), removeItem: async () => writeLocal('recent_searches', []) };
 
-const RECENT_SEARCHES_KEY = '@hallado_recent_searches_v1';
+/**
+ * Búsquedas recientes del buscador guiado (Punto 3).
+ * Se guardan por usuario en la base local (cache_entries de WatermelonDB).
+ */
+const STORAGE_KEY = 'recent_searches';
 const MAX_RECENT_SEARCHES = 5;
 
 export const getRecentSearches = async () => {
   try {
-    const json = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
-    return json ? JSON.parse(json) : [];
+    return await readLocal(STORAGE_KEY, []);
   } catch (error) {
-    console.error('Error reading recent searches from AsyncStorage:', error);
+    console.error('No se pudieron leer las búsquedas recientes:', error);
     return [];
   }
 };
@@ -17,11 +19,9 @@ export const getRecentSearches = async () => {
 export const saveRecentSearch = async (searchCriteria) => {
   try {
     const current = await getRecentSearches();
-
-    // Create unique label/key for comparison
     const newEntry = {
       id: Date.now().toString(),
-      type: searchCriteria.type, // LOST or FOUND
+      type: searchCriteria.type,
       category: searchCriteria.category || null,
       query: searchCriteria.query || '',
       barrio: searchCriteria.barrio || '',
@@ -31,8 +31,8 @@ export const saveRecentSearch = async (searchCriteria) => {
       timestamp: new Date().toISOString(),
     };
 
-    // Filter out duplicate identical search
-    const filtered = current.filter(
+    // Una búsqueda repetida sube al principio en lugar de duplicarse.
+    const withoutDuplicate = current.filter(
       (item) =>
         !(
           item.type === newEntry.type &&
@@ -42,34 +42,21 @@ export const saveRecentSearch = async (searchCriteria) => {
         )
     );
 
-    // Add to top and limit to MAX_RECENT_SEARCHES
-    const updated = [newEntry, ...filtered].slice(0, MAX_RECENT_SEARCHES);
-    await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+    const updated = [newEntry, ...withoutDuplicate].slice(0, MAX_RECENT_SEARCHES);
+    await writeLocal(STORAGE_KEY, updated);
     return updated;
   } catch (error) {
-    console.error('Error saving recent search:', error);
-    return [];
-  }
-};
-
-export const deleteRecentSearch = async (id) => {
-  try {
-    const current = await getRecentSearches();
-    const updated = current.filter((item) => item.id !== id);
-    await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-    return updated;
-  } catch (error) {
-    console.error('Error deleting recent search:', error);
+    console.error('No se pudo guardar la búsqueda reciente:', error);
     return [];
   }
 };
 
 export const clearRecentSearches = async () => {
   try {
-    await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
+    await writeLocal(STORAGE_KEY, []);
     return [];
   } catch (error) {
-    console.error('Error clearing recent searches:', error);
+    console.error('No se pudieron borrar las búsquedas recientes:', error);
     return [];
   }
 };

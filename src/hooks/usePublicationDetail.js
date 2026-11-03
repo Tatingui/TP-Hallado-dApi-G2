@@ -85,7 +85,7 @@ export default function usePublicationDetail() {
       const followed = Boolean(followStatus?.followed);
       setIsFollowing(followed);
       if (followed) {
-        try { await markPublicationAsSeenApi(pubId); } catch { /* silencioso */ }
+        try { await markPublicationAsSeenApi(pubId); } catch (error) { console.warn("No se pudo marcar como vista:", error.message); }
       }
     } catch {
       setIsFollowing(false);

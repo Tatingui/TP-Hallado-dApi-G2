@@ -89,7 +89,7 @@ Después de cambiarla, reiniciar Metro.
 
 | Mensaje | Causa y solución |
 |---|---|
-| `Project is incompatible with this version of Expo Go` | Se abrió con Expo Go. Usar `iniciar.bat` y abrir la app **TPReactNative** del emulador. |
+| `Project is incompatible with this version of Expo Go` | Se abrió con Expo Go. Usar `iniciar.bat` y abrir la app **Hallado** del emulador. |
 | `Port 8081 was already in use` | Quedó otro proceso en el puerto. `netstat -ano \| findstr :8081` y `taskkill /PID <número> /F`. |
 | `SDK location not found` | El SDK no está en la ruta por defecto. Definir `ANDROID_HOME` y volver a correr `instalar.bat`. |
 | `Filename longer than 260 characters` | Faltan el paso 3 (rutas largas y reinicio) o la CMake 3.31+ del paso 2. |

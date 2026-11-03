@@ -1,33 +1,16 @@
 import { usePublications } from '../../hooks/usePublications';
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  Alert,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import useSaveSearchAlert from '../../hooks/useSaveSearchAlert';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Colors, Spacing, FontSize } from '../../constants/theme';
-import LogoHallado from '../../components/LogoHallado';
-import PublicationCard from '../../components/PublicationCard';
+import { Colors } from '../../constants/theme';
 import GuidedSearchModal from '../../components/GuidedSearchModal';
-import EmptySearchResults from '../../components/EmptySearchResults';
 import OfflineBanner from '../../components/OfflineBanner';
-import StartSearchPrompt from '../../components/StartSearchPrompt';
-import {
-  PublicationType,
-  CATEGORY_OPTIONS,
-  getCategoryLabel,
-  getTypeLabel,
-} from '../../constants/publicationConstants';
-import { createAlertApi } from '../../services/alertService';
-import { checkNetworkConnection } from '../../hooks/useNetworkStatus';
+import HomeHeader from '../../components/home/HomeHeader';
+import SearchBanner from '../../components/home/SearchBanner';
+import CategoryFilterBar from '../../components/home/CategoryFilterBar';
+import SearchResultsList from '../../components/home/SearchResultsList';
+import { PublicationType } from '../../constants/publicationConstants';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -46,7 +29,7 @@ export default function HomeScreen() {
 
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState('recent');
-  const [savingAlert, setSavingAlert] = useState(false);
+  const { savingAlert, saveAlert } = useSaveSearchAlert();
   const [refreshing, setRefreshing] = useState(false);
   const { publications, loading, isOfflineMode, refetch, loadMore, error } = usePublications({ ...searchCriteria, sortBy }, hasSearched);
   const loadingMore = loading && publications.length > 0;
@@ -69,42 +52,11 @@ export default function HomeScreen() {
   };
 
   // Punto 9: Guardar una búsqueda como alerta (la actual o la armada en el Buscador Guiado)
-  const handleSaveAlert = async (criteria = searchCriteria) => {
-    if (savingAlert) return;
+  const handleSaveAlert = (criteria = searchCriteria) => saveAlert(criteria);
 
-    if (!criteria.category && !criteria.barrio && !criteria.query) {
-      Alert.alert(
-        'Faltan criterios',
-        'Elegí al menos una categoría, un barrio o palabras clave para guardar la alerta.'
-      );
-      return;
-    }
+  const handleToggleSort = () => setSortBy(sortBy === 'recent' ? 'distance' : 'recent');
 
-    const isConnected = await checkNetworkConnection();
-    if (!isConnected) {
-      Alert.alert('Sin conexión', 'Necesitás conexión a internet para guardar una alerta.');
-      return;
-    }
-
-    try {
-      setSavingAlert(true);
-      await createAlertApi(criteria);
-      const summary = [
-        criteria.type === PublicationType.LOST ? 'Hallazgos' : 'Pérdidas',
-        criteria.category ? getCategoryLabel(criteria.category) : null,
-        criteria.barrio ? `en ${criteria.barrio}` : null,
-        criteria.query ? `"${criteria.query}"` : null,
-      ].filter(Boolean).join(' • ');
-      Alert.alert(
-        'Alerta guardada',
-        `${summary}\n\nTe avisaremos cuando aparezcan publicaciones nuevas que coincidan.`
-      );
-    } catch (err) {
-      Alert.alert('Error', err.message || 'No se pudo guardar la alerta.');
-    } finally {
-      setSavingAlert(false);
-    }
-  };
+  const openGuidedSearch = () => setSearchModalVisible(true);
 
   // Volver a la búsqueda por defecto (sin filtros), manteniendo el tipo elegido
   const hasActiveFilters = !!(
@@ -127,57 +79,13 @@ export default function HomeScreen() {
     }));
   };
 
-  const targetTypeLabel =
-    searchCriteria.type === PublicationType.LOST ? 'HALLAZGOS' : 'PÉRDIDAS';
-
   return (
     <View style={styles.container}>
       {/* App Top Bar */}
-      <View style={styles.appHeader}>
-        <View style={styles.brandContainer}>
-          <LogoHallado size={28} color={Colors.surface} />
-          <Text style={styles.brandTitle}>Hallado</Text>
-        </View>
-
-        <Pressable
-          style={styles.guidedSearchButtonHeader}
-          onPress={() => setSearchModalVisible(true)}
-        >
-          <MaterialCommunityIcons name="tune-variant" size={18} color={Colors.surface} />
-          <Text style={styles.guidedSearchButtonText}>Buscador Guiado</Text>
-        </Pressable>
-      </View>
+      <HomeHeader onOpenGuidedSearch={openGuidedSearch} />
 
       {/* Main Search Banner / Launcher */}
-      <Pressable
-        style={styles.searchBanner}
-        onPress={() => setSearchModalVisible(true)}
-      >
-        <View style={styles.searchBannerIconCircle}>
-          <MaterialCommunityIcons
-            name={
-              searchCriteria.type === PublicationType.LOST
-                ? 'magnify-expand'
-                : 'hand-heart'
-            }
-            size={22}
-            color={Colors.primary}
-          />
-        </View>
-
-        <View style={styles.searchBannerTextContainer}>
-          <Text style={styles.searchBannerTitle}>
-            Buscando {targetTypeLabel}
-          </Text>
-          <Text style={styles.searchBannerSubtitle} numberOfLines={1}>
-            {searchCriteria.barrio ? `en ${searchCriteria.barrio}` : 'en Todos los barrios'}
-            {searchCriteria.category ? ` • ${getCategoryLabel(searchCriteria.category)}` : ''}
-            {searchCriteria.query ? ` • "${searchCriteria.query}"` : ''}
-          </Text>
-        </View>
-
-        <MaterialCommunityIcons name="chevron-right" size={22} color={Colors.gray400} />
-      </Pressable>
+      <SearchBanner searchCriteria={searchCriteria} onPress={openGuidedSearch} />
 
       {/* Offline Warning Banner */}
       {isOfflineMode && (
@@ -185,135 +93,34 @@ export default function HomeScreen() {
       )}
 
       {/* Filter Refinement Bar */}
-      <View style={styles.filterRefineSection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRefineScroll}
-        >
-          {/* Limpiar filtros: solo si hay alguno aplicado */}
-          {hasActiveFilters && (
-            <Pressable style={styles.filterChip} onPress={handleClearFilters}>
-              <MaterialCommunityIcons name="filter-remove" size={14} color={Colors.error} />
-              <Text style={[styles.filterChipText, { color: Colors.error }]}>Limpiar</Text>
-            </Pressable>
-          )}
-
-          {/* Guardar búsqueda como alerta (Punto 9) */}
-          <Pressable
-            style={styles.filterChip}
-            onPress={() => handleSaveAlert()}
-            disabled={savingAlert}
-          >
-            {savingAlert ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <MaterialCommunityIcons name="bell-plus" size={14} color={Colors.primary} />
-            )}
-            <Text style={styles.filterChipText}>Guardar alerta</Text>
-          </Pressable>
-
-          {/* Sort Option Toggle */}
-          <Pressable
-            style={[
-              styles.filterChip,
-              sortBy === 'distance' && styles.filterChipActive,
-            ]}
-            onPress={() => setSortBy(sortBy === 'recent' ? 'distance' : 'recent')}
-          >
-            <MaterialCommunityIcons
-              name={sortBy === 'distance' ? 'map-marker-distance' : 'clock-outline'}
-              size={14}
-              color={sortBy === 'distance' ? Colors.surface : Colors.gray700}
-            />
-            <Text
-              style={[
-                styles.filterChipText,
-                sortBy === 'distance' && styles.textWhite,
-              ]}
-            >
-              {sortBy === 'distance' ? 'Por Cercanía' : 'Por Fecha'}
-            </Text>
-          </Pressable>
-
-          {/* Quick Category Chips */}
-          {CATEGORY_OPTIONS.map((cat) => (
-            <Pressable
-              key={cat.id}
-              style={[
-                styles.filterChip,
-                searchCriteria.category === cat.id && styles.filterChipActive,
-              ]}
-              onPress={() => handleSelectCategoryFilter(cat.id)}
-            >
-              <MaterialCommunityIcons
-                name={cat.icon}
-                size={14}
-                color={
-                  searchCriteria.category === cat.id
-                    ? Colors.surface
-                    : Colors.primary
-                }
-              />
-              <Text
-                style={[
-                  styles.filterChipText,
-                  searchCriteria.category === cat.id && styles.textWhite,
-                ]}
-              >
-                {cat.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+      <CategoryFilterBar
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+        savingAlert={savingAlert}
+        onSaveAlert={handleSaveAlert}
+        sortBy={sortBy}
+        onToggleSort={handleToggleSort}
+        selectedCategory={searchCriteria.category}
+        onSelectCategory={handleSelectCategoryFilter}
+      />
 
       {/* Results List or Loading */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Buscando publicaciones...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={publications}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <PublicationCard
-              publication={item}
-              onPress={() => {
-                // Navigate to Publication Detail (Point 4)
-                navigation.navigate("PublicationDetail", { id: String(item.id) });
-              }}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[Colors.primary]}
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={
-            hasSearched ? (
-              <EmptySearchResults searchCriteria={searchCriteria} onSaveAlert={handleSaveAlert} />
-            ) : (
-              <StartSearchPrompt onStart={() => setSearchModalVisible(true)} />
-            )
-          }
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footerLoading}>
-                <ActivityIndicator size="small" color={Colors.primary} />
-              </View>
-            ) : null
-          }
-        />
-      )}
+      <SearchResultsList
+        loading={loading}
+        loadingMore={loadingMore}
+        publications={publications}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onLoadMore={handleLoadMore}
+        hasSearched={hasSearched}
+        searchCriteria={searchCriteria}
+        onSaveAlert={handleSaveAlert}
+        onStartSearch={openGuidedSearch}
+        onPressPublication={(item) => {
+          // Navigate to Publication Detail (Point 4)
+          navigation.navigate("PublicationDetail", { id: String(item.id) });
+        }}
+      />
 
       {/* Guided Search Modal Component */}
       <GuidedSearchModal
@@ -332,143 +139,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.gray50,
-  },
-  appHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    paddingTop: 50,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
-  },
-  brandContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.surface,
-    letterSpacing: 0.5,
-  },
-  guidedSearchButtonHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  guidedSearchButtonText: {
-    color: Colors.surface,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  searchBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  searchBannerIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.purple100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  searchBannerTextContainer: {
-    flex: 1,
-  },
-  searchBannerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.gray900,
-  },
-  searchBannerSubtitle: {
-    fontSize: 12,
-    color: Colors.gray500,
-    marginTop: 2,
-  },
-  offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 8,
-    gap: 8,
-  },
-  offlineBannerText: {
-    fontSize: 12,
-    color: '#92400E',
-    fontWeight: '600',
-  },
-  filterRefineSection: {
-    marginBottom: 8,
-  },
-  filterRefineScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    gap: 6,
-  },
-  filterChipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.gray700,
-  },
-  textWhite: {
-    color: Colors.surface,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: Colors.gray500,
-    fontWeight: '500',
-  },
-  footerLoading: {
-    paddingVertical: 16,
-    alignItems: 'center',
   },
 });

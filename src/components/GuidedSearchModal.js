@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import useLocation from '../hooks/useLocation';
+import useRecentSearches from '../hooks/useRecentSearches';
 import { PublicationType } from '../constants/publicationConstants';
 import { Colors } from '../constants/theme';
-import {
-  clearRecentSearches,
-  getRecentSearches,
-  saveRecentSearch,
-} from '../storage/recentSearchesStorage';
 import GuidedSearchFooter from './guidedSearch/GuidedSearchFooter';
 import GuidedSearchHeader from './guidedSearch/GuidedSearchHeader';
 import RecentSearchesSection from './guidedSearch/RecentSearchesSection';
@@ -35,7 +31,12 @@ export default function GuidedSearchModal({
     getLocation,
     setLocation: setUserLocation,
   } = useLocation();
-  const [recentSearches, setRecentSearches] = useState([]);
+  const {
+    recentSearches,
+    loadRecentSearches,
+    addRecentSearch,
+    clearRecent,
+  } = useRecentSearches();
   const [showBarrioPicker, setShowBarrioPicker] = useState(false);
 
   useEffect(() => {
@@ -53,11 +54,6 @@ export default function GuidedSearchModal({
       );
     }
   }, [visible]);
-
-  const loadRecentSearches = async () => {
-    const list = await getRecentSearches();
-    setRecentSearches(list);
-  };
 
   const handleGetCurrentLocation = async () => {
     try {
@@ -88,11 +84,6 @@ export default function GuidedSearchModal({
     setDateFilter(item.dateFilter || 'ALL');
   };
 
-  const handleClearRecent = async () => {
-    await clearRecentSearches();
-    setRecentSearches([]);
-  };
-
   const buildSearchParams = () => ({
     type,
     category,
@@ -105,7 +96,7 @@ export default function GuidedSearchModal({
 
   const handleSubmitSearch = async () => {
     const searchParams = buildSearchParams();
-    await saveRecentSearch(searchParams);
+    await addRecentSearch(searchParams);
     onApplySearch(searchParams);
     onClose();
   };
@@ -143,7 +134,7 @@ export default function GuidedSearchModal({
           <SearchDateSection dateFilter={dateFilter} onChangeDateFilter={setDateFilter} />
           <RecentSearchesSection
             recentSearches={recentSearches}
-            onClear={handleClearRecent}
+            onClear={clearRecent}
             onSelect={handleSelectRecentSearch}
           />
         </ScrollView>

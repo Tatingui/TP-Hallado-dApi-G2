@@ -4,7 +4,7 @@
 
 - Pruebas JavaScript de aislamiento por cuenta, actualización de snapshots, cola transaccional, recuperación repetida de datos antiguos, archivos faltantes, exclusión mutua del sincronizador, reintentos y cambio de sesión durante un envío.
 - Pruebas existentes de navegación y seguidas.
-- Cuatro pruebas Spring Boot / H2: replay, payload incompatible, fallo seguido de reintento, solicitudes concurrentes y separación por usuario (el replay y conflicto comparten una prueba).
+- Pruebas Spring Boot / H2 (8 clases, `mvnw test`): registro y recupero, fecha del suceso, vencimiento y renovación de publicaciones, vencimiento de reclamos, seguimiento, manejo global de errores, alta con y sin fotos e idempotencia (replay, payload incompatible, fallo seguido de reintento, solicitudes concurrentes y separación por usuario).
 - Transformación Babel de las fuentes y generación del bundle Android con Hermes.
 
 Estas pruebas no implican que se haya ejecutado una build nativa. Deben completarse las siguientes verificaciones en un Android real o emulador antes de aprobar la entrega.

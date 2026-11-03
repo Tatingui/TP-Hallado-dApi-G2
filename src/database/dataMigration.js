@@ -13,7 +13,7 @@ const KEYS = ['hallado_publication_draft', '@hallado_pending_publications_queue_
   '@hallado_offline_pub_details_v1', '@hallado_followed_publications_v1'];
 const LEGACY_OWNER = '__legacy_unassigned__';
 
-// A single SQLite record preserves an immutable backup. No AsyncStorage keys are deleted.
+// Un único registro en SQLite conserva una copia inmutable. No se borra ninguna clave de AsyncStorage.
 async function legacySnapshot() {
   const values = await AsyncStorage.multiGet(KEYS);
   return database.write(async () => {
@@ -51,7 +51,7 @@ export async function migrateAsyncStorageToWatermelon(session = getDatabaseSessi
     backup = JSON.parse(record.valueJson);
   }
   const parse = (key, fallback) => backup.raw[key] ? JSON.parse(backup.raw[key]) : fallback;
-  // Each step is idempotent. The completion marker is written only after all steps succeed.
+  // Cada paso es idempotente. La marca de completado se escribe solo si todos los pasos terminaron bien.
   const draft = parse(KEYS[0], null);
   if (draft && !(await readLocal('legacy_draft_imported', false, session))) {
     let recovered = draft;
@@ -76,8 +76,7 @@ export async function migrateAsyncStorageToWatermelon(session = getDatabaseSessi
   const cache = parse(KEYS[3], null);
   if (cache?.items && !(await readLocal('last_search', null, session))) await saveSearchCacheOffline(cache.items, session);
   for (const publication of Object.values(parse(KEYS[4], {}))) await savePublicationDetailOffline(publication, session);
-  const follows = parse(KEYS[5], {});
-  await writeLocal('legacy_followed_ids', follows[session.owner] || [], session);
+  // KEYS[5] (publicaciones seguidas) queda solo en la copia de respaldo: ahora el seguimiento vive en el backend.
   await database.write(async () => {
     assertCurrentSession(session);
     await record.update(row => { row.valueJson = JSON.stringify({ ...backup, complete: true }); });

@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,10 +10,7 @@ import {
 } from "react-native";
 import PublicationCard from "../../components/PublicationCard";
 import { Colors } from "../../constants/theme";
-import {
-  getAlertPublicationsApi,
-  markAlertAsSeenApi,
-} from "../../services/alertService";
+import useAlertResults from "../../hooks/useAlertResults";
 
 /**
  * Punto 9: Publicaciones que coinciden con una alerta.
@@ -23,48 +19,8 @@ import {
 export default function AlertResultsScreen() {
   const navigation = useNavigation();
   const { id, summary } = useRoute().params ?? {};
-  const [publications, setPublications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(0);
-  const [isLastPage, setIsLastPage] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    loadFirstPage();
-  }, [id]);
-
-  const loadFirstPage = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getAlertPublicationsApi(id, 0, 10);
-      setPublications(data?.content || []);
-      setPage(data?.pageNumber || 0);
-      setIsLastPage(data?.last ?? true);
-      // Se marca como vista después de cargar, así las nuevas siguen marcadas en esta pantalla
-      await markAlertAsSeenApi(id);
-    } catch (err) {
-      setError(err?.message || "No se pudieron cargar las publicaciones de la alerta.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoadMore = async () => {
-    if (loadingMore || isLastPage || loading) return;
-    try {
-      setLoadingMore(true);
-      const data = await getAlertPublicationsApi(id, page + 1, 10);
-      setPublications((prev) => [...prev, ...(data?.content || [])]);
-      setPage(data?.pageNumber || page + 1);
-      setIsLastPage(data?.last ?? true);
-    } catch (err) {
-      console.warn("Error cargando más resultados de la alerta:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const { publications, loading, loadingMore, error, loadFirstPage, loadMore } =
+    useAlertResults(id);
 
   const renderPublication = ({ item }) => (
     <View>
@@ -115,7 +71,7 @@ export default function AlertResultsScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderPublication}
           contentContainerStyle={styles.listContent}
-          onEndReached={handleLoadMore}
+          onEndReached={loadMore}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
             <View style={styles.center}>

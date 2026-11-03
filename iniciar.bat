@@ -22,5 +22,5 @@ start "Hallado - Metro" cmd /k "npm start -- --android"
 
 echo.
 echo Listo. Para frenar todo, cerra las dos ventanas.
-echo Si la app no se abre sola, abri "TPReactNative" en el emulador.
+echo Si la app no se abre sola, abri "Hallado" en el emulador.
 endlocal

@@ -1,4 +1,4 @@
-// A generation invalidates in-flight reads/writes when the active account changes.
+// Cada sesión tiene una generación: al cambiar de cuenta se invalidan las lecturas y escrituras en curso.
 let session = null;
 let generation = 0;
 const listeners = new Set();
