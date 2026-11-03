@@ -8,7 +8,7 @@ import com.hallado.backend.model.PublicationType;
 import com.hallado.backend.model.User;
 
 public class ResolvedCaseDTO {
-    public static ResolvedCaseDTO from(Claim claim, User current, ClaimRating rating) {
+    public static ResolvedCaseDTO from(Claim claim, User current, ClaimRating rating, ClaimRating counterpartRating) {
         ResolvedCaseDTO dto = new ResolvedCaseDTO();
         boolean publisher = claim.getPublication().getUser().getId().equals(current.getId());
         boolean devolver = claim.getPublication().getType() == PublicationType.FOUND ? publisher : !publisher;
@@ -25,6 +25,7 @@ public class ResolvedCaseDTO {
         dto.rated = rating != null;
         dto.canThank = !devolver && dto.canRate;
         dto.ratingMessage = rating != null ? rating.getMessage() : null;
+        dto.counterpartRatingMessage = counterpartRating != null ? counterpartRating.getMessage() : null;
         return dto;
     }
     private Long claimId;
@@ -40,6 +41,7 @@ public class ResolvedCaseDTO {
     private boolean canThank;
 
     private String ratingMessage;
+    private String counterpartRatingMessage;
     public Long getClaimId() { return claimId; }
     public Long getCounterpartId() { return counterpartId; }
     public String getCounterpartName() { return counterpartName; }
@@ -47,6 +49,7 @@ public class ResolvedCaseDTO {
     public String getPublicationTitle() { return publicationTitle; }
     public String getPublicationType() { return publicationType; }
     public String getRatingMessage() { return ratingMessage; }
+    public String getCounterpartRatingMessage() { return counterpartRatingMessage; }
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public String getRole() { return role; }
     public boolean isCanRate() { return canRate; }

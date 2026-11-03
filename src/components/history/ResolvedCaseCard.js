@@ -27,7 +27,21 @@ export default function ResolvedCaseCard({ item, onOpen, onRate }) {
         {item.ratingMessage ? (
           <View style={styles.ratingMessage}>
             <Ionicons name="chatbubble-outline" size={15} color={Colors.primary} />
-            <Text style={styles.ratingMessageText}>{item.ratingMessage}</Text>
+            <View style={styles.ratingMessageContent}>
+              <Text style={styles.ratingMessageLabel}>Tu mensaje</Text>
+              <Text style={styles.ratingMessageText}>{item.ratingMessage}</Text>
+            </View>
+          </View>
+        ) : null}
+        {item.counterpartRatingMessage ? (
+          <View style={styles.ratingMessage}>
+            <Ionicons name="chatbubble-ellipses-outline" size={15} color={Colors.primary} />
+            <View style={styles.ratingMessageContent}>
+              <Text style={styles.ratingMessageLabel}>
+                Mensaje de {item.counterpartName}
+              </Text>
+              <Text style={styles.ratingMessageText}>{item.counterpartRatingMessage}</Text>
+            </View>
           </View>
         ) : null}
       </Pressable>
@@ -87,6 +101,15 @@ const styles = StyleSheet.create({
     color: Colors.gray600,
     fontSize: 13,
     lineHeight: 18,
+  },
+  ratingMessageContent: {
+    flex: 1,
+  },
+  ratingMessageLabel: {
+    color: Colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 2,
   },
   rateButton: {
     marginTop: 12,

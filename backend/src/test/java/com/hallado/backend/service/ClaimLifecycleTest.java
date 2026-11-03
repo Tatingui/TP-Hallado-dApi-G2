@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hallado.backend.dto.ClaimRequestDTO;
 import com.hallado.backend.dto.ClaimResponseDTO;
+import com.hallado.backend.dto.RatingRequestDTO;
+import com.hallado.backend.dto.ResolvedCaseDTO;
 import com.hallado.backend.exception.BadRequestException;
 import com.hallado.backend.exception.ForbiddenException;
 import com.hallado.backend.model.*;
@@ -168,6 +170,29 @@ class ClaimLifecycleTest {
         BadRequestException error = assertThrows(BadRequestException.class,
                 () -> claims.createClaim(perdida.getId(), sinBarrio, null, usuario().getEmail()));
         assertTrue(error.getMessage().contains("barrio"));
+    }
+
+    @Test
+    void historialIncluyeLosMensajesDeAmbasValoraciones() {
+        Caso caso = casoAceptado();
+        claims.confirmDelivery(caso.reclamo.getId(), caso.publicador.getEmail());
+
+        RatingRequestDTO valoracionDelPublicador = new RatingRequestDTO();
+        valoracionDelPublicador.setPositive(true);
+        valoracionDelPublicador.setMessage("Mensaje del publicador");
+        claims.rateResolvedCase(caso.reclamo.getId(), valoracionDelPublicador, caso.publicador.getEmail());
+
+        RatingRequestDTO valoracionDelReclamante = new RatingRequestDTO();
+        valoracionDelReclamante.setPositive(true);
+        valoracionDelReclamante.setMessage("Mensaje del reclamante");
+        claims.rateResolvedCase(caso.reclamo.getId(), valoracionDelReclamante, caso.reclamante.getEmail());
+
+        ResolvedCaseDTO historial = claims
+                .getResolvedHistory(caso.reclamante.getEmail(), null, null, null)
+                .get(0);
+
+        assertEquals("Mensaje del reclamante", historial.getRatingMessage());
+        assertEquals("Mensaje del publicador", historial.getCounterpartRatingMessage());
     }
 
     private record Caso(User publicador, User reclamante, Publication publicacion, Claim reclamo) {}
