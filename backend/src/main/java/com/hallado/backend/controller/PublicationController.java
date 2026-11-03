@@ -2,7 +2,6 @@ package com.hallado.backend.controller;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -22,6 +21,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hallado.backend.dto.CreatePublicationRequest;
+import com.hallado.backend.dto.FollowStatusDTO;
+import com.hallado.backend.dto.FollowedUpdatesCountDTO;
+import com.hallado.backend.dto.SeenStatusDTO;
 import com.hallado.backend.dto.UpdatePublicationRequest;
 import com.hallado.backend.dto.PublicationEditResponseDTO;
 import com.hallado.backend.dto.PageResponseDTO;
@@ -29,6 +31,8 @@ import com.hallado.backend.dto.PublicationResponseDTO;
 import com.hallado.backend.model.CategoryEnum;
 import com.hallado.backend.model.PublicationStatus;
 import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.service.IdempotentPublicationService;
+import com.hallado.backend.service.PublicationFollowService;
 import com.hallado.backend.service.PublicationService;
 
 @RestController
@@ -36,11 +40,16 @@ import com.hallado.backend.service.PublicationService;
 public class PublicationController {
 
     private final PublicationService publicationService;
+    private final PublicationFollowService followService;
     private final ObjectMapper objectMapper;
-    private final com.hallado.backend.service.IdempotentPublicationService idempotentPublications;
+    private final IdempotentPublicationService idempotentPublications;
 
-    public PublicationController(PublicationService publicationService, ObjectMapper objectMapper, com.hallado.backend.service.IdempotentPublicationService idempotentPublications) {
+    public PublicationController(PublicationService publicationService,
+                                 PublicationFollowService followService,
+                                 ObjectMapper objectMapper,
+                                 IdempotentPublicationService idempotentPublications) {
         this.publicationService = publicationService;
+        this.followService = followService;
         this.objectMapper = objectMapper;
         this.idempotentPublications = idempotentPublications;
     }
@@ -78,11 +87,11 @@ public class PublicationController {
     }
 
     @PostMapping("/{id}/follow")
-    public ResponseEntity<Map<String, Object>> followPublication(
+    public ResponseEntity<FollowStatusDTO> followPublication(
             @PathVariable Long id,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(publicationService.followPublication(authentication.getName(), id));
+        return ResponseEntity.ok(followService.follow(authentication.getName(), id));
     }
 
     @GetMapping("/followed")
@@ -92,7 +101,7 @@ public class PublicationController {
             Authentication authentication
     ) {
         String userEmail = authentication.getName();
-        PageResponseDTO<PublicationResponseDTO> result = publicationService.getFollowedPublications(userEmail, page, size);
+        PageResponseDTO<PublicationResponseDTO> result = followService.getFollowedPublications(userEmail, page, size);
         return ResponseEntity.ok(result);
     }
 
@@ -100,16 +109,16 @@ public class PublicationController {
      * Punto 9: cantidad de publicaciones seguidas que cambiaron de estado (para el indicador de novedad)
      */
     @GetMapping("/followed/updates-count")
-    public ResponseEntity<Map<String, Long>> getFollowedUpdatesCount(Authentication authentication) {
-        return ResponseEntity.ok(Map.of("count", publicationService.countFollowedWithUpdates(authentication.getName())));
+    public ResponseEntity<FollowedUpdatesCountDTO> getFollowedUpdatesCount(Authentication authentication) {
+        return ResponseEntity.ok(new FollowedUpdatesCountDTO(followService.countWithUpdates(authentication.getName())));
     }
 
     @GetMapping("/{id}/follow")
-    public ResponseEntity<Map<String, Object>> getFollowStatus(
+    public ResponseEntity<FollowStatusDTO> getFollowStatus(
             @PathVariable Long id,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(publicationService.getFollowStatus(authentication.getName(), id));
+        return ResponseEntity.ok(followService.getStatus(authentication.getName(), id));
     }
 
     /**
@@ -138,11 +147,11 @@ public class PublicationController {
     }
 
     @PostMapping("/{id}/seen")
-    public ResponseEntity<Map<String, Object>> markPublicationAsSeen(
+    public ResponseEntity<SeenStatusDTO> markPublicationAsSeen(
             @PathVariable Long id,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(publicationService.markPublicationAsSeen(authentication.getName(), id));
+        return ResponseEntity.ok(followService.markAsSeen(authentication.getName(), id));
     }
 
     /**
@@ -170,11 +179,11 @@ public class PublicationController {
     }
 
     @DeleteMapping("/{id}/follow")
-    public ResponseEntity<Map<String, Object>> unfollowPublication(
+    public ResponseEntity<FollowStatusDTO> unfollowPublication(
             @PathVariable Long id,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(publicationService.unfollowPublication(authentication.getName(), id));
+        return ResponseEntity.ok(followService.unfollow(authentication.getName(), id));
     }
 
     /**
