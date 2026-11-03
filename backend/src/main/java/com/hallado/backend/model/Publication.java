@@ -20,6 +20,9 @@ import jakarta.persistence.Table;
 @Table(name = "publications")
 public class Publication {
 
+    /** Punto 5: las publicaciones vencen a los 30 días y pueden renovarse. */
+    public static final int VIGENCIA_DIAS = 30;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -160,8 +163,29 @@ public class Publication {
         this.createdAt = now;
         this.updatedAt = now;
         if (this.expiresAt == null) {
-            this.expiresAt = this.createdAt.plusDays(30); // Publications expire in 30 days
+            this.expiresAt = this.createdAt.plusDays(VIGENCIA_DIAS);
         }
+    }
+
+    /** Abierta con la fecha de vencimiento ya cumplida (todavía no marcada como vencida). */
+    public boolean isOverdue(LocalDateTime now) {
+        return status == PublicationStatus.OPEN && expiresAt != null && !expiresAt.isAfter(now);
+    }
+
+    /** Se puede renovar si está vencida, o si su vigencia terminó y todavía no se marcó. */
+    public boolean isRenewable(LocalDateTime now) {
+        return status == PublicationStatus.EXPIRED || isOverdue(now);
+    }
+
+    /** Marca la publicación como vencida. */
+    public void expire() {
+        setStatus(PublicationStatus.EXPIRED);
+    }
+
+    /** Vuelve a abrir la publicación por otros 30 días a partir de ahora. */
+    public void renew(LocalDateTime now) {
+        this.expiresAt = now.plusDays(VIGENCIA_DIAS);
+        setStatus(PublicationStatus.OPEN);
     }
     @PreUpdate
     protected void onUpdate() {

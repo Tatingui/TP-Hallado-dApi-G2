@@ -14,6 +14,8 @@ import StartScreen from '../screens/StartScreen';
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import RegisterCodeScreen from '../screens/auth/RegisterCodeScreen';
+import CompleteRegistrationScreen from '../screens/auth/CompleteRegistrationScreen';
 import VerifyOtpScreen from '../screens/auth/VerifyOtpScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
@@ -144,9 +146,11 @@ export default function AppNavigator() {
         <Stack.Group screenOptions={authHeaderOptions}>
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Crear cuenta' }} />
+          <Stack.Screen name="RegisterCode" component={RegisterCodeScreen} options={{ title: 'Verificar email' }} />
+          <Stack.Screen name="CompleteRegistration" component={CompleteRegistrationScreen} options={{ title: 'Completar registro' }} />
           <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} options={{ title: 'Verificar email' }} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Recuperar contraseña' }} />
-          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: 'Nueva contraseña' }} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: 'Verificar código' }} />
           <Stack.Screen name="NewPassword" component={NewPasswordScreen} options={{ title: 'Nueva contraseña' }} />
           <Stack.Screen name="Lock" component={LockScreen} options={{ headerShown: false }} />
         </Stack.Group>

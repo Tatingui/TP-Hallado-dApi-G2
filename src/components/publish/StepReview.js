@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { CATEGORY_OPTIONS, getTypeLabel } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
+import { formatDateTime } from "../../utils/date";
 
 export default function StepReview({ form }) {
   return (
@@ -27,10 +28,8 @@ export default function StepReview({ form }) {
         ) : null}
         {form.eventDate && (
           <>
-            <Text style={styles.reviewLabel}>Fecha</Text>
-            <Text style={styles.reviewValue}>
-              {new Date(form.eventDate).toLocaleDateString("es-AR")}
-            </Text>
+            <Text style={styles.reviewLabel}>Fecha y hora</Text>
+            <Text style={styles.reviewValue}>{formatDateTime(form.eventDate)}</Text>
           </>
         )}
         {form.images.length > 0 && (

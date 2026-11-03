@@ -21,6 +21,7 @@ import {
 } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
 import usePublicationDetail from "../../hooks/usePublicationDetail";
+import { formatDateTime } from "../../utils/date";
 
 export default function PublicationDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -132,8 +133,8 @@ export default function PublicationDetailScreen() {
           <View style={styles.divider} />
           <InfoRow
             icon="calendar-outline"
-            label="Fecha"
-            value={publication.eventDate ? new Date(publication.eventDate).toLocaleDateString("es-AR") : "Sin fecha"}
+            label="Fecha y hora"
+            value={formatDateTime(publication.eventDate, "Sin fecha")}
           />
         </View>
 

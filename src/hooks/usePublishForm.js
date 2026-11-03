@@ -10,6 +10,7 @@ import { PublicationType } from "../constants/publicationConstants";
 import { useAuth } from "./useAuth";
 import { clearDraft, loadDraft, saveDraft } from "../storage/draftStorage";
 import { savePendingPublication, removePendingPublication } from "../storage/pendingSyncStorage";
+import { toLocalDateTimeString } from "../utils/date";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -37,7 +38,6 @@ export default function usePublishForm() {
   const [form, setForm] = useState(() => ({ ...INITIAL_FORM, operationKey: randomUUID() }));
   const [submitting, setSubmitting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [touched, setTouched] = useState({});
 
   const markTouched = useCallback((field) => {
@@ -171,7 +171,7 @@ export default function usePublishForm() {
       address: form.address.trim() || null,
       latitude: form.latitude,
       longitude: form.longitude,
-      eventDate: form.eventDate || new Date().toISOString(),
+      eventDate: form.eventDate || toLocalDateTimeString(new Date()),
     };
     if (form.type === PublicationType.FOUND) {
       payload.verificationQuestion = form.verificationQuestion.trim() || null;
@@ -253,8 +253,6 @@ export default function usePublishForm() {
     step,
     form,
     submitting,
-    showDatePicker,
-    setShowDatePicker,
     updateField,
     markTouched,
     fieldError,

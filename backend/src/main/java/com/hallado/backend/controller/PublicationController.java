@@ -240,4 +240,12 @@ public class PublicationController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Punto 5: renovar una publicación vencida por otros 30 días.
+     */
+    @PostMapping("/{id}/renew")
+    public ResponseEntity<PublicationResponseDTO> renewPublication(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(publicationService.renewPublication(id, authentication.getName()));
+    }
+
 }

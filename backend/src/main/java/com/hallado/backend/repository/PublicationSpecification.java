@@ -29,8 +29,14 @@ public class PublicationSpecification {
                 predicates.add(cb.equal(root.get("type"), type));
             }
 
-            // Exclude RESOLVED or EXPIRED publications by default
-            predicates.add(root.get("status").in(PublicationStatus.OPEN, PublicationStatus.IN_CLAIM));
+            // Solo publicaciones vigentes: en reclamo, o abiertas que todavía no vencieron
+            // (la tarea programada las marca como vencidas, pero puede no haber corrido aún).
+            predicates.add(cb.or(
+                    cb.equal(root.get("status"), PublicationStatus.IN_CLAIM),
+                    cb.and(
+                            cb.equal(root.get("status"), PublicationStatus.OPEN),
+                            cb.or(cb.isNull(root.get("expiresAt")),
+                                    cb.greaterThan(root.get("expiresAt"), LocalDateTime.now())))));
 
             // Category filter
             if (category != null) {

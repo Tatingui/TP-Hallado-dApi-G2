@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { getClaimStatusColor, getClaimStatusLabel } from '../constants/publicationConstants';
 import { resolveImageUrl } from '../utils/imageUrl';
+import { formatDateTime } from '../utils/date';
 
 export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMeeting, onAcceptMeeting, isProcessing, isOfflineMode = false }) {
   if (!claim) return null;
@@ -35,12 +36,7 @@ export default function ClaimCard({ claim, type, onAccept, onReject, onProposeMe
     }
   };
 
-  const formattedDate = new Date(claim.claimDate).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const formattedDate = formatDateTime(claim.claimDate);
 
   return (
     <View style={styles.card}>

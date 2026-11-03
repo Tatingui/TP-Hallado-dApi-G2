@@ -7,7 +7,7 @@ public class OtpRequest {
     @NotBlank(message = "El email es obligatorio")
     private String email;
 
-    @NotBlank(message = "El codigo es obligatorio")
+    @NotBlank(message = "El código es obligatorio")
     private String code;
 
     public OtpRequest() {}

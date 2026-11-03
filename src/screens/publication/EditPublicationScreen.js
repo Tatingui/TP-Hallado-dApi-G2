@@ -1,4 +1,3 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
@@ -23,6 +22,8 @@ import {
   getPublicationForEditApi,
   updatePublicationApi,
 } from "../../services/publicationService";
+import { toLocalDateTimeString } from "../../utils/date";
+import EventDateTimeField from "../../components/publication/EventDateTimeField";
 
 export default function EditPublicationScreen() {
   const navigation = useNavigation();
@@ -31,14 +32,13 @@ export default function EditPublicationScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     getPublicationForEditApi(id)
       .then((publication) =>
         setForm({
           ...publication,
-          eventDate: publication.eventDate || new Date().toISOString(),
+          eventDate: publication.eventDate || toLocalDateTimeString(new Date()),
           verificationQuestion: publication.verificationQuestion || "",
           verificationAnswer: publication.verificationAnswer || "",
           address: publication.address || "",
@@ -251,24 +251,11 @@ export default function EditPublicationScreen() {
             </Text>
           )}
         </Pressable>
-        <Text style={styles.label}>Fecha</Text>
-        <Pressable style={styles.input} onPress={() => setShowDatePicker(true)}>
-          <Text>
-            {form.eventDate
-              ? new Date(form.eventDate).toLocaleDateString("es-AR")
-              : "Seleccionar fecha"}
-          </Text>
-        </Pressable>
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date(form.eventDate)}
-            mode="date"
-            onChange={(_, date) => {
-              setShowDatePicker(false);
-              if (date) updateField("eventDate", date.toISOString());
-            }}
-          />
-        )}
+        <Text style={styles.label}>Fecha y hora</Text>
+        <EventDateTimeField
+          value={form.eventDate}
+          onChange={(value) => updateField("eventDate", value)}
+        />
         <Pressable style={styles.saveButton} onPress={save} disabled={saving}>
           {saving ? (
             <ActivityIndicator color="#fff" />

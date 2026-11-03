@@ -8,6 +8,7 @@ import {
   getCategoryIcon,
   PublicationType,
 } from '../constants/publicationConstants';
+import { formatDate } from '../utils/date';
 
 export default function PublicationCard({ publication, onPress }) {
   if (!publication) return null;
@@ -17,13 +18,7 @@ export default function PublicationCard({ publication, onPress }) {
   const categoryIcon = getCategoryIcon(publication.category);
 
   // Format date
-  const formattedDate = publication.eventDate
-    ? new Date(publication.eventDate).toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
-    : 'Fecha no especificada';
+  const formattedDate = formatDate(publication.eventDate, 'Fecha no especificada');
 
   // Primary image — si la URL es relativa, le agregamos la base del servidor
   const rawUrl =

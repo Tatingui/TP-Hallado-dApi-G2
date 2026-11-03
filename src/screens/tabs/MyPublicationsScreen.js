@@ -17,7 +17,8 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 import { shared } from "../../constants/sharedStyles";
 import { useAuth } from "../../hooks/useAuth";
-import { getMyPublicationsApi, deletePublicationApi } from "../../services/publicationService";
+import { getMyPublicationsApi, deletePublicationApi, renewPublicationApi } from "../../services/publicationService";
+import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 import { getPublicationStatusColor } from "../../constants/publicationConstants";
 import { getPendingPublications } from "../../storage/pendingSyncStorage";
 import { syncPendingPublications } from "../../services/offlineSyncService";
@@ -27,6 +28,7 @@ import {
   getTypeLabel,
   getCategoryLabel,
 } from "../../constants/publicationConstants";
+import { formatDate, parseDate } from "../../utils/date";
 
 const STATUS_FILTERS = [
   { id: null, label: "Todas" },
@@ -35,6 +37,16 @@ const STATUS_FILTERS = [
   { id: PublicationStatus.RESOLVED, label: "Resueltas" },
   { id: PublicationStatus.EXPIRED, label: "Vencidas" },
 ];
+
+/**
+ * Misma regla que el backend: vencida, o abierta con la vigencia ya cumplida
+ * (la tarea programada todavía no la marcó como vencida).
+ */
+function isRenewable(publication) {
+  if (publication.status === "EXPIRED") return true;
+  const expiresAt = parseDate(publication.expiresAt);
+  return publication.status === "OPEN" && expiresAt !== null && expiresAt <= new Date();
+}
 
 export default function MyPublicationsScreen() {
   const navigation = useNavigation();
@@ -47,6 +59,7 @@ export default function MyPublicationsScreen() {
   const [page, setPage] = useState(0);
   const [isLastPage, setIsLastPage] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const { isConnected } = useNetworkStatus();
 
   const fetchPublications = useCallback(
     async (pageNum = 0, append = false) => {
@@ -158,6 +171,31 @@ export default function MyPublicationsScreen() {
     );
   };
 
+  const handleRenew = (pub) => {
+    if (!isConnected) {
+      Alert.alert("Sin conexión", "Necesitás conexión a internet para renovar una publicación.");
+      return;
+    }
+    Alert.alert(
+      "Renovar publicación",
+      `"${pub.title}" va a volver a estar visible por 30 días más.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Renovar",
+          onPress: async () => {
+            try {
+              await renewPublicationApi(pub.id);
+              fetchPublications(0);
+            } catch (err) {
+              Alert.alert("Error", err?.message || "No se pudo renovar la publicación.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }) => {
     if (item.isPending) {
       return (
@@ -224,12 +262,27 @@ export default function MyPublicationsScreen() {
         </View>
 
         <View style={styles.cardFooter}>
-          {item.createdAt && (
-            <Text style={styles.dateText}>
-              {new Date(item.createdAt).toLocaleDateString("es-AR")}
-            </Text>
+          <View>
+            {item.createdAt && (
+              <Text style={styles.dateText}>Publicada el {formatDate(item.createdAt)}</Text>
+            )}
+            {(item.status === "OPEN" || item.status === "EXPIRED") && item.expiresAt && (
+              <Text style={styles.dateText}>
+                {isRenewable(item) ? "Venció" : "Vence"} el {formatDate(item.expiresAt)}
+              </Text>
+            )}
+          </View>
+          {isRenewable(item) && (
+            <TouchableOpacity
+              style={styles.renewButton}
+              onPress={(e) => { e.stopPropagation(); handleRenew(item); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="refresh-outline" size={16} color={Colors.primary} />
+              <Text style={styles.renewText}>Renovar</Text>
+            </TouchableOpacity>
           )}
-          {item.status === "OPEN" && (
+          {item.status === "OPEN" && !isRenewable(item) && (
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation(); handleDelete(item); }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -391,6 +444,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   dateText: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+  renewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  renewText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 
   // Empty
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },

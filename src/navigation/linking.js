@@ -2,7 +2,8 @@ import * as Linking from 'expo-linking';
 import { CommonActions, getPathFromState, getStateFromPath } from '@react-navigation/native';
 
 const authScreens = new Set([
-  'Start', 'Login', 'Register', 'VerifyOtp', 'ForgotPassword', 'ResetPassword', 'NewPassword', 'Lock',
+  'Start', 'Login', 'Register', 'RegisterCode', 'CompleteRegistration', 'VerifyOtp',
+  'ForgotPassword', 'ResetPassword', 'NewPassword', 'Lock',
 ]);
 
 export const linkConfig = {
@@ -10,6 +11,8 @@ export const linkConfig = {
     Start: '',
     Login: 'login',
     Register: 'register',
+    RegisterCode: 'register/code',
+    CompleteRegistration: 'register/complete',
     VerifyOtp: 'verify-otp',
     ForgotPassword: 'forgot-password',
     ResetPassword: 'reset-password',
