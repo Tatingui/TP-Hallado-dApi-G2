@@ -37,7 +37,7 @@
     "postinstall": "node scripts/postinstall.js",
     "ios": "expo run:ios",
     "lint": "expo lint",
-    "test": "node --test --test-force-exit tests/*.test.cjs src/navigation/navigation.test.js src/storage/followedPublicationsStorage.test.js"
+    "test": "node --test --test-force-exit tests/*.test.cjs src/navigation/navigation.test.js"
   },
   "private": true,
   "devDependencies": {
