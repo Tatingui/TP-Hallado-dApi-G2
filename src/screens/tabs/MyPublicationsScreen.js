@@ -27,6 +27,7 @@ import {
   getTypeLabel,
   getCategoryLabel,
 } from "../../constants/publicationConstants";
+import { formatDate } from "../../utils/date";
 
 const STATUS_FILTERS = [
   { id: null, label: "Todas" },
@@ -226,7 +227,7 @@ export default function MyPublicationsScreen() {
         <View style={styles.cardFooter}>
           {item.createdAt && (
             <Text style={styles.dateText}>
-              {new Date(item.createdAt).toLocaleDateString("es-AR")}
+              {formatDate(item.createdAt)}
             </Text>
           )}
           {item.status === "OPEN" && (

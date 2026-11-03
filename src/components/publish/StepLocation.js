@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { BARRIOS_LIST, PublicationType } from "../../constants/publicationConstants";
 import { Colors } from "../../constants/theme";
+import EventDateTimeField from "../publication/EventDateTimeField";
 
 export default function StepLocation({
-  form, updateField, getLocation, showDatePicker, setShowDatePicker,
+  form, updateField, getLocation,
 }) {
   return (
     <View>
@@ -46,29 +46,12 @@ export default function StepLocation({
       </TouchableOpacity>
 
       <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-        ¿Cuándo {form.type === PublicationType.LOST ? "lo perdiste" : "lo encontraste"}? (opcional)
+        ¿Cuándo {form.type === PublicationType.LOST ? "lo perdiste" : "lo encontraste"}?
       </Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-        <Text style={{ color: form.eventDate ? Colors.text : Colors.textSecondary, fontSize: 15 }}>
-          {form.eventDate
-            ? new Date(form.eventDate).toLocaleDateString("es-AR")
-            : "Tocar para seleccionar fecha"}
-        </Text>
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-          value={form.eventDate ? new Date(form.eventDate) : new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          maximumDate={new Date()}
-          onValueChange={(event, selectedDate) => {
-            setShowDatePicker(Platform.OS === "ios");
-            if (selectedDate) {
-              updateField("eventDate", selectedDate.toISOString());
-            }
-          }}
-        />
-      )}
+      <EventDateTimeField
+        value={form.eventDate}
+        onChange={(value) => updateField("eventDate", value)}
+      />
     </View>
   );
 }

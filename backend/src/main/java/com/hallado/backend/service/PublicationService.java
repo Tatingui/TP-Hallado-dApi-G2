@@ -49,6 +49,7 @@ public class PublicationService {
 
     // Directorio donde se guardan las imágenes subidas
     private static final String UPLOAD_DIR = "uploads/publications/";
+    private static final int TOLERANCIA_RELOJ_MINUTOS = 5;
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
 
@@ -89,6 +90,7 @@ public class PublicationService {
         if (req.getBarrio() == null || req.getBarrio().trim().isEmpty()) {
             throw new IllegalArgumentException("El barrio es obligatorio");
         }
+        validarFechaDelSuceso(req.getEventDate());
 
         // Guardar imágenes y obtener rutas
         String imageUrlsStr = null;
@@ -277,6 +279,7 @@ public class PublicationService {
         if (request.getBarrio() == null || request.getBarrio().trim().isEmpty()) {
             throw new IllegalArgumentException("El barrio es obligatorio");
         }
+        validarFechaDelSuceso(request.getEventDate());
 
         publication.setTitle(request.getTitle().trim());
         publication.setDescription(request.getDescription().trim());
@@ -443,6 +446,17 @@ public class PublicationService {
             throw new BadRequestException("Solo se pueden eliminar publicaciones abiertas.");
         }
         publicationRepository.delete(publication);
+    }
+
+    /**
+     * La fecha y hora del suceso no pueden ser futuras. Se tolera una diferencia
+     * de unos minutos entre el reloj del celular y el del servidor.
+     */
+    private void validarFechaDelSuceso(LocalDateTime fechaDelSuceso) {
+        if (fechaDelSuceso != null
+                && fechaDelSuceso.isAfter(LocalDateTime.now().plusMinutes(TOLERANCIA_RELOJ_MINUTOS))) {
+            throw new IllegalArgumentException("La fecha y hora del suceso no pueden ser futuras");
+        }
     }
 
     /**

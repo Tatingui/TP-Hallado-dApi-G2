@@ -24,8 +24,6 @@ export default function PublishScreen() {
     step,
     form,
     submitting,
-    showDatePicker,
-    setShowDatePicker,
     updateField,
     markTouched,
     fieldError,
@@ -59,8 +57,6 @@ export default function PublishScreen() {
             form={form}
             updateField={updateField}
             getLocation={getLocation}
-            showDatePicker={showDatePicker}
-            setShowDatePicker={setShowDatePicker}
           />
         );
       case "images":

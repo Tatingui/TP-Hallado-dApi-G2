@@ -17,10 +17,8 @@ import {
   getResolvedHistoryApi,
   rateResolvedCaseApi,
 } from "../../services/claimService";
+import { formatDate, toLocalDateString } from "../../utils/date";
 
-const formatDate = (date) => date.toISOString().slice(0, 10);
-const displayDate = (value) =>
-  value ? new Date(value).toLocaleDateString("es-AR") : "-";
 
 export default function ResolvedHistoryScreen() {
   const navigation = useNavigation();
@@ -41,8 +39,8 @@ export default function ResolvedHistoryScreen() {
       setCases(
         await getResolvedHistoryApi({
           type,
-          from: from && formatDate(from),
-          to: to && formatDate(to),
+          from: from && toLocalDateString(from),
+          to: to && toLocalDateString(to),
         }),
       );
     } catch (error) {
@@ -88,7 +86,7 @@ export default function ResolvedHistoryScreen() {
         </View>
         <Text style={styles.meta}>
           {item.role === "DEVOLVI" ? "Devolví" : "Recuperé"} ·{" "}
-          {displayDate(item.resolvedAt)}
+          {formatDate(item.resolvedAt)}
         </Text>
         <Text style={styles.counterpart}>
           Contraparte: {item.counterpartName}
@@ -159,10 +157,10 @@ export default function ResolvedHistoryScreen() {
             style={styles.dateButton}
             onPress={() => setPicker("from")}
           >
-            <Text>Desde: {from ? displayDate(from) : "cualquiera"}</Text>
+            <Text>Desde: {from ? formatDate(from) : "cualquiera"}</Text>
           </Pressable>
           <Pressable style={styles.dateButton} onPress={() => setPicker("to")}>
-            <Text>Hasta: {to ? displayDate(to) : "cualquiera"}</Text>
+            <Text>Hasta: {to ? formatDate(to) : "cualquiera"}</Text>
           </Pressable>
         </View>
       </View>
