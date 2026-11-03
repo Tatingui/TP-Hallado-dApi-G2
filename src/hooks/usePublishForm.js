@@ -4,13 +4,13 @@ import { persistImages } from '../services/files/fileSystemManager';
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { PublicationType } from "../constants/publicationConstants";
 import { useAuth } from "./useAuth";
 import { clearDraft, loadDraft, saveDraft } from "../storage/draftStorage";
 import { savePendingPublication, removePendingPublication } from "../storage/pendingSyncStorage";
 import { toLocalDateTimeString } from "../utils/date";
+import useLocation from "./useLocation";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -39,6 +39,7 @@ export default function usePublishForm() {
   const [submitting, setSubmitting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [touched, setTouched] = useState({});
+  const { getLocation: readLocation } = useLocation();
 
   const markTouched = useCallback((field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -142,20 +143,17 @@ export default function usePublishForm() {
 
   // ─── Obtener ubicación GPS ───
   const getLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a tu ubicación.");
-      return;
-    }
     try {
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      updateField("latitude", loc.coords.latitude);
-      updateField("longitude", loc.coords.longitude);
+      const location = await readLocation();
+      if (!location) {
+        Alert.alert("Permiso necesario", "Necesitamos acceso a tu ubicación.");
+        return;
+      }
+      updateField("latitude", location.latitude);
+      updateField("longitude", location.longitude);
       Alert.alert("Ubicación obtenida", "Se registró tu ubicación actual.");
-    } catch {
-      Alert.alert("Error", "No se pudo obtener la ubicación.");
+    } catch (error) {
+      Alert.alert("Error", error?.message || "No se pudo obtener la ubicación.");
     }
   };
 
