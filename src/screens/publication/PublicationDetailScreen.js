@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreateClaimModal from "../../components/CreateClaimModal";
 import OfflineBanner from "../../components/OfflineBanner";
@@ -24,6 +25,7 @@ import { formatDateTime } from "../../utils/date";
 
 export default function PublicationDetailScreen() {
   const insets = useSafeAreaInsets();
+  const [actionFooterHeight, setActionFooterHeight] = useState(0);
   const {
     navigation,
     publication,
@@ -46,6 +48,10 @@ export default function PublicationDetailScreen() {
     handlePressEdit,
     handleSubmitClaim,
   } = usePublicationDetail();
+
+  const handleActionFooterLayout = ({ nativeEvent }) => {
+    setActionFooterHeight(nativeEvent.layout.height);
+  };
 
   if (loading) {
     return (
@@ -95,7 +101,13 @@ export default function PublicationDetailScreen() {
         <OfflineBanner message="Sin conexión: los datos pueden estar desactualizados. Reclamar, seguir y editar requieren conexión." />
       )}
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          actionFooterHeight > 0 && { paddingBottom: actionFooterHeight + 16 },
+        ]}
+      >
         {/* Galería de imágenes */}
         {publication?.offlineImagesMissing && <Text>Algunas fotos no están disponibles sin conexión.</Text>}
       <ImageGallery images={images} activeImage={activeImage} onImageChange={setActiveImage} />
@@ -141,7 +153,10 @@ export default function PublicationDetailScreen() {
 
       {/* Footer: botones de reclamo */}
       {canInteract && (
-        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View
+          onLayout={handleActionFooterLayout}
+          style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}
+        >
           <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: isFound ? Colors.primary : Colors.success }, isOfflineMode && styles.disabledActionBtn]}
             onPress={handlePressClaim}
@@ -155,7 +170,10 @@ export default function PublicationDetailScreen() {
 
       {/* Footer: gestión propia */}
       {isMyPublication && (
-        <View style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16), gap: 10 }]}>
+        <View
+          onLayout={handleActionFooterLayout}
+          style={[styles.actionFooter, { paddingBottom: Math.max(insets.bottom, 16), gap: 10 }]}
+        >
           {publication.status === PublicationStatus.OPEN && (
             <TouchableOpacity
               style={[styles.mainActionBtn, { backgroundColor: Colors.gray700, flex: 1 }, isOfflineMode && styles.disabledActionBtn]}
