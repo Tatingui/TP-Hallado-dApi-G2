@@ -19,6 +19,7 @@ import PublicationCard from '../../components/PublicationCard';
 import GuidedSearchModal from '../../components/GuidedSearchModal';
 import EmptySearchResults from '../../components/EmptySearchResults';
 import OfflineBanner from '../../components/OfflineBanner';
+import StartSearchPrompt from '../../components/StartSearchPrompt';
 import {
   PublicationType,
   CATEGORY_OPTIONS,
@@ -50,10 +51,17 @@ export default function HomeScreen() {
   const { publications, loading, isOfflineMode, refetch, loadMore, error } = usePublications({ ...searchCriteria, sortBy }, hasSearched);
   const loadingMore = loading && publications.length > 0;
   useEffect(() => { if (error) Alert.alert('No se pudo buscar', error.message || 'Revisá los filtros o la sesión.'); }, [error]);
-  const handleRefresh = async () => { setRefreshing(true); try { await refetch(); } finally { setRefreshing(false); } };
+  const handleRefresh = async () => {
+    // Antes de la primera búsqueda, refrescar equivale a buscar con los criterios actuales.
+    if (!hasSearched) { setHasSearched(true); return; }
+    setRefreshing(true);
+    try { await refetch(); } finally { setRefreshing(false); }
+  };
   const handleLoadMore = () => loadMore();
 
+  // Refinar los filtros desde los resultados cuenta como una búsqueda (Punto 3).
   const handleSelectCategoryFilter = (catId) => {
+    setHasSearched(true);
     setSearchCriteria((prev) => ({
       ...prev,
       category: prev.category === catId ? null : catId,
@@ -291,7 +299,11 @@ export default function HomeScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
-            <EmptySearchResults searchCriteria={searchCriteria} onSaveAlert={handleSaveAlert} />
+            hasSearched ? (
+              <EmptySearchResults searchCriteria={searchCriteria} onSaveAlert={handleSaveAlert} />
+            ) : (
+              <StartSearchPrompt onStart={() => setSearchModalVisible(true)} />
+            )
           }
           ListFooterComponent={
             loadingMore ? (
