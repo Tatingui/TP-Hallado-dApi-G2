@@ -1,0 +1,3 @@
+# Los scripts de Windows necesitan finales de línea CRLF para ejecutarse bien en cmd.
+*.bat text eol=crlf
+*.cmd text eol=crlf
