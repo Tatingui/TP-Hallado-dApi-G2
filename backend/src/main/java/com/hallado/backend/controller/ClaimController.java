@@ -87,6 +87,32 @@ public class ClaimController {
     }
 
     /**
+     * Ciclo de vida: el publicador confirma que el objeto se entregó y la publicación queda resuelta.
+     */
+    @PostMapping("/{claimId}/deliver")
+    public ResponseEntity<ClaimResponseDTO> confirmDelivery(
+            @PathVariable Long claimId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(claimService.confirmDelivery(claimId, authentication.getName()));
+    }
+
+    /**
+     * Ciclo de vida: el publicador cancela un reclamo aceptado.
+     * Body: {"republish": true} vuelve a abrir la publicación; {"republish": false} la elimina (204).
+     */
+    @PostMapping("/{claimId}/cancel")
+    public ResponseEntity<ClaimResponseDTO> cancelClaim(
+            @PathVariable Long claimId,
+            @RequestBody(required = false) Map<String, Boolean> body,
+            Authentication authentication
+    ) {
+        boolean republish = body == null || !Boolean.FALSE.equals(body.get("republish"));
+        ClaimResponseDTO updated = claimService.cancelAcceptedClaim(claimId, republish, authentication.getName());
+        return updated == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(updated);
+    }
+
+    /**
      * Punto 7: Ver mis reclamos ENVIADOS
      */
     @GetMapping("/my-sent")

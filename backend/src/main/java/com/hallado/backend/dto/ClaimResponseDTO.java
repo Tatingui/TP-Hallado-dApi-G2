@@ -3,6 +3,7 @@ package com.hallado.backend.dto;
 import com.hallado.backend.model.Claim;
 import com.hallado.backend.model.ClaimStatus;
 import com.hallado.backend.model.MeetingPointStatus;
+import com.hallado.backend.model.PublicationStatus;
 import com.hallado.backend.model.PublicationType;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ public class ClaimResponseDTO {
     private ClaimStatus status;
     private String proofMessage;
     private String proofImageUrl;
+    private String barrio; // "Lo encontré": dónde se encontró el objeto
     private LocalDateTime claimDate;
 
     // Verificación: respuesta del reclamante y pregunta/respuesta esperada (solo para el publicador)
@@ -26,6 +28,7 @@ public class ClaimResponseDTO {
     private String publicationType;
     private String publicationImageUrl;
     private String publicationBarrio;
+    private String publicationStatus;
 
     // Contact info (ONLY visible if status is ACCEPTED)
     private ClaimantSummaryDTO claimant;
@@ -38,6 +41,7 @@ public class ClaimResponseDTO {
     private boolean meetingProposedByMe;
     private boolean canProposeMeeting; // Quien tiene el objeto, mientras no haya propuesta
     private boolean canRespondMeeting; // La otra parte, mientras la propuesta esté pendiente
+    private boolean canCloseDelivery; // El publicador, con el reclamo aceptado y la entrega pendiente
 
     public static class ClaimantSummaryDTO {
         private Long id;
@@ -79,6 +83,7 @@ public class ClaimResponseDTO {
         dto.setId(claim.getId());
         dto.setStatus(claim.getStatus());
         dto.setProofMessage(claim.getProofMessage());
+        dto.setBarrio(claim.getBarrio());
         dto.setProofImageUrl(claim.getProofImageUrl());
         dto.setClaimDate(claim.getClaimDate());
 
@@ -94,6 +99,7 @@ public class ClaimResponseDTO {
         dto.setPublicationTitle(claim.getPublication().getTitle());
         dto.setPublicationType(claim.getPublication().getType().name());
         dto.setPublicationBarrio(claim.getPublication().getBarrio());
+        dto.setPublicationStatus(claim.getPublication().getStatus().name());
 
         String[] pubImages = claim.getPublication().getImageUrls() != null ? claim.getPublication().getImageUrls().split(",") : new String[0];
         if (pubImages.length > 0) {
@@ -140,8 +146,10 @@ public class ClaimResponseDTO {
         dto.setMeetingAddress(claim.getMeetingAddress());
         dto.setMeetingStatus(claim.getMeetingStatus());
         dto.setMeetingProposedByMe(proposedByMe);
-        dto.setCanProposeMeeting(isAccepted && claim.getMeetingStatus() == null && iHaveObject);
-        dto.setCanRespondMeeting(isAccepted && claim.getMeetingStatus() == MeetingPointStatus.PROPOSED && !proposedByMe);
+        boolean deliveryPending = isAccepted && claim.getPublication().getStatus() == PublicationStatus.IN_CLAIM;
+        dto.setCanProposeMeeting(deliveryPending && claim.getMeetingStatus() == null && iHaveObject);
+        dto.setCanRespondMeeting(deliveryPending && claim.getMeetingStatus() == MeetingPointStatus.PROPOSED && !proposedByMe);
+        dto.setCanCloseDelivery(deliveryPending && isPublisher);
 
         return dto;
     }
@@ -153,6 +161,8 @@ public class ClaimResponseDTO {
     public void setStatus(ClaimStatus status) { this.status = status; }
     public String getProofMessage() { return proofMessage; }
     public void setProofMessage(String proofMessage) { this.proofMessage = proofMessage; }
+    public String getBarrio() { return barrio; }
+    public void setBarrio(String barrio) { this.barrio = barrio; }
     public String getProofImageUrl() { return proofImageUrl; }
     public void setProofImageUrl(String proofImageUrl) { this.proofImageUrl = proofImageUrl; }
     public LocalDateTime getClaimDate() { return claimDate; }
@@ -178,6 +188,10 @@ public class ClaimResponseDTO {
     public MeetingPointStatus getMeetingStatus() { return meetingStatus; }
     public void setMeetingStatus(MeetingPointStatus meetingStatus) { this.meetingStatus = meetingStatus; }
     public boolean isMeetingProposedByMe() { return meetingProposedByMe; }
+    public String getPublicationStatus() { return publicationStatus; }
+    public void setPublicationStatus(String publicationStatus) { this.publicationStatus = publicationStatus; }
+    public boolean isCanCloseDelivery() { return canCloseDelivery; }
+    public void setCanCloseDelivery(boolean canCloseDelivery) { this.canCloseDelivery = canCloseDelivery; }
     public void setMeetingProposedByMe(boolean meetingProposedByMe) { this.meetingProposedByMe = meetingProposedByMe; }
     public boolean isCanProposeMeeting() { return canProposeMeeting; }
     public void setCanProposeMeeting(boolean canProposeMeeting) { this.canProposeMeeting = canProposeMeeting; }
@@ -191,4 +205,4 @@ public class ClaimResponseDTO {
     public String getExpectedVerificationAnswer() { return expectedVerificationAnswer; }
     public void setExpectedVerificationAnswer(String expectedVerificationAnswer) { this.expectedVerificationAnswer = expectedVerificationAnswer; }
 
-}
+}

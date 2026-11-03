@@ -16,7 +16,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
-import { PublicationType } from '../constants/publicationConstants';
+import { BARRIOS_LIST, PublicationType } from '../constants/publicationConstants';
 import { checkNetworkConnection } from '../hooks/useNetworkStatus';
 import useImagePicker from '../hooks/useImagePicker';
 
@@ -31,6 +31,7 @@ export default function CreateClaimModal({
   const [proofMessage, setProofMessage] = useState('');
   const [verificationAnswer, setVerificationAnswer] = useState('');
   const [imageUri, setImageUri] = useState(null);
+  const [barrio, setBarrio] = useState(null);
   const { takePhoto: takePhotoFromCamera } = useImagePicker();
 
   const isFound = publicationType === PublicationType.FOUND;
@@ -97,12 +98,17 @@ export default function CreateClaimModal({
       return;
     }
 
+    if (!isFound && !barrio) {
+      Alert.alert('Falta el barrio', 'Elegí el barrio donde encontraste el objeto.');
+      return;
+    }
+
     if (!isFound && !imageUri) {
       Alert.alert('Evidencia requerida', 'Debés adjuntar una foto del objeto que encontraste.');
       return;
     }
 
-    onSubmit({ proofMessage, verificationAnswer, imageUri });
+    onSubmit({ proofMessage, verificationAnswer, imageUri, barrio: isFound ? null : barrio });
   };
 
   return (
@@ -147,9 +153,30 @@ export default function CreateClaimModal({
               </View>
             ) : null}
 
+            {!isFound && (
+              <View style={styles.section}>
+                <Text style={styles.label}>
+                  ¿En qué barrio lo encontraste? <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <View style={styles.barrioGrid}>
+                  {BARRIOS_LIST.filter((b) => b !== 'Todos los barrios').map((b) => (
+                    <TouchableOpacity
+                      key={b}
+                      style={[styles.barrioChip, barrio === b && styles.barrioChipSelected]}
+                      onPress={() => setBarrio(b)}
+                    >
+                      <Text style={[styles.barrioChipText, barrio === b && styles.barrioChipTextSelected]}>
+                        {b}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <View style={styles.section}>
               <Text style={styles.label}>
-                Mensaje o Descripción {isFound ? '(Opcional)' : '(Barrio/Detalles)'}
+                Mensaje o Descripción (Opcional)
               </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
@@ -299,6 +326,30 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  barrioGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  barrioChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+    backgroundColor: Colors.surface,
+  },
+  barrioChipSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  barrioChipText: {
+    fontSize: 12,
+    color: Colors.text || Colors.gray900,
+  },
+  barrioChipTextSelected: {
+    color: Colors.surface,
   },
   uploadBtn: {
     borderWidth: 2,

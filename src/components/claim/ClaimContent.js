@@ -24,6 +24,12 @@ export default function ClaimContent({ claim, isReceived, isAccepted }) {
           {claim.proofMessage || 'Sin descripción adicional.'}
         </Text>
 
+        {claim.barrio ? (
+          <Text style={styles.barrioText}>
+            <Ionicons name="location-outline" size={13} color={Colors.gray600} /> Lo encontró en {claim.barrio}
+          </Text>
+        ) : null}
+
         {isReceived && claim.verificationQuestion && (
           <View style={styles.verificationBox}>
             <Text style={styles.verificationLabel}>
@@ -111,6 +117,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.gray600,
     lineHeight: 18,
+  },
+  barrioText: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.gray600,
   },
   contactBox: {
     marginTop: 10,

@@ -23,4 +23,6 @@ public interface PublicationFollowRepository extends JpaRepository<PublicationFo
 
     // Punto 9: para contar las seguidas con novedades
     List<PublicationFollow> findByUser(User user);
+
+    List<PublicationFollow> findByPublication(Publication publication);
 }

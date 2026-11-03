@@ -48,6 +48,8 @@ export default function ClaimsScreen() {
     handleRespond,
     handleSubmitMeeting,
     handleAcceptMeeting,
+    handleConfirmDelivery,
+    handleCancelClaim,
   } = useClaims(activeTab);
 
   return (
@@ -97,6 +99,8 @@ export default function ClaimsScreen() {
               onReject={(id) => handleRespond(id, ClaimStatus.REJECTED)}
               onProposeMeeting={(claim) => setMeetingClaim(claim)}
               onAcceptMeeting={handleAcceptMeeting}
+              onConfirmDelivery={handleConfirmDelivery}
+              onCancelClaim={handleCancelClaim}
             />
           )}
           contentContainerStyle={claims.length === 0 ? { flex: 1 } : { padding: 16 }}

@@ -7,7 +7,9 @@ import {
   getMyReceivedClaimsApi,
   respondToClaimApi,
   proposeMeetingPointApi,
-  acceptMeetingPointApi
+  acceptMeetingPointApi,
+  confirmDeliveryApi,
+  cancelClaimApi,
 } from '../services/claimService';
 import { ClaimStatus } from '../constants/publicationConstants';
 
@@ -153,6 +155,74 @@ export default function useClaims(activeTab) {
     );
   };
 
+  /** Ejecuta una acción sobre un reclamo con conexión, indicador de carga y recarga de la lista. */
+  const runClaimAction = async (claimId, action, successTitle, successMessage) => {
+    if (!(await checkNetworkConnection())) {
+      Alert.alert("Sin conexión", "Necesitás conexión para cerrar el reclamo.");
+      return;
+    }
+    try {
+      setProcessingId(claimId);
+      await action();
+      Alert.alert(successTitle, successMessage);
+      fetchClaims(0, true);
+    } catch (err) {
+      Alert.alert("Error", err.message || "No se pudo actualizar el reclamo.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Ciclo de vida: el publicador confirma la entrega y la publicación queda resuelta
+  const handleConfirmDelivery = (claimId) => {
+    Alert.alert(
+      "Confirmar entrega",
+      "¿El objeto ya se entregó? La publicación pasará a Resuelta, el caso irá al historial y no se podrá deshacer.",
+      [
+        { text: "Volver", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () => runClaimAction(
+            claimId,
+            () => confirmDeliveryApi(claimId, token),
+            "Entrega confirmada",
+            "El caso pasó a tu historial. Ya podés valorar a la otra persona.",
+          ),
+        },
+      ]
+    );
+  };
+
+  // Ciclo de vida: el publicador cancela un reclamo aceptado que no se concretó
+  const handleCancelClaim = (claimId) => {
+    Alert.alert(
+      "Cancelar reclamo",
+      "¿Qué querés hacer con la publicación?",
+      [
+        { text: "Volver", style: "cancel" },
+        {
+          text: "Eliminarla",
+          style: "destructive",
+          onPress: () => runClaimAction(
+            claimId,
+            () => cancelClaimApi(claimId, false, token),
+            "Publicación eliminada",
+            "Se canceló el reclamo y se eliminó la publicación.",
+          ),
+        },
+        {
+          text: "Volver a publicar",
+          onPress: () => runClaimAction(
+            claimId,
+            () => cancelClaimApi(claimId, true, token),
+            "Publicación reabierta",
+            "Se canceló el reclamo y la publicación vuelve a recibir reclamos.",
+          ),
+        },
+      ]
+    );
+  };
+
   return {
     claims,
     loading,
@@ -168,5 +238,7 @@ export default function useClaims(activeTab) {
     handleRespond,
     handleSubmitMeeting,
     handleAcceptMeeting,
+    handleConfirmDelivery,
+    handleCancelClaim,
   };
 }

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/theme';
-import { ClaimStatus, MeetingStatus } from '../constants/publicationConstants';
+import { ClaimStatus, MeetingStatus, PublicationStatus } from '../constants/publicationConstants';
 import { formatDateTime } from '../utils/date';
 import ClaimActions from './claim/ClaimActions';
 import ClaimContent from './claim/ClaimContent';
 import ClaimHeader from './claim/ClaimHeader';
+import DeliverySection from './claim/DeliverySection';
 import MeetingSection from './claim/MeetingSection';
 
 export default function ClaimCard({
@@ -15,6 +16,8 @@ export default function ClaimCard({
   onReject,
   onProposeMeeting,
   onAcceptMeeting,
+  onConfirmDelivery,
+  onCancelClaim,
   isProcessing,
   isOfflineMode = false,
 }) {
@@ -25,6 +28,7 @@ export default function ClaimCard({
     (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
   const isAccepted = claim.status === ClaimStatus.ACCEPTED;
   const isPending = claim.status === ClaimStatus.PENDING;
+  const isDelivered = isAccepted && claim.publicationStatus === PublicationStatus.RESOLVED;
 
   const getMeetingStatusText = () => {
     if (claim.meetingStatus === MeetingStatus.ACCEPTED) return 'Confirmado por ambas partes';
@@ -67,6 +71,17 @@ export default function ClaimCard({
           onProposeMeeting={onProposeMeeting}
           onAcceptMeeting={onAcceptMeeting}
           isProcessing={isProcessing}
+        />
+      )}
+
+      {(isDelivered || claim.canCloseDelivery) && (
+        <DeliverySection
+          claim={claim}
+          isDelivered={isDelivered}
+          onConfirmDelivery={onConfirmDelivery}
+          onCancelClaim={onCancelClaim}
+          isProcessing={isProcessing}
+          isOfflineMode={isOfflineMode}
         />
       )}
     </View>

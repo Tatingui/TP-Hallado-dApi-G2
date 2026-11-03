@@ -2,13 +2,15 @@ import { authGet, authPatch, authPost, authPostMultipart, authPut } from "./api"
 
 /**
  * Crea un nuevo reclamo ("Es mío" / "Lo encontré") enviando los datos en FormData multipart.
+ * En "Lo encontré" se envía además el barrio donde se encontró el objeto.
  */
-export const createClaimApi = async (publicationId, proofMessage, verificationAnswer, imageUri, tokenParam) => {
+export const createClaimApi = async (publicationId, proofMessage, verificationAnswer, imageUri, barrio, tokenParam) => {
   const formData = new FormData();
 
   const claimRequest = {
     proofMessage: proofMessage || "",
     verificationAnswer: verificationAnswer || "",
+    barrio: barrio || null,
   };
 
   formData.append("claim", JSON.stringify(claimRequest));
@@ -61,6 +63,21 @@ export const proposeMeetingPointApi = async (claimId, address, tokenParam) => {
  */
 export const acceptMeetingPointApi = async (claimId, tokenParam) => {
   return authPost(`/claims/${claimId}/meeting-point/accept`, {}, tokenParam);
+};
+
+/**
+ * Ciclo de vida: el publicador confirma que el objeto se entregó (la publicación queda resuelta).
+ */
+export const confirmDeliveryApi = async (claimId, tokenParam) => {
+  return authPost(`/claims/${claimId}/deliver`, {}, tokenParam);
+};
+
+/**
+ * Ciclo de vida: el publicador cancela un reclamo aceptado.
+ * Con republish vuelve a abrir la publicación; sin republish la elimina.
+ */
+export const cancelClaimApi = async (claimId, republish, tokenParam) => {
+  return authPost(`/claims/${claimId}/cancel`, { republish }, tokenParam);
 };
 
 export const getResolvedHistoryApi = async (filters = {}, tokenParam) => {

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public class ClaimService {
 
     private final ClaimRepository claimRepository;
+    private final PublicationService publicationService;
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
     private final ClaimRatingRepository claimRatingRepository;
@@ -40,7 +41,9 @@ public class ClaimService {
 
     public ClaimService(ClaimRepository claimRepository, PublicationRepository publicationRepository, UserRepository userRepository,
                         ClaimRatingRepository claimRatingRepository, ObjectMapper objectMapper,
-                        UserLookupService userLookupService, FileStorageService fileStorageService) {
+                        UserLookupService userLookupService, FileStorageService fileStorageService,
+                        PublicationService publicationService) {
+        this.publicationService = publicationService;
         this.claimRepository = claimRepository;
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
@@ -86,6 +89,17 @@ public class ClaimService {
             }
         }
 
+        // "Lo encontré": la consigna pide la foto y el barrio donde se encontró
+        String barrio = request.getBarrio() == null ? "" : request.getBarrio().trim();
+        if (publication.getType() == PublicationType.LOST) {
+            if (barrio.isEmpty()) {
+                throw new BadRequestException("Debes indicar el barrio donde lo encontraste.");
+            }
+            if (barrio.length() > 100) {
+                throw new BadRequestException("El barrio no puede superar los 100 caracteres.");
+            }
+        }
+
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             imageUrl = fileStorageService.store(image, "uploads/", "/uploads/");
@@ -94,6 +108,9 @@ public class ClaimService {
         }
 
         Claim newClaim = new Claim(publication, claimant, request.getProofMessage(), imageUrl);
+        if (publication.getType() == PublicationType.LOST) {
+            newClaim.setBarrio(barrio);
+        }
         if (request.getVerificationAnswer() != null) {
             newClaim.setVerificationAnswer(request.getVerificationAnswer().trim());
         }
@@ -135,18 +152,16 @@ public class ClaimService {
             throw new ForbiddenException("No tienes permiso para responder a este reclamo.");
         }
 
+        if (newStatus != ClaimStatus.ACCEPTED && newStatus != ClaimStatus.REJECTED) {
+            throw new BadRequestException("Un reclamo solo se puede aceptar o rechazar.");
+        }
+
         if (claim.getStatus() != ClaimStatus.PENDING) {
             throw new BadRequestException("Solo puedes responder a reclamos pendientes.");
         }
 
+        // Aceptar no concreta la devolución: eso ocurre cuando el publicador confirma la entrega.
         claim.setStatus(newStatus);
-        if (newStatus == ClaimStatus.ACCEPTED) {
-            claim.setResolvedAt(LocalDateTime.now());
-            boolean publisherIsDevolver = claim.getPublication().getType() == PublicationType.FOUND;
-            User devolver = publisherIsDevolver ? claim.getPublication().getUser() : claim.getClaimant();
-            devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
-            userRepository.save(devolver);
-        }
         claimRepository.save(claim);
 
         if (newStatus == ClaimStatus.ACCEPTED) {
@@ -182,6 +197,9 @@ public class ClaimService {
         }
         if (claim.getStatus() != ClaimStatus.ACCEPTED) {
             throw new BadRequestException("Solo se puede acordar un punto de encuentro en reclamos aceptados.");
+        }
+        if (claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
         }
         if (claim.getMeetingStatus() == MeetingPointStatus.ACCEPTED) {
             throw new BadRequestException("El punto de encuentro ya fue confirmado.");
@@ -233,15 +251,74 @@ public class ClaimService {
             throw new BadRequestException("No podés aceptar tu propia propuesta.");
         }
 
+        // Acordar el lugar no cierra el caso: la publicación sigue en reclamo
+        // hasta que el publicador confirma la entrega.
         claim.setMeetingStatus(MeetingPointStatus.ACCEPTED);
-
-        // La devolución se concretó: marcar la publicación como resuelta
-        Publication publication = claim.getPublication();
-        publication.setStatus(PublicationStatus.RESOLVED);
-        publicationRepository.save(publication);
         claimRepository.save(claim);
 
         return ClaimResponseDTO.fromEntity(claim, isPublisher);
+    }
+
+    /**
+     * Ciclo de vida: el publicador confirma que el objeto se entregó.
+     * Recién acá la publicación pasa a resuelta, el caso entra al historial (y se puede
+     * valorar) y se suma la devolución concretada a quien tenía el objeto.
+     */
+    @Transactional
+    public ClaimResponseDTO confirmDelivery(Long claimId, String publisherEmail) {
+        Claim claim = getAcceptedClaimOfPublisher(claimId, publisherEmail);
+
+        claim.setResolvedAt(LocalDateTime.now());
+        claimRepository.save(claim);
+
+        Publication publication = claim.getPublication();
+        publication.setStatus(PublicationStatus.RESOLVED);
+        publicationRepository.save(publication);
+
+        boolean publisherIsDevolver = publication.getType() == PublicationType.FOUND;
+        User devolver = publisherIsDevolver ? publication.getUser() : claim.getClaimant();
+        devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
+        userRepository.save(devolver);
+
+        return ClaimResponseDTO.fromEntity(claim, true);
+    }
+
+    /**
+     * Ciclo de vida: el publicador cancela un reclamo aceptado que no se concretó.
+     * Con republish, el reclamo queda cancelado y la publicación vuelve a estar abierta
+     * para recibir otros reclamos. Sin republish, se elimina la publicación (como al
+     * borrarla desde Mis publicaciones) y devuelve null.
+     */
+    @Transactional
+    public ClaimResponseDTO cancelAcceptedClaim(Long claimId, boolean republish, String publisherEmail) {
+        Claim claim = getAcceptedClaimOfPublisher(claimId, publisherEmail);
+        Publication publication = claim.getPublication();
+
+        if (!republish) {
+            publicationService.deleteWithDependencies(publication);
+            return null;
+        }
+
+        claim.setStatus(ClaimStatus.CANCELLED);
+        claimRepository.save(claim);
+        publication.setStatus(PublicationStatus.OPEN);
+        publicationRepository.save(publication);
+
+        return ClaimResponseDTO.fromEntity(claim, true);
+    }
+
+    private Claim getAcceptedClaimOfPublisher(Long claimId, String publisherEmail) {
+        User publisher = userLookupService.getByEmailOrThrow(publisherEmail);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+        if (!claim.getPublication().getUser().getId().equals(publisher.getId())) {
+            throw new ForbiddenException("Solo el publicador puede cerrar este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED
+                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("El reclamo no está pendiente de entrega.");
+        }
+        return claim;
     }
 
     @Transactional(readOnly = true)
@@ -261,6 +338,7 @@ public class ClaimService {
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
         if (claim.getStatus() != ClaimStatus.ACCEPTED || claim.getResolvedAt() == null ||
+                claim.getPublication().getStatus() != PublicationStatus.RESOLVED ||
                 claim.getResolvedAt().plusDays(7).isBefore(LocalDateTime.now())) {
             throw new BadRequestException("El plazo para valorar este caso venció.");
         }

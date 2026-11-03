@@ -4,5 +4,7 @@ public enum ClaimStatus {
     PENDING,
     ACCEPTED,
     REJECTED,
-    EXPIRED
+    EXPIRED,
+    /** El publicador canceló un reclamo ya aceptado y volvió a abrir la publicación. */
+    CANCELLED
 }
