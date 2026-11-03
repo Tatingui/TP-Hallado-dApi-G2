@@ -6,17 +6,13 @@ node_modules/
 # Expo
 .expo/
 dist/
-web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
 *.orig.*
 *.jks
-*.p8
 *.p12
 *.key
-*.mobileprovision
 
 # Metro
 .metro-health-check*
@@ -32,8 +28,6 @@ yarn-error.*
 
 # local env files
 .env*.local
-
-example
 
 # generated native folders
 /ios
