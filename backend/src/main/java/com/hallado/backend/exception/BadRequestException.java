@@ -1,6 +1,6 @@
 package com.hallado.backend.exception;
 
-public class BadRequestException extends RuntimeException {
+public class BadRequestException extends IllegalArgumentException {
     public BadRequestException(String message) {
         super(message);
     }

@@ -75,20 +75,20 @@ public class PublicationService {
                                                      List<MultipartFile> images,
                                                      String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         // Validaciones
         if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("El título es obligatorio");
+            throw new BadRequestException("El título es obligatorio");
         }
         if (req.getType() == null) {
-            throw new IllegalArgumentException("El tipo de publicación es obligatorio");
+            throw new BadRequestException("El tipo de publicación es obligatorio");
         }
         if (req.getCategory() == null) {
-            throw new IllegalArgumentException("La categoría es obligatoria");
+            throw new BadRequestException("La categoría es obligatoria");
         }
         if (req.getBarrio() == null || req.getBarrio().trim().isEmpty()) {
-            throw new IllegalArgumentException("El barrio es obligatorio");
+            throw new BadRequestException("El barrio es obligatorio");
         }
         validarFechaDelSuceso(req.getEventDate());
 
@@ -121,7 +121,7 @@ public class PublicationService {
         if (req.getType() == PublicationType.FOUND) {
             if (req.getVerificationQuestion() == null || req.getVerificationQuestion().trim().isEmpty()
                     || req.getVerificationAnswer() == null || req.getVerificationAnswer().trim().isEmpty()) {
-                throw new IllegalArgumentException("La pregunta y respuesta de verificación son obligatorias para publicaciones encontradas");
+                throw new BadRequestException("La pregunta y respuesta de verificación son obligatorias para publicaciones encontradas");
             }
             pub.setVerificationQuestion(req.getVerificationQuestion());
             pub.setVerificationAnswer(req.getVerificationAnswer());
@@ -133,10 +133,10 @@ public class PublicationService {
 
     public Map<String, Object> followPublication(String userEmail, Long publicationId) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         if (publicationFollowRepository.existsByUserAndPublication(user, publication)) {
             return getFollowStatus(userEmail, publicationId);
@@ -150,7 +150,7 @@ public class PublicationService {
 
     public PageResponseDTO<PublicationResponseDTO> getFollowedPublications(String userEmail, int page, int size) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<PublicationFollow> followPage = publicationFollowRepository.findByUserOrderByCreatedAtDesc(user, pageable);
@@ -173,7 +173,7 @@ public class PublicationService {
      */
     public long countFollowedWithUpdates(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         return publicationFollowRepository.findByUser(user).stream()
                 .filter(follow -> hasStatusChangedSinceSeen(follow.getPublication(), follow))
                 .count();
@@ -190,10 +190,10 @@ public class PublicationService {
      */
     public Map<String, Object> getFollowStatus(String userEmail, Long publicationId) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         boolean followed = publicationFollowRepository.existsByUserAndPublication(user, publication);
         long followersCount = publicationFollowRepository.countByPublication(publication);
@@ -217,7 +217,7 @@ public class PublicationService {
                                                                       PublicationStatus status,
                                                                       int page, int size) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Publication> pubPage;
@@ -243,15 +243,15 @@ public class PublicationService {
      */
     public PublicationResponseDTO getPublicationById(Long id) {
         Publication pub = publicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         return PublicationResponseDTO.fromEntity(pub);
     }
 
     public PublicationEditResponseDTO getPublicationForEdit(Long id, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         Publication publication = publicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
         if (!publication.getUser().getId().equals(user.getId())) {
             throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
         }
@@ -260,24 +260,24 @@ public class PublicationService {
 
     public PublicationResponseDTO updatePublication(Long id, UpdatePublicationRequest request, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         Publication publication = publicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         if (!publication.getUser().getId().equals(user.getId())) {
             throw new com.hallado.backend.exception.ForbiddenException("No tenés permiso para editar esta publicación");
         }
         if (publication.getStatus() != PublicationStatus.OPEN) {
-            throw new IllegalArgumentException("Solo se pueden editar publicaciones abiertas");
+            throw new BadRequestException("Solo se pueden editar publicaciones abiertas");
         }
         if (request.getTitle() == null || request.getTitle().trim().length() < 5) {
-            throw new IllegalArgumentException("El título debe tener al menos 5 caracteres");
+            throw new BadRequestException("El título debe tener al menos 5 caracteres");
         }
         if (request.getDescription() == null || request.getDescription().trim().length() < 10) {
-            throw new IllegalArgumentException("La descripción debe tener al menos 10 caracteres");
+            throw new BadRequestException("La descripción debe tener al menos 10 caracteres");
         }
         if (request.getBarrio() == null || request.getBarrio().trim().isEmpty()) {
-            throw new IllegalArgumentException("El barrio es obligatorio");
+            throw new BadRequestException("El barrio es obligatorio");
         }
         validarFechaDelSuceso(request.getEventDate());
 
@@ -292,7 +292,7 @@ public class PublicationService {
         if (publication.getType() == PublicationType.FOUND) {
             if (request.getVerificationQuestion() == null || request.getVerificationQuestion().trim().isEmpty()
                     || request.getVerificationAnswer() == null || request.getVerificationAnswer().trim().isEmpty()) {
-                throw new IllegalArgumentException("La pregunta y respuesta de verificación son obligatorias");
+                throw new BadRequestException("La pregunta y respuesta de verificación son obligatorias");
             }
             publication.setVerificationQuestion(request.getVerificationQuestion().trim());
             publication.setVerificationAnswer(request.getVerificationAnswer().trim());
@@ -303,10 +303,10 @@ public class PublicationService {
 
     public Map<String, Object> markPublicationAsSeen(String userEmail, Long publicationId) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         PublicationFollow follow = publicationFollowRepository.findByUserAndPublication(user, publication)
                 .orElse(null);
@@ -406,10 +406,10 @@ public class PublicationService {
 
     public Map<String, Object> unfollowPublication(String userEmail, Long publicationId) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         publicationFollowRepository.findByUserAndPublication(user, publication)
                 .ifPresent(publicationFollowRepository::delete);
@@ -475,7 +475,7 @@ public class PublicationService {
     private void validarFechaDelSuceso(LocalDateTime fechaDelSuceso) {
         if (fechaDelSuceso != null
                 && fechaDelSuceso.isAfter(LocalDateTime.now().plusMinutes(TOLERANCIA_RELOJ_MINUTOS))) {
-            throw new IllegalArgumentException("La fecha y hora del suceso no pueden ser futuras");
+            throw new BadRequestException("La fecha y hora del suceso no pueden ser futuras");
         }
     }
 
@@ -510,7 +510,7 @@ public class PublicationService {
 
             return "/uploads/publications/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar imagen: " + e.getMessage());
+            throw new BadRequestException("No se pudo guardar la imagen: " + e.getMessage());
         }
     }
 }
