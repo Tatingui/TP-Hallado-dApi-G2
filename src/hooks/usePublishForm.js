@@ -3,7 +3,6 @@ import { triggerSyncProcess } from '../sync/syncCoordinator';
 import { persistImages } from '../services/files/fileSystemManager';
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { PublicationType } from "../constants/publicationConstants";
 import { useAuth } from "./useAuth";
@@ -11,6 +10,7 @@ import { clearDraft, loadDraft, saveDraft } from "../storage/draftStorage";
 import { savePendingPublication, removePendingPublication } from "../storage/pendingSyncStorage";
 import { toLocalDateTimeString } from "../utils/date";
 import useLocation from "./useLocation";
+import useImagePicker from "./useImagePicker";
 
 const STEPS = ["type", "category", "details", "location", "images", "review"];
 
@@ -40,6 +40,7 @@ export default function usePublishForm() {
   const [hasDraft, setHasDraft] = useState(false);
   const [touched, setTouched] = useState({});
   const { getLocation: readLocation } = useLocation();
+  const { pickImages: pickImagesFromGallery } = useImagePicker();
 
   const markTouched = useCallback((field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -107,30 +108,21 @@ export default function usePublishForm() {
 
   // ─── Seleccionar imágenes ───
   const pickImages = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permiso necesario",
-        "Necesitamos acceso a tu galería para agregar fotos.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: 4 - form.images.length,
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets) {
-      const newImages = result.assets.map((a) => ({
-        uri: a.uri,
-        type: a.mimeType || "image/jpeg",
-        fileName: a.fileName || `img_${Date.now()}.jpg`,
-      }));
-      try {
+    try {
+      const newImages = await pickImagesFromGallery(4 - form.images.length);
+      if (newImages === null) {
+        Alert.alert(
+          "Permiso necesario",
+          "Necesitamos acceso a tu galería para agregar fotos.",
+        );
+        return;
+      }
+      if (newImages.length > 0) {
         const durable = await persistImages(newImages);
         updateField("images", [...form.images, ...durable].slice(0, 4));
-      } catch (error) { Alert.alert("No se pudieron guardar las fotos", error.message); }
+      }
+    } catch (error) {
+      Alert.alert("No se pudieron guardar las fotos", error.message);
     }
   };
 
