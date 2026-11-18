@@ -96,12 +96,13 @@ class ClaimLifecycleTest {
     }
 
     @Test
-    void soloElPublicadorPuedeCerrarLaEntregaYUnaSolaVez() {
+    void soloParticipantesPuedenCerrarLaEntregaYUnaSolaVez() {
         Caso caso = casoAceptado();
+        User ajeno = usuario();
         assertThrows(ForbiddenException.class,
-                () -> claims.confirmDelivery(caso.reclamo.getId(), caso.reclamante.getEmail()));
+                () -> claims.confirmDelivery(caso.reclamo.getId(), ajeno.getEmail()));
 
-        claims.confirmDelivery(caso.reclamo.getId(), caso.publicador.getEmail());
+        claims.confirmDelivery(caso.reclamo.getId(), caso.reclamante.getEmail());
         assertThrows(BadRequestException.class,
                 () -> claims.cancelAcceptedClaim(caso.reclamo.getId(), true, caso.publicador.getEmail()));
     }
