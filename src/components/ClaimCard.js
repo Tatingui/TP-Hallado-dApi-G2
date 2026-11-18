@@ -82,6 +82,7 @@ export default function ClaimCard({
       {(isDelivered || claim.canCloseDelivery) && (
         <DeliverySection
           claim={claim}
+          type={type}
           isDelivered={isDelivered}
           onConfirmDelivery={onConfirmDelivery}
           onCancelClaim={onCancelClaim}
