@@ -18,7 +18,7 @@ function GlobalOfflineSyncWatcher({ children }) {
 // Configura cómo mostrar las notificaciones cuando la app está en primer plano
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
   }),
