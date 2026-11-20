@@ -39,6 +39,12 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Obtener el resto de los reclamos pendientes de una publicación (para rechazarlos si acepto uno)
     List<Claim> findByPublicationAndStatusAndIdNot(Publication publication, ClaimStatus status, Long idToExclude);
 
+    @Query("select c from Claim c where " +
+           "(c.publication.user = :user and c.claimDate > :since) or " +
+           "(c.claimant = :user and c.statusChangedAt > :since) " +
+           "order by c.claimDate desc")
+    List<Claim> findNovedades(User user, LocalDateTime since);
+
     // Un caso es historial cuando el publicador confirmó la entrega (publicación resuelta).
     @Query("select c from Claim c where c.status = com.hallado.backend.model.ClaimStatus.ACCEPTED " +
            "and c.publication.status = com.hallado.backend.model.PublicationStatus.RESOLVED " +

@@ -127,6 +127,17 @@ public class ClaimService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<ClaimResponseDTO> getNovedades(String email, LocalDateTime since) {
+        User user = userLookupService.getByEmailOrThrow(email);
+        return claimRepository.findNovedades(user, since).stream()
+                .map(claim -> {
+                    boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+                    return ClaimResponseDTO.fromEntity(claim, isPublisher);
+                })
+                .collect(Collectors.toList());
+    }
+
     public ClaimStatus parseStatus(String status) {
         if (status == null || status.isBlank()) {
             throw new BadRequestException("Debes indicar el estado del reclamo.");

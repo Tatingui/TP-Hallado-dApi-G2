@@ -125,6 +125,27 @@ class ClaimLifecycleTest {
     }
 
     @Test
+    void novedadesIncluyeUnReclamoNuevoParaElPublicador() {
+        Caso caso = casoPendiente();
+        LocalDateTime antesDelReclamo = caso.reclamo.getClaimDate().minusSeconds(1);
+
+        assertEquals(1, claims.getNovedades(caso.publicador.getEmail(), antesDelReclamo).size());
+        assertTrue(claims.getNovedades(caso.reclamante.getEmail(), antesDelReclamo).isEmpty());
+    }
+
+    @Test
+    void novedadesIncluyeElCambioDeEstadoParaElReclamante() {
+        Caso caso = casoPendiente();
+        LocalDateTime antesDelCambio = LocalDateTime.now();
+
+        claims.respondToClaim(caso.reclamo.getId(), ClaimStatus.ACCEPTED, caso.publicador.getEmail());
+
+        assertEquals(ClaimStatus.ACCEPTED,
+                claims.getNovedades(caso.reclamante.getEmail(), antesDelCambio).get(0).getStatus());
+        assertTrue(claims.getNovedades(caso.reclamante.getEmail(), LocalDateTime.now().plusMinutes(1)).isEmpty());
+    }
+
+    @Test
     void volverAPublicarRenuevaSiElPlazoTerminoDuranteElReclamo() {
         Caso caso = casoAceptado();
         caso.publicacion.setExpiresAt(LocalDateTime.now().minusDays(1));
