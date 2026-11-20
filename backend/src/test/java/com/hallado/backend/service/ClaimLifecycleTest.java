@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -143,6 +144,20 @@ class ClaimLifecycleTest {
         assertEquals(ClaimStatus.ACCEPTED,
                 claims.getNovedades(caso.reclamante.getEmail(), antesDelCambio).get(0).getStatus());
         assertTrue(claims.getNovedades(caso.reclamante.getEmail(), LocalDateTime.now().plusMinutes(1)).isEmpty());
+    }
+
+    @Test
+    void novedadesIncluyeLaPropuestaDeLaOtraPartePeroNoLaPropuestaPropia() {
+        Caso caso = casoAceptado();
+        LocalDateTime antesDeLaPropuesta = LocalDateTime.now();
+
+        claims.proposeMeetingPoint(caso.reclamo.getId(), "Plaza Serrano", caso.publicador.getEmail());
+
+        List<ClaimResponseDTO> novedadesDelReclamante =
+                claims.getNovedades(caso.reclamante.getEmail(), antesDeLaPropuesta);
+        assertEquals(1, novedadesDelReclamante.size());
+        assertEquals("Plaza Serrano", novedadesDelReclamante.get(0).getMeetingAddress());
+        assertTrue(claims.getNovedades(caso.publicador.getEmail(), antesDeLaPropuesta).isEmpty());
     }
 
     @Test

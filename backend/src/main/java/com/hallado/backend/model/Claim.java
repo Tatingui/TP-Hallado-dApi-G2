@@ -54,6 +54,8 @@ public class Claim {
     @JoinColumn(name = "meeting_proposed_by_id")
     private User meetingProposedBy;
 
+    private LocalDateTime meetingChangedAt;
+
     @Enumerated(EnumType.STRING)
     private MeetingPointStatus meetingStatus;
 
@@ -107,6 +109,9 @@ public class Claim {
 
     public User getMeetingProposedBy() { return meetingProposedBy; }
     public void setMeetingProposedBy(User meetingProposedBy) { this.meetingProposedBy = meetingProposedBy; }
+
+    public LocalDateTime getMeetingChangedAt() { return meetingChangedAt; }
+    public void setMeetingChangedAt(LocalDateTime meetingChangedAt) { this.meetingChangedAt = meetingChangedAt; }
 
     public MeetingPointStatus getMeetingStatus() { return meetingStatus; }
     public void setMeetingStatus(MeetingPointStatus meetingStatus) { this.meetingStatus = meetingStatus; }
