@@ -150,7 +150,7 @@ public class ClaimResponseDTO {
         boolean deliveryPending = isAccepted && claim.getPublication().getStatus() == PublicationStatus.IN_CLAIM;
         dto.setCanProposeMeeting(deliveryPending && claim.getMeetingStatus() == null && iHaveObject);
         dto.setCanRespondMeeting(deliveryPending && claim.getMeetingStatus() == MeetingPointStatus.PROPOSED && !proposedByMe);
-        dto.setCanCloseDelivery(deliveryPending && isPublisher);
+        dto.setCanCloseDelivery(deliveryPending);
 
         return dto;
     }
@@ -206,4 +206,4 @@ public class ClaimResponseDTO {
     public String getExpectedVerificationAnswer() { return expectedVerificationAnswer; }
     public void setExpectedVerificationAnswer(String expectedVerificationAnswer) { this.expectedVerificationAnswer = expectedVerificationAnswer; }
 
-}
+}

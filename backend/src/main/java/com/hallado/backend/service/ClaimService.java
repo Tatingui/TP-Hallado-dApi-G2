@@ -270,13 +270,26 @@ public class ClaimService {
     }
 
     /**
-     * Ciclo de vida: el publicador confirma que el objeto se entregó.
+     * Ciclo de vida / Escaneo QR: las partes del reclamo confirman la entrega del objeto.
      * Recién acá la publicación pasa a resuelta, el caso entra al historial (y se puede
      * valorar) y se suma la devolución concretada a quien tenía el objeto.
      */
     @Transactional
-    public ClaimResponseDTO confirmDelivery(Long claimId, String publisherEmail) {
-        Claim claim = getAcceptedClaimOfPublisher(claimId, publisherEmail);
+    public ClaimResponseDTO confirmDelivery(Long claimId, String userEmail) {
+        User user = userLookupService.getByEmailOrThrow(userEmail);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        boolean isClaimant = claim.getClaimant().getId().equals(user.getId());
+
+        if (!isPublisher && !isClaimant) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED
+                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("El reclamo no está pendiente de entrega.");
+        }
 
         claim.setResolvedAt(LocalDateTime.now());
         claimRepository.save(claim);
@@ -290,7 +303,7 @@ public class ClaimService {
         devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
         userRepository.save(devolver);
 
-        return ClaimResponseDTO.fromEntity(claim, true);
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
     }
 
     /**
