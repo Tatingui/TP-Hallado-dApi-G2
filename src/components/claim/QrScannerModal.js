@@ -14,6 +14,9 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
+import jsQR from "jsqr";
+import { Buffer } from "buffer";
+import jpeg from "jpeg-js";
 import { modalStyles } from "../../constants/sharedStyles";
 
 /**
@@ -137,8 +140,8 @@ export default function QrScannerModal({
   const handlePickFromGallery = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
+        mediaTypes: ["images"],
+        quality: 0.8,
         base64: true,
       });
 
@@ -146,12 +149,36 @@ export default function QrScannerModal({
         return;
       }
 
-      setShowManualInput(true);
-      Alert.alert(
-        "Imagen de Galería Seleccionada",
-        `Para confirmar el reclamo #${claim.id}, ingresá el número de código del QR de la imagen:`,
-        [{ text: "Entendido" }],
-      );
+      const base64 = result.assets[0].base64;
+      if (!base64) {
+        setShowManualInput(true);
+        Alert.alert("Error", "No se pudo obtener la imagen. Ingresá el código manualmente.");
+        return;
+      }
+
+      try {
+        const rawBuffer = Buffer.from(base64, "base64");
+        const { data, width, height } = jpeg.decode(rawBuffer, { useTArray: true });
+        const code = jsQR(new Uint8ClampedArray(data), width, height);
+
+        if (code && code.data) {
+          processScannedData(code.data, false);
+        } else {
+          setShowManualInput(true);
+          Alert.alert(
+            "QR no detectado",
+            "No se encontró un código QR en la imagen. Podés ingresar el código manualmente.",
+            [{ text: "Entendido" }],
+          );
+        }
+      } catch (decodeErr) {
+        setShowManualInput(true);
+        Alert.alert(
+          "No se pudo leer",
+          "No se pudo procesar la imagen. Probá con otra foto o ingresá el código manualmente.",
+          [{ text: "Entendido" }],
+        );
+      }
     } catch (err) {
       Alert.alert("Error", "No se pudo abrir la galería de fotos.");
     }
