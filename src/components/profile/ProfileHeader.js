@@ -1,7 +1,7 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import LogoHallado from "../LogoHallado";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { sharedStyles } from "../../constants/sharedStyles";
 import { Colors, FontSize, Spacing } from "../../constants/theme";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
@@ -21,10 +21,9 @@ export default function ProfileHeader({ profile }) {
 
   return (
     <>
-      <View style={styles.header}>
+      <View style={sharedStyles.tabHeader}>
         <View style={styles.logoRow}>
-          <LogoHallado size={28} color={Colors.textOnPrimary} />
-          <Text style={styles.headerTitle}>Mi Perfil</Text>
+          <Text style={sharedStyles.tabHeaderTitle}>Mi Perfil</Text>
         </View>
       </View>
 
@@ -64,26 +63,15 @@ export default function ProfileHeader({ profile }) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingTop: 50,
-    paddingBottom: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-  },
   logoRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-  headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: "bold",
-    color: Colors.textOnPrimary,
-  },
   profileCard: {
     backgroundColor: Colors.surface,
     marginHorizontal: Spacing.lg,
-    marginTop: -Spacing.md,
+    marginTop: Spacing.md,
     borderRadius: 12,
     padding: Spacing.lg,
     alignItems: "center",

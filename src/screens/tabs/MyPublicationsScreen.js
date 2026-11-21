@@ -1,26 +1,26 @@
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  RefreshControl,
-  Alert,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Colors } from "../../constants/theme";
-import { shared } from "../../constants/sharedStyles";
-import useMyPublications from "../../hooks/useMyPublications";
+import { useNavigation } from "@react-navigation/native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { PublicationStatusBadge } from "../../components/StatusBadge";
 import {
   PENDING_SUBMISSION_STATUS,
   PublicationStatus,
+  getCategoryLabel,
   getStatusLabel,
   getTypeLabel,
-  getCategoryLabel,
 } from "../../constants/publicationConstants";
+import { sharedStyles } from "../../constants/sharedStyles";
+import { Colors } from "../../constants/theme";
+import useMyPublications from "../../hooks/useMyPublications";
 import { formatDate, parseDate } from "../../utils/date";
 
 const STATUS_FILTERS = [
@@ -107,13 +107,13 @@ export default function MyPublicationsScreen() {
     if (item.isPending) {
       return (
         <TouchableOpacity
-          style={[shared.card, styles.pendingCard]}
+          style={[sharedStyles.card, styles.pendingCard]}
           activeOpacity={0.8}
           onPress={() =>
             Alert.alert(
               "Publicación Pendiente",
               item.lastError || "Se enviará automáticamente cuando el dispositivo recupere conexión.",
-              item.pendingState === "blocked" ? [{text: "Cerrar"}, {text: "Corregir", onPress: () => navigation.navigate("PublishTab", {pendingDraft: item.pendingDraft, pendingId: item.id})}] : [{text:"Entendido"}]
+              item.pendingState === "blocked" ? [{ text: "Cerrar" }, { text: "Corregir", onPress: () => navigation.navigate("PublishTab", { pendingDraft: item.pendingDraft, pendingId: item.id }) }] : [{ text: "Entendido" }]
             )
           }
         >
@@ -143,7 +143,7 @@ export default function MyPublicationsScreen() {
     }
 
     return (
-      <TouchableOpacity style={shared.card} activeOpacity={0.7} onPress={() => navigation.navigate("PublicationDetail", { id: String(item.id) })}>
+      <TouchableOpacity style={sharedStyles.card} activeOpacity={0.7} onPress={() => navigation.navigate("PublicationDetail", { id: String(item.id) })}>
         <View style={styles.cardHeader}>
           <PublicationStatusBadge status={item.status} />
           <Text style={styles.typeText}>{getTypeLabel(item.type)}</Text>
@@ -153,14 +153,14 @@ export default function MyPublicationsScreen() {
           {item.title}
         </Text>
 
-        <View style={shared.metaRow}>
-          <View style={shared.metaItem}>
+        <View style={sharedStyles.metaRow}>
+          <View style={sharedStyles.metaItem}>
             <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
-            <Text style={shared.metaText}>{getCategoryLabel(item.category)}</Text>
+            <Text style={sharedStyles.metaText}>{getCategoryLabel(item.category)}</Text>
           </View>
-          <View style={shared.metaItem}>
+          <View style={sharedStyles.metaItem}>
             <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-            <Text style={shared.metaText}>{item.barrio}</Text>
+            <Text style={sharedStyles.metaText}>{item.barrio}</Text>
           </View>
         </View>
 
@@ -215,8 +215,8 @@ export default function MyPublicationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis Publicaciones</Text>
+      <View style={sharedStyles.tabHeader}>
+        <Text style={sharedStyles.tabHeaderTitle}>Mis Publicaciones</Text>
       </View>
 
       {/* Filtros de estado */}
@@ -274,15 +274,6 @@ export default function MyPublicationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: Colors.text },
 
   // Filters
   filterRow: {

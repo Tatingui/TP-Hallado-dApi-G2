@@ -1,14 +1,16 @@
-import React from 'react';
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
-import { Colors } from '../constants/theme';
-import { ClaimStatus, MeetingStatus, PublicationStatus } from '../constants/publicationConstants';
-import { formatDateTime } from '../utils/date';
-import ClaimActions from './claim/ClaimActions';
-import ClaimContent from './claim/ClaimContent';
-import ClaimHeader from './claim/ClaimHeader';
-import DeliverySection from './claim/DeliverySection';
-import MeetingSection from './claim/MeetingSection';
-
+import { Alert, Linking, Pressable, StyleSheet } from "react-native";
+import {
+  ClaimStatus,
+  MeetingStatus,
+  PublicationStatus,
+} from "../constants/publicationConstants";
+import { Colors } from "../constants/theme";
+import { formatDateTime } from "../utils/date";
+import ClaimActions from "./claim/ClaimActions";
+import ClaimContent from "./claim/ClaimContent";
+import ClaimHeader from "./claim/ClaimHeader";
+import DeliverySection from "./claim/DeliverySection";
+import MeetingSection from "./claim/MeetingSection";
 export default function ClaimCard({
   claim,
   type,
@@ -24,26 +26,32 @@ export default function ClaimCard({
 }) {
   if (!claim) return null;
 
-  const isReceived = type === 'RECEIVED';
+  const isReceived = type === "RECEIVED";
   const counterpartName =
-    (isReceived ? claim.claimant?.name : claim.publisher?.name) || 'la otra persona';
+    (isReceived ? claim.claimant?.name : claim.publisher?.name) ||
+    "la otra persona";
   const isAccepted = claim.status === ClaimStatus.ACCEPTED;
   const isPending = claim.status === ClaimStatus.PENDING;
-  const isDelivered = isAccepted && claim.publicationStatus === PublicationStatus.RESOLVED;
+  const isDelivered =
+    isAccepted && claim.publicationStatus === PublicationStatus.RESOLVED;
 
   const getMeetingStatusText = () => {
-    if (claim.meetingStatus === MeetingStatus.ACCEPTED) return 'Confirmado por ambas partes';
-    if (claim.meetingProposedByMe) return `Esperando respuesta de ${counterpartName}`;
+    if (claim.meetingStatus === MeetingStatus.ACCEPTED)
+      return "Confirmado por ambas partes";
+    if (claim.meetingProposedByMe)
+      return `Esperando respuesta de ${counterpartName}`;
     return `${counterpartName} propuso este lugar`;
   };
 
   const openDirections = async () => {
-    const destination = encodeURIComponent(`${claim.meetingAddress}, Buenos Aires, Argentina`);
+    const destination = encodeURIComponent(
+      `${claim.meetingAddress}, Buenos Aires, Argentina`,
+    );
     const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving&dir_action=navigate`;
     try {
       await Linking.openURL(url);
     } catch (err) {
-      Alert.alert('Error', 'No se pudo abrir la aplicación de mapas.');
+      Alert.alert("Error", "No se pudo abrir la aplicación de mapas.");
     }
   };
 
@@ -53,9 +61,16 @@ export default function ClaimCard({
       onPress={() => onOpenPublication?.(claim.publicationId)}
       disabled={!claim.publicationId}
     >
-      <ClaimHeader claim={claim} formattedDate={formatDateTime(claim.claimDate)} />
+      <ClaimHeader
+        claim={claim}
+        formattedDate={formatDateTime(claim.claimDate)}
+      />
 
-      <ClaimContent claim={claim} isReceived={isReceived} isAccepted={isAccepted} />
+      <ClaimContent
+        claim={claim}
+        isReceived={isReceived}
+        isAccepted={isAccepted}
+      />
 
       {isReceived && isPending && (
         <ClaimActions
@@ -98,16 +113,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
-    marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: Colors.gray200,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardPressed: {
     opacity: 0.92,
