@@ -4,6 +4,7 @@ import {
   getFollowedPublicationsApi,
   markPublicationAsSeenApi,
 } from "../services/publicationService";
+import { refreshProfileTabBadge } from "../services/profileBadgeRefresher";
 
 /**
  * Hook que encapsula el listado paginado de publicaciones seguidas:
@@ -59,6 +60,7 @@ export default function useFollowedPublications() {
     if (!publication.hasNewUpdates) return;
     try {
       await markPublicationAsSeenApi(publication.id);
+      refreshProfileTabBadge().catch(() => {});
     } catch (err) {
       console.warn("Error marcando publicación como vista:", err);
     }

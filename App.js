@@ -8,6 +8,7 @@ import { startSyncCoordinator } from "./src/sync/syncCoordinator";
 import { registrarTareaBackground } from "./src/tasks/backgroundNotificationsTask";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { iniciarEscuchaNovedades } from "./src/services/novedadesListener";
+import { startProfileBadgeWatcher } from "./src/services/profileBadgeRefresher";
 import { peekDatabaseSession } from "./src/database/session";
 
 function GlobalOfflineSyncWatcher({ children }) {
@@ -34,6 +35,12 @@ function GlobalClaimNotificationsPoller() {
   useEffect(() => {
     if (token) registrarTareaBackground();
   }, [token]);
+
+  // Badge de la pestaña Perfil (seguidas y alertas), actualizado sin tener que entrar al Perfil
+  useEffect(() => {
+    if (!token || !user || loading) return undefined;
+    return startProfileBadgeWatcher();
+  }, [token, user, loading]);
 
   return null;
 }

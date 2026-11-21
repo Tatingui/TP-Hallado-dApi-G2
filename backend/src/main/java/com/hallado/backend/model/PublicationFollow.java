@@ -63,9 +63,7 @@ public class PublicationFollow {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        if (this.lastSeenAt == null && this.publication != null && this.publication.getUpdatedAt() != null) {
-            this.lastSeenAt = this.publication.getUpdatedAt();
-        }
+        // Al seguirla el usuario la está viendo: la última visita es el momento en que empezó a seguirla
         if (this.lastSeenAt == null) {
             this.lastSeenAt = this.createdAt;
         }

@@ -88,7 +88,8 @@ public class PublicationFollowService {
 
         return followRepository.findByUserAndPublication(user, publication)
                 .map(follow -> {
-                    follow.setLastSeenAt(publication.getUpdatedAt() != null ? publication.getUpdatedAt() : LocalDateTime.now());
+                    // Momento exacto en que el usuario vio la publicación (no la fecha de su última modificación)
+                    follow.setLastSeenAt(LocalDateTime.now());
                     followRepository.save(follow);
                     return SeenStatusDTO.vista(follow.getLastSeenAt());
                 })
