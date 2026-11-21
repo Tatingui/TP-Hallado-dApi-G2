@@ -312,6 +312,7 @@ public class ClaimService {
 
         ClaimResponseDTO dto = ClaimResponseDTO.fromEntity(claim, isPublisher);
         dto.setNovedadTipo(tipo);
+        dto.setPublicador(isPublisher);
         dto.setFecha(fecha);
         return dto;
     }

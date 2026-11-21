@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ export default function ClaimsScreen() {
     claimId != null ? String(claimId) : null,
   );
   const claimsListRef = useRef(null);
+  const scrolledClaimIdRef = useRef(null);
   const activeTab = tab === 'received' ? 'RECEIVED' : tab === 'sent' ? 'SENT' : selectedTab;
 
   useEffect(() => {
@@ -41,13 +42,11 @@ export default function ClaimsScreen() {
     }
   }, [tab, claimId, navigation]);
 
-  useEffect(() => {
-    if (!highlightedClaimId) return;
-    const index = claims.findIndex((claim) => String(claim.id) === highlightedClaimId);
-    if (index >= 0) {
-      claimsListRef.current?.scrollToIndex({ index, animated: true });
-    }
-  }, [highlightedClaimId, claims]);
+  // El resaltado es solo para la visita que viene de la notificación:
+  // al salir de la pantalla se limpia y al volver la tarjeta se ve normal.
+  useFocusEffect(
+    useCallback(() => () => setHighlightedClaimId(null), []),
+  );
 
   // La carga, la paginación y las acciones viven en useClaims; su efecto corre después del de la pestaña, como antes.
   const {
@@ -55,6 +54,7 @@ export default function ClaimsScreen() {
     loading,
     refreshing,
     loadingMore,
+    isLastPage,
     isOfflineMode,
     processingId,
     meetingClaim,
@@ -69,9 +69,54 @@ export default function ClaimsScreen() {
     handleConfirmDelivery,
     handleCancelClaim,
   } = useClaims(activeTab);
+
+  // Lleva la lista hasta la tarjeta resaltada (una sola vez por destino, para no pelear con el scroll manual).
+  useEffect(() => {
+    if (!highlightedClaimId) {
+      scrolledClaimIdRef.current = null;
+      return;
+    }
+    // Una recarga inicial reemplaza la lista y pierde la posición: hay que volver a scrollear
+    if (loading) {
+      scrolledClaimIdRef.current = null;
+      return;
+    }
+    if (scrolledClaimIdRef.current === highlightedClaimId) return;
+
+    const index = claims.findIndex((claim) => String(claim.id) === highlightedClaimId);
+    if (index >= 0) {
+      scrolledClaimIdRef.current = highlightedClaimId;
+      // Esperar al layout de la lista antes de scrollear
+      requestAnimationFrame(() => {
+        claimsListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.1 });
+      });
+    } else if (!isLastPage && !loadingMore) {
+      // El reclamo está en una página que todavía no se cargó: seguir paginando hasta encontrarlo
+      handleLoadMore();
+    }
+  }, [highlightedClaimId, claims, loading, loadingMore, isLastPage]);
+
+  // Las tarjetas tienen alturas distintas y las lejanas aún no se midieron: scrollToIndex falla.
+  // Se salta a un offset estimado (renderiza esa zona) y se reintenta con la tarjeta ya medida.
+  const handleScrollToIndexFailed = ({ index, averageItemLength }) => {
+    claimsListRef.current?.scrollToOffset({
+      offset: averageItemLength * index,
+      animated: false,
+    });
+    setTimeout(() => {
+      claimsListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.1 });
+    }, 300);
+  };
   const unreadNotifications = claimNotifications.filter(
     (notification) => !notification.readAt,
   ).length;
+
+  // Cambiar entre Enviados y Recibidos a mano descarta el destino de la notificación:
+  // sin resaltado ni scroll automático (el efecto de scroll se corta solo al quedar sin resaltado).
+  const handleSelectTab = (newTab) => {
+    setHighlightedClaimId(null);
+    setActiveTab(newTab);
+  };
 
   return (
     <View style={styles.container}>
@@ -98,7 +143,7 @@ export default function ClaimsScreen() {
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'SENT' && styles.tabActive]}
-            onPress={() => setActiveTab('SENT')}
+            onPress={() => handleSelectTab('SENT')}
           >
             <Text style={[styles.tabText, activeTab === 'SENT' && styles.tabTextActive]}>
               Enviados
@@ -106,7 +151,7 @@ export default function ClaimsScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'RECEIVED' && styles.tabActive]}
-            onPress={() => setActiveTab('RECEIVED')}
+            onPress={() => handleSelectTab('RECEIVED')}
           >
             <Text style={[styles.tabText, activeTab === 'RECEIVED' && styles.tabTextActive]}>
               Recibidos
@@ -162,6 +207,7 @@ export default function ClaimsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[Colors.primary]} />
           }
           onEndReached={handleLoadMore}
+          onScrollToIndexFailed={handleScrollToIndexFailed}
           onEndReachedThreshold={0.3}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>

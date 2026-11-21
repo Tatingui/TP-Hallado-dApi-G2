@@ -275,6 +275,7 @@ export default function useClaims(activeTab) {
     loading,
     refreshing,
     loadingMore,
+    isLastPage,
     isOfflineMode,
     processingId,
     meetingClaim,

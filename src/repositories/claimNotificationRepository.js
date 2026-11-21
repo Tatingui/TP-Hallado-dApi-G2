@@ -176,10 +176,17 @@ export async function notifyClaimNotifications(saved, Notifications) {
 }
 
 export function getClaimNotificationNavigation(notification) {
-  const tab = notification?.type === "CLAIM_RECEIVED"
-    || notification?.type === "MEETING_POINT_PROPOSED"
-    ? "received"
-    : "sent";
+  // La pestaña depende del rol de quien recibe: publicador → Recibidos, quien reclama → Enviados.
+  // El rol viene en el reclamo guardado (payloadJson); si no está (novedades viejas), se infiere del tipo.
+  let esPublicador;
+  try {
+    const payload = notification?.payloadJson ? JSON.parse(notification.payloadJson) : null;
+    if (typeof payload?.publicador === "boolean") esPublicador = payload.publicador;
+  } catch {
+    // payload inválido: se usa el tipo
+  }
+  if (esPublicador === undefined) esPublicador = notification?.type === "CLAIM_RECEIVED";
+  const tab = esPublicador ? "received" : "sent";
   return {
     tab,
     claimId: notification?.claimId != null ? String(notification.claimId) : null,

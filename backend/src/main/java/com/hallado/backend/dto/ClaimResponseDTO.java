@@ -23,6 +23,9 @@ public class ClaimResponseDTO {
     // Tipo de novedad para quien consulta: CLAIM_RECEIVED, CLAIM_<ESTADO> o MEETING_POINT_PROPOSED
     private String novedadTipo;
 
+    // true si quien consulta es el publicador: define en qué pestaña (Recibidos/Enviados) está el reclamo
+    private boolean publicador;
+
     // Verificación: respuesta del reclamante y pregunta/respuesta esperada (solo para el publicador)
     private String verificationAnswer;
     private String verificationQuestion;
@@ -168,6 +171,8 @@ public class ClaimResponseDTO {
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
     public String getNovedadTipo() { return novedadTipo; }
     public void setNovedadTipo(String novedadTipo) { this.novedadTipo = novedadTipo; }
+    public boolean isPublicador() { return publicador; }
+    public void setPublicador(boolean publicador) { this.publicador = publicador; }
     public ClaimStatus getStatus() { return status; }
     public void setStatus(ClaimStatus status) { this.status = status; }
     public String getProofMessage() { return proofMessage; }
