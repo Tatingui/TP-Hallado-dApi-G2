@@ -14,6 +14,10 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
+import jsQR from "jsqr";
+import { Buffer } from "buffer";
+import jpeg from "jpeg-js";
+import { modalStyles } from "../../constants/sharedStyles";
 
 /**
  * Modal de escaneo de código QR para confirmar la entrega del objeto.
@@ -32,6 +36,7 @@ export default function QrScannerModal({
   const [manualCode, setManualCode] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
   const [facing, setFacing] = useState("back");
+  const [decodingImage, setDecodingImage] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -134,10 +139,11 @@ export default function QrScannerModal({
   };
 
   const handlePickFromGallery = async () => {
+    if (decodingImage) return;
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
+        mediaTypes: ["images"],
+        quality: 0.5,
         base64: true,
       });
 
@@ -145,12 +151,48 @@ export default function QrScannerModal({
         return;
       }
 
-      setShowManualInput(true);
-      Alert.alert(
-        "Imagen de Galería Seleccionada",
-        `Para confirmar el reclamo #${claim.id}, ingresá el número de código del QR de la imagen:`,
-        [{ text: "Entendido" }],
-      );
+      const base64 = result.assets[0].base64;
+      if (!base64) {
+        setShowManualInput(true);
+        Alert.alert("Error", "No se pudo obtener la imagen. Ingresá el código manualmente.");
+        return;
+      }
+
+      setDecodingImage(true);
+
+      // setTimeout para que React renderice el spinner antes del trabajo pesado
+      setTimeout(() => {
+        try {
+          const rawBuffer = Buffer.from(base64, "base64");
+          const { data, width, height } = jpeg.decode(rawBuffer, { useTArray: true });
+          const code = jsQR(new Uint8ClampedArray(data), width, height);
+
+          if (code && code.data) {
+            setDecodingImage(false);
+            processScannedData(code.data, false);
+          } else {
+            setDecodingImage(false);
+            Alert.alert(
+              "QR no detectado",
+              "No se encontró un código QR en la imagen.",
+              [
+                { text: "Reintentar", onPress: handlePickFromGallery },
+                { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
+              ],
+            );
+          }
+        } catch (decodeErr) {
+          setDecodingImage(false);
+          Alert.alert(
+            "No se pudo leer",
+            "No se pudo procesar la imagen.",
+            [
+              { text: "Reintentar", onPress: handlePickFromGallery },
+              { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
+            ],
+          );
+        }
+      }, 100);
     } catch (err) {
       Alert.alert("Error", "No se pudo abrir la galería de fotos.");
     }
@@ -183,7 +225,7 @@ export default function QrScannerModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[modalStyles.overlay, { backgroundColor: "rgba(0,0,0,0.75)", alignItems: "stretch" }]}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -197,7 +239,12 @@ export default function QrScannerModal({
             </TouchableOpacity>
           </View>
 
-          {isProcessing ? (
+          {decodingImage ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Validando código QR...</Text>
+            </View>
+          ) : isProcessing ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator size="large" color={Colors.primary} />
               <Text style={styles.loadingText}>Confirmando entrega...</Text>
@@ -227,15 +274,15 @@ export default function QrScannerModal({
 
               <View style={styles.permissionActions}>
                 <TouchableOpacity
-                  style={styles.primaryBtn}
+                  style={modalStyles.primaryBtn}
                   onPress={requestPermission}
                 >
                   <Ionicons name="camera" size={18} color={Colors.surface} />
-                  <Text style={styles.primaryBtnText}>Conceder Permiso</Text>
+                  <Text style={modalStyles.primaryBtnText}>Conceder Permiso</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.secondaryBtn}
+                  style={modalStyles.secondaryBtn}
                   onPress={openSettings}
                 >
                   <Ionicons
@@ -243,13 +290,13 @@ export default function QrScannerModal({
                     size={18}
                     color={Colors.primary}
                   />
-                  <Text style={styles.secondaryBtnText}>
+                  <Text style={modalStyles.secondaryBtnText}>
                     Ir a Configuración
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.secondaryBtn}
+                  style={modalStyles.secondaryBtn}
                   onPress={handlePickFromGallery}
                 >
                   <Ionicons
@@ -257,7 +304,7 @@ export default function QrScannerModal({
                     size={18}
                     color={Colors.primary}
                   />
-                  <Text style={styles.secondaryBtnText}>
+                  <Text style={modalStyles.secondaryBtnText}>
                     Elegir foto de la galería
                   </Text>
                 </TouchableOpacity>
@@ -381,8 +428,10 @@ export default function QrScannerModal({
                   </TouchableOpacity>
                 </View>
               )}
+
             </View>
           )}
+
         </View>
       </View>
     </Modal>
@@ -390,12 +439,6 @@ export default function QrScannerModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
-    padding: 16,
-  },
   container: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
@@ -420,7 +463,7 @@ const styles = StyleSheet.create({
   },
   loadingBox: {
     flex: 1,
-    justify: "center",
+    justifyContent: "center",
     alignItems: "center",
     padding: 40,
     minHeight: 350,
@@ -461,34 +504,7 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 8,
   },
-  primaryBtn: {
-    flexDirection: "row",
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  primaryBtnText: {
-    color: Colors.surface,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  secondaryBtn: {
-    flexDirection: "row",
-    backgroundColor: Colors.inputBackground,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  secondaryBtnText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
+
   textBtn: {
     paddingVertical: 8,
     alignItems: "center",
@@ -579,22 +595,39 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     flexDirection: "row",
-    justify: "space-around",
+    justifyContent: "space-around",
     backgroundColor: "rgba(0,0,0,0.75)",
     borderRadius: 14,
     paddingVertical: 10,
     zIndex: 10,
   },
+  decodingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 20,
+  },
+  decodingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
   galleryBarBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 6,
   },
   galleryBarBtnText: {
     color: Colors.surface,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "600",
   },
 });
