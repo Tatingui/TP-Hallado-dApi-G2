@@ -28,6 +28,8 @@ public class Claim {
     @Column(nullable = false, length = 20)
     private ClaimStatus status = ClaimStatus.PENDING;
 
+    private LocalDateTime statusChangedAt;
+
     @Column(columnDefinition = "TEXT")
     private String proofMessage;
 
@@ -51,6 +53,8 @@ public class Claim {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meeting_proposed_by_id")
     private User meetingProposedBy;
+
+    private LocalDateTime meetingChangedAt;
 
     @Enumerated(EnumType.STRING)
     private MeetingPointStatus meetingStatus;
@@ -77,7 +81,14 @@ public class Claim {
     public void setClaimant(User claimant) { this.claimant = claimant; }
 
     public ClaimStatus getStatus() { return status; }
-    public void setStatus(ClaimStatus status) { this.status = status; }
+    public void setStatus(ClaimStatus status) {
+        if (this.status != status) {
+            this.statusChangedAt = LocalDateTime.now();
+        }
+        this.status = status;
+    }
+    public LocalDateTime getStatusChangedAt() { return statusChangedAt; }
+    public void setStatusChangedAt(LocalDateTime statusChangedAt) { this.statusChangedAt = statusChangedAt; }
 
     public String getBarrio() { return barrio; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
@@ -98,6 +109,9 @@ public class Claim {
 
     public User getMeetingProposedBy() { return meetingProposedBy; }
     public void setMeetingProposedBy(User meetingProposedBy) { this.meetingProposedBy = meetingProposedBy; }
+
+    public LocalDateTime getMeetingChangedAt() { return meetingChangedAt; }
+    public void setMeetingChangedAt(LocalDateTime meetingChangedAt) { this.meetingChangedAt = meetingChangedAt; }
 
     public MeetingPointStatus getMeetingStatus() { return meetingStatus; }
     public void setMeetingStatus(MeetingPointStatus meetingStatus) { this.meetingStatus = meetingStatus; }

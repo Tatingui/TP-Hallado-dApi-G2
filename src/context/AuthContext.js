@@ -1,14 +1,20 @@
-import { setDatabaseSession, subscribeSession, getDatabaseSession, markDatabaseReady } from '../database/session';
-import { migrateAsyncStorageToWatermelon } from '../database/dataMigration';
-import { createContext, useState, useEffect } from "react";
+import { createContext, useEffect, useState } from "react";
+import { migrateAsyncStorageToWatermelon } from "../database/dataMigration";
+import {
+  getDatabaseSession,
+  markDatabaseReady,
+  setDatabaseSession,
+  subscribeSession,
+} from "../database/session";
 import { resetTo } from "../navigation/navigationRef";
 import { clearBiometricEnabled } from "../services/biometricService";
 import {
-  saveSession,
+  clearSession,
   getToken,
   getUserEmail,
-  clearSession,
+  saveSession,
 } from "../storage/authStorage";
+import { desregistrarTareaBackground } from "../tasks/backgroundNotificationsTask";
 
 export const AuthContext = createContext(null);
 
@@ -20,7 +26,10 @@ async function importLegacyData() {
   try {
     await migrateAsyncStorageToWatermelon();
   } catch (error) {
-    console.warn("No se pudieron importar los datos de la versión anterior:", error.message);
+    console.warn(
+      "No se pudieron importar los datos de la versión anterior:",
+      error.message,
+    );
   }
 }
 
@@ -41,7 +50,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     restoreSession();
     return subscribeSession(() => {
-      try { getDatabaseSession(); } catch { setToken(null); setUser(null); }
+      try {
+        getDatabaseSession();
+      } catch {
+        setToken(null);
+        setUser(null);
+      }
     });
   }, []);
 
@@ -82,6 +96,10 @@ export function AuthProvider({ children }) {
    * se borra para que quien inicie sesión después no herede el bloqueo.
    */
   async function logout(loginParams) {
+    // Desregistramos la tarea background antes de limpiar la sesión,
+    // para que el SO no siga chequeando novedades sin usuario activo
+    await desregistrarTareaBackground();
+
     setDatabaseSession(null, null);
     await clearSession();
     await clearBiometricEnabled();

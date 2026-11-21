@@ -1,20 +1,12 @@
 package com.hallado.backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hallado.backend.dto.ClaimRequestDTO;
-import com.hallado.backend.dto.ClaimResponseDTO;
-import com.hallado.backend.dto.PageResponseDTO;
-import com.hallado.backend.exception.BadRequestException;
-import com.hallado.backend.exception.ForbiddenException;
-import com.hallado.backend.exception.ResourceNotFoundException;
-import com.hallado.backend.model.*;
-import com.hallado.backend.repository.ClaimRepository;
-import com.hallado.backend.repository.PublicationRepository;
-import com.hallado.backend.repository.UserRepository;
-import com.hallado.backend.repository.ClaimRatingRepository;
-import com.hallado.backend.dto.RatingRequestDTO;
-import com.hallado.backend.dto.ResolvedCaseDTO;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,10 +14,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hallado.backend.dto.ClaimRequestDTO;
+import com.hallado.backend.dto.ClaimResponseDTO;
+import com.hallado.backend.dto.PageResponseDTO;
+import com.hallado.backend.dto.RatingRequestDTO;
+import com.hallado.backend.dto.ResolvedCaseDTO;
+import com.hallado.backend.exception.BadRequestException;
+import com.hallado.backend.exception.ForbiddenException;
+import com.hallado.backend.exception.ResourceNotFoundException;
+import com.hallado.backend.model.Claim;
+import com.hallado.backend.model.ClaimRating;
+import com.hallado.backend.model.ClaimStatus;
+import com.hallado.backend.model.MeetingPointStatus;
+import com.hallado.backend.model.Publication;
+import com.hallado.backend.model.PublicationStatus;
+import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.model.User;
+import com.hallado.backend.repository.ClaimRatingRepository;
+import com.hallado.backend.repository.ClaimRepository;
+import com.hallado.backend.repository.PublicationRepository;
+import com.hallado.backend.repository.UserRepository;
 
 @Service
 public class ClaimService {
@@ -51,6 +61,106 @@ public class ClaimService {
         this.objectMapper = objectMapper;
         this.userLookupService = userLookupService;
         this.fileStorageService = fileStorageService;
+    }
+
+    /**
+     * Punto 8: Aceptar el punto de encuentro propuesto por la otra parte.
+     */
+    @Transactional
+    public ClaimResponseDTO acceptMeetingPoint(Long claimId, String userEmail) {
+        User user = userLookupService.getByEmailOrThrow(userEmail);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED
+                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
+        }
+        if (claim.getMeetingStatus() != MeetingPointStatus.PROPOSED) {
+            throw new BadRequestException("No hay un punto de encuentro pendiente de respuesta.");
+        }
+        if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
+            throw new BadRequestException("No podés aceptar tu propia propuesta.");
+        }
+
+        // Acordar el lugar no cierra el caso: la publicación sigue en reclamo
+        // hasta que el publicador confirma la entrega.
+        claim.setMeetingStatus(MeetingPointStatus.ACCEPTED);
+        claimRepository.save(claim);
+
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
+    }
+
+    /**
+     * Ciclo de vida: el publicador cancela un reclamo aceptado que no se concretó.
+     * Con republish, el reclamo queda cancelado y la publicación vuelve a estar abierta
+     * para recibir otros reclamos. Sin republish, se elimina la publicación (como al
+     * borrarla desde Mis publicaciones) y devuelve null.
+     */
+    @Transactional
+    public ClaimResponseDTO cancelAcceptedClaim(Long claimId, boolean republish, String publisherEmail) {
+        Claim claim = getAcceptedClaimOfPublisher(claimId, publisherEmail);
+        Publication publication = claim.getPublication();
+
+        if (!republish) {
+            publicationService.deleteWithDependencies(publication);
+            return null;
+        }
+
+        claim.setStatus(ClaimStatus.CANCELLED);
+        claimRepository.save(claim);
+        // Si la vigencia terminó mientras estaba en reclamo, se renueva: si no,
+        // volvería a abrirse ya vencida y desaparecería de la búsqueda.
+        LocalDateTime now = LocalDateTime.now();
+        if (publication.getExpiresAt() != null && !publication.getExpiresAt().isAfter(now)) {
+            publication.renew(now);
+        } else {
+            publication.setStatus(PublicationStatus.OPEN);
+        }
+        publicationRepository.save(publication);
+
+        return ClaimResponseDTO.fromEntity(claim, true);
+    }
+
+    /**
+     * Ciclo de vida / Escaneo QR: las partes del reclamo confirman la entrega del objeto.
+     * Recién acá la publicación pasa a resuelta, el caso entra al historial (y se puede
+     * valorar) y se suma la devolución concretada a quien tenía el objeto.
+     */
+    @Transactional
+    public ClaimResponseDTO confirmDelivery(Long claimId, String userEmail) {
+        User user = userLookupService.getByEmailOrThrow(userEmail);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        boolean isClaimant = claim.getClaimant().getId().equals(user.getId());
+
+        if (!isPublisher && !isClaimant) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED
+                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("El reclamo no está pendiente de entrega.");
+        }
+
+        claim.setResolvedAt(LocalDateTime.now());
+        claimRepository.save(claim);
+
+        Publication publication = claim.getPublication();
+        publication.setStatus(PublicationStatus.RESOLVED);
+        publicationRepository.save(publication);
+
+        boolean publisherIsDevolver = publication.getType() == PublicationType.FOUND;
+        User devolver = publisherIsDevolver ? publication.getUser() : claim.getClaimant();
+        devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
+        userRepository.save(devolver);
+
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
     }
 
     /**
@@ -127,6 +237,104 @@ public class ClaimService {
         }
     }
 
+    public PageResponseDTO<ClaimResponseDTO> getMyReceivedClaims(String userEmail, int page, int size) {
+        User publisher = userLookupService.getByEmailOrThrow(userEmail);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Claim> claims = claimRepository.findByPublicationUserOrderByClaimDateDesc(publisher, pageable);
+
+        List<ClaimResponseDTO> dtos = claims.getContent().stream()
+                .map(c -> ClaimResponseDTO.fromEntity(c, true))
+                .collect(Collectors.toList());
+
+        return new PageResponseDTO<>(dtos, claims.getNumber(), claims.getSize(), claims.getTotalElements(), claims.getTotalPages(), claims.isLast());
+    }
+
+    public PageResponseDTO<ClaimResponseDTO> getMySentClaims(String userEmail, int page, int size) {
+        User claimant = userLookupService.getByEmailOrThrow(userEmail);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Claim> claims = claimRepository.findByClaimantOrderByClaimDateDesc(claimant, pageable);
+
+        List<ClaimResponseDTO> dtos = claims.getContent().stream()
+                .map(c -> ClaimResponseDTO.fromEntity(c, false))
+                .collect(Collectors.toList());
+
+        return new PageResponseDTO<>(dtos, claims.getNumber(), claims.getSize(), claims.getTotalElements(), claims.getTotalPages(), claims.isLast());
+    }
+
+    /**
+     * Punto 12: Recibir novedades cuando se recibe un reclamo nuevo o cambia el estado de un reclamo propio.
+     */
+
+    @Transactional(readOnly = true)
+    public List<ClaimResponseDTO> getNovedades(String email, LocalDateTime since) {
+        User user = userLookupService.getByEmailOrThrow(email);
+        return claimRepository.findNovedades(user, since).stream()
+                .map(claim -> toNovedad(claim, user, since))
+                .filter(Objects::nonNull)
+                // Ascendente: el último elemento es la novedad más reciente (cursor del cliente)
+                .sorted(Comparator.comparing(ClaimResponseDTO::getFecha))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Arma la novedad desde el punto de vista de quien consulta. Solo se avisa lo que hizo la
+     * OTRA parte: el publicador no se entera de sus propias acciones (aceptar/rechazar) ni
+     * quien reclama de las suyas. Devuelve null si no hay nada para avisarle.
+     */
+    private ClaimResponseDTO toNovedad(Claim claim, User user, LocalDateTime since) {
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        String tipo = null;
+        LocalDateTime fecha = null;
+
+        boolean meetingByOther = claim.getMeetingChangedAt() != null
+                && claim.getMeetingChangedAt().isAfter(since)
+                && claim.getMeetingProposedBy() != null
+                && !claim.getMeetingProposedBy().getId().equals(user.getId());
+
+        if (isPublisher) {
+            // Reclamo nuevo (solo si sigue pendiente: si ya lo resolvió, no hay nada que avisarle)
+            if (claim.getClaimDate().isAfter(since) && claim.getStatus() == ClaimStatus.PENDING) {
+                tipo = "CLAIM_RECEIVED";
+                fecha = claim.getClaimDate();
+            }
+        } else if (claim.getStatusChangedAt() != null && claim.getStatusChangedAt().isAfter(since)) {
+            tipo = "CLAIM_" + claim.getStatus().name();
+            fecha = claim.getStatusChangedAt();
+        }
+
+        if (meetingByOther && (fecha == null || claim.getMeetingChangedAt().isAfter(fecha))) {
+            tipo = "MEETING_POINT_PROPOSED";
+            fecha = claim.getMeetingChangedAt();
+        }
+        if (tipo == null) return null;
+
+        ClaimResponseDTO dto = ClaimResponseDTO.fromEntity(claim, isPublisher);
+        dto.setNovedadTipo(tipo);
+        dto.setPublicador(isPublisher);
+        dto.setFecha(fecha);
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResolvedCaseDTO> getResolvedHistory(String email, LocalDate from, LocalDate to, PublicationType type) {
+        User user = userLookupService.getByEmailOrThrow(email);
+        LocalDateTime fromDate = from == null ? null : from.atStartOfDay();
+        LocalDateTime toDate = to == null ? null : to.plusDays(1).atStartOfDay();
+        return claimRepository.findResolvedHistory(user, fromDate, toDate, type).stream()
+                .map(claim -> {
+                    ClaimRating rating = claimRatingRepository.findByClaimAndAuthor(claim, user).orElse(null);
+                    User counterpart = claim.getPublication().getUser().getId().equals(user.getId())
+                            ? claim.getClaimant()
+                            : claim.getPublication().getUser();
+                    ClaimRating counterpartRating = claimRatingRepository.findByClaimAndAuthor(claim, counterpart)
+                            .orElse(null);
+                    return ResolvedCaseDTO.from(claim, user, rating, counterpartRating);
+                })
+                .collect(Collectors.toList());
+    }
+
     public ClaimStatus parseStatus(String status) {
         if (status == null || status.isBlank()) {
             throw new BadRequestException("Debes indicar el estado del reclamo.");
@@ -136,6 +344,96 @@ public class ClaimService {
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Estado de reclamo inválido.");
         }
+    }
+
+    /**
+     * Punto 8: Proponer un punto de encuentro o sugerir uno alternativo.
+     * La primera propuesta la hace quien tiene el objeto; después solo la otra parte puede reemplazarla.
+     */
+    @Transactional
+    public ClaimResponseDTO proposeMeetingPoint(Long claimId, String address, String userEmail) {
+        User user = userLookupService.getByEmailOrThrow(userEmail);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
+
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
+            throw new ForbiddenException("No participaste de este reclamo.");
+        }
+        if (claim.getStatus() != ClaimStatus.ACCEPTED) {
+            throw new BadRequestException("Solo se puede acordar un punto de encuentro en reclamos aceptados.");
+        }
+        if (claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
+            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
+        }
+        if (claim.getMeetingStatus() == MeetingPointStatus.ACCEPTED) {
+            throw new BadRequestException("El punto de encuentro ya fue confirmado.");
+        }
+
+        String trimmed = address == null ? "" : address.trim();
+        if (trimmed.isEmpty()) {
+            throw new BadRequestException("Debes indicar la dirección del punto de encuentro.");
+        }
+        if (trimmed.length() > 255) {
+            throw new BadRequestException("La dirección no puede superar los 255 caracteres.");
+        }
+
+        if (claim.getMeetingStatus() == null) {
+            // Si se encontró algo, el objeto lo tiene el publicador; si se perdió, lo tiene quien reclamó
+            boolean publisherHasObject = claim.getPublication().getType() == PublicationType.FOUND;
+            if (isPublisher != publisherHasObject) {
+                throw new ForbiddenException("Solo quien tiene el objeto puede proponer el punto de encuentro.");
+            }
+        } else if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
+            throw new BadRequestException("Ya propusiste un punto de encuentro. Esperá la respuesta de la otra parte.");
+        }
+
+        claim.setMeetingAddress(trimmed);
+        claim.setMeetingProposedBy(user);
+        claim.setMeetingStatus(MeetingPointStatus.PROPOSED);
+        claim.setMeetingChangedAt(LocalDateTime.now());
+        claimRepository.save(claim);
+
+        return ClaimResponseDTO.fromEntity(claim, isPublisher);
+    }
+
+    @Transactional
+    public void rateResolvedCase(Long claimId, RatingRequestDTO request, String email) {
+        User author = userLookupService.getByEmailOrThrow(email);
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
+        if (claim.getStatus() != ClaimStatus.ACCEPTED || claim.getResolvedAt() == null ||
+                claim.getPublication().getStatus() != PublicationStatus.RESOLVED ||
+                claim.getResolvedAt().plusDays(7).isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("El plazo para valorar este caso venció.");
+        }
+        boolean publisher = claim.getPublication().getUser().getId().equals(author.getId());
+        if (!publisher && !claim.getClaimant().getId().equals(author.getId())) {
+            throw new ForbiddenException("No participaste de este caso.");
+        }
+        if (request.getPositive() == null) {
+            throw new BadRequestException("Debes indicar si la valoración es positiva o negativa.");
+        }
+        if (claimRatingRepository.findByClaimAndAuthor(claim, author).isPresent()) {
+            throw new BadRequestException("Ya valoraste este caso.");
+        }
+        User rated = publisher ? claim.getClaimant() : claim.getPublication().getUser();
+        boolean devolver = claim.getPublication().getType() == PublicationType.FOUND ? publisher : !publisher;
+        String thanks = request.getPublicThanks() == null ? null : request.getPublicThanks().trim();
+        if (!devolver && thanks != null && thanks.length() > 280) {
+            throw new BadRequestException("El agradecimiento no puede superar los 280 caracteres.");
+        }
+        ClaimRating rating = new ClaimRating();
+        rating.setClaim(claim);
+        rating.setAuthor(author);
+        rating.setRatedUser(rated);
+        rating.setPositive(request.getPositive());
+        rating.setMessage(trimToLimit(request.getMessage(), 280));
+        rating.setPublicThanks(!devolver ? trimToLimit(thanks, 280) : null);
+        claimRatingRepository.save(rating);
+        if (request.getPositive()) rated.setValoracionesPositivas(rated.getValoracionesPositivas() + 1);
+        else rated.setValoracionesNegativas(rated.getValoracionesNegativas() + 1);
+        userRepository.save(rated);
     }
 
     /**
@@ -187,156 +485,6 @@ public class ClaimService {
         return ClaimResponseDTO.fromEntity(claim, true);
     }
 
-    /**
-     * Punto 8: Proponer un punto de encuentro o sugerir uno alternativo.
-     * La primera propuesta la hace quien tiene el objeto; después solo la otra parte puede reemplazarla.
-     */
-    @Transactional
-    public ClaimResponseDTO proposeMeetingPoint(Long claimId, String address, String userEmail) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-        Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
-
-        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
-        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
-            throw new ForbiddenException("No participaste de este reclamo.");
-        }
-        if (claim.getStatus() != ClaimStatus.ACCEPTED) {
-            throw new BadRequestException("Solo se puede acordar un punto de encuentro en reclamos aceptados.");
-        }
-        if (claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
-            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
-        }
-        if (claim.getMeetingStatus() == MeetingPointStatus.ACCEPTED) {
-            throw new BadRequestException("El punto de encuentro ya fue confirmado.");
-        }
-
-        String trimmed = address == null ? "" : address.trim();
-        if (trimmed.isEmpty()) {
-            throw new BadRequestException("Debes indicar la dirección del punto de encuentro.");
-        }
-        if (trimmed.length() > 255) {
-            throw new BadRequestException("La dirección no puede superar los 255 caracteres.");
-        }
-
-        if (claim.getMeetingStatus() == null) {
-            // Si se encontró algo, el objeto lo tiene el publicador; si se perdió, lo tiene quien reclamó
-            boolean publisherHasObject = claim.getPublication().getType() == PublicationType.FOUND;
-            if (isPublisher != publisherHasObject) {
-                throw new ForbiddenException("Solo quien tiene el objeto puede proponer el punto de encuentro.");
-            }
-        } else if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
-            throw new BadRequestException("Ya propusiste un punto de encuentro. Esperá la respuesta de la otra parte.");
-        }
-
-        claim.setMeetingAddress(trimmed);
-        claim.setMeetingProposedBy(user);
-        claim.setMeetingStatus(MeetingPointStatus.PROPOSED);
-        claimRepository.save(claim);
-
-        return ClaimResponseDTO.fromEntity(claim, isPublisher);
-    }
-
-    /**
-     * Punto 8: Aceptar el punto de encuentro propuesto por la otra parte.
-     */
-    @Transactional
-    public ClaimResponseDTO acceptMeetingPoint(Long claimId, String userEmail) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-        Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
-
-        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
-        if (!isPublisher && !claim.getClaimant().getId().equals(user.getId())) {
-            throw new ForbiddenException("No participaste de este reclamo.");
-        }
-        if (claim.getStatus() != ClaimStatus.ACCEPTED
-                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
-            throw new BadRequestException("La entrega de este reclamo ya fue cerrada.");
-        }
-        if (claim.getMeetingStatus() != MeetingPointStatus.PROPOSED) {
-            throw new BadRequestException("No hay un punto de encuentro pendiente de respuesta.");
-        }
-        if (claim.getMeetingProposedBy().getId().equals(user.getId())) {
-            throw new BadRequestException("No podés aceptar tu propia propuesta.");
-        }
-
-        // Acordar el lugar no cierra el caso: la publicación sigue en reclamo
-        // hasta que el publicador confirma la entrega.
-        claim.setMeetingStatus(MeetingPointStatus.ACCEPTED);
-        claimRepository.save(claim);
-
-        return ClaimResponseDTO.fromEntity(claim, isPublisher);
-    }
-
-    /**
-     * Ciclo de vida / Escaneo QR: las partes del reclamo confirman la entrega del objeto.
-     * Recién acá la publicación pasa a resuelta, el caso entra al historial (y se puede
-     * valorar) y se suma la devolución concretada a quien tenía el objeto.
-     */
-    @Transactional
-    public ClaimResponseDTO confirmDelivery(Long claimId, String userEmail) {
-        User user = userLookupService.getByEmailOrThrow(userEmail);
-        Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamo no encontrado"));
-
-        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
-        boolean isClaimant = claim.getClaimant().getId().equals(user.getId());
-
-        if (!isPublisher && !isClaimant) {
-            throw new ForbiddenException("No participaste de este reclamo.");
-        }
-        if (claim.getStatus() != ClaimStatus.ACCEPTED
-                || claim.getPublication().getStatus() != PublicationStatus.IN_CLAIM) {
-            throw new BadRequestException("El reclamo no está pendiente de entrega.");
-        }
-
-        claim.setResolvedAt(LocalDateTime.now());
-        claimRepository.save(claim);
-
-        Publication publication = claim.getPublication();
-        publication.setStatus(PublicationStatus.RESOLVED);
-        publicationRepository.save(publication);
-
-        boolean publisherIsDevolver = publication.getType() == PublicationType.FOUND;
-        User devolver = publisherIsDevolver ? publication.getUser() : claim.getClaimant();
-        devolver.setDevolucionesConcretadas(devolver.getDevolucionesConcretadas() + 1);
-        userRepository.save(devolver);
-
-        return ClaimResponseDTO.fromEntity(claim, isPublisher);
-    }
-
-    /**
-     * Ciclo de vida: el publicador cancela un reclamo aceptado que no se concretó.
-     * Con republish, el reclamo queda cancelado y la publicación vuelve a estar abierta
-     * para recibir otros reclamos. Sin republish, se elimina la publicación (como al
-     * borrarla desde Mis publicaciones) y devuelve null.
-     */
-    @Transactional
-    public ClaimResponseDTO cancelAcceptedClaim(Long claimId, boolean republish, String publisherEmail) {
-        Claim claim = getAcceptedClaimOfPublisher(claimId, publisherEmail);
-        Publication publication = claim.getPublication();
-
-        if (!republish) {
-            publicationService.deleteWithDependencies(publication);
-            return null;
-        }
-
-        claim.setStatus(ClaimStatus.CANCELLED);
-        claimRepository.save(claim);
-        // Si la vigencia terminó mientras estaba en reclamo, se renueva: si no,
-        // volvería a abrirse ya vencida y desaparecería de la búsqueda.
-        LocalDateTime now = LocalDateTime.now();
-        if (publication.getExpiresAt() != null && !publication.getExpiresAt().isAfter(now)) {
-            publication.renew(now);
-        } else {
-            publication.setStatus(PublicationStatus.OPEN);
-        }
-        publicationRepository.save(publication);
-
-        return ClaimResponseDTO.fromEntity(claim, true);
-    }
-
     private Claim getAcceptedClaimOfPublisher(Long claimId, String publisherEmail) {
         User publisher = userLookupService.getByEmailOrThrow(publisherEmail);
         Claim claim = claimRepository.findById(claimId)
@@ -351,93 +499,10 @@ public class ClaimService {
         return claim;
     }
 
-    @Transactional(readOnly = true)
-    public List<ResolvedCaseDTO> getResolvedHistory(String email, LocalDate from, LocalDate to, PublicationType type) {
-        User user = userLookupService.getByEmailOrThrow(email);
-        LocalDateTime fromDate = from == null ? null : from.atStartOfDay();
-        LocalDateTime toDate = to == null ? null : to.plusDays(1).atStartOfDay();
-        return claimRepository.findResolvedHistory(user, fromDate, toDate, type).stream()
-                .map(claim -> {
-                    ClaimRating rating = claimRatingRepository.findByClaimAndAuthor(claim, user).orElse(null);
-                    User counterpart = claim.getPublication().getUser().getId().equals(user.getId())
-                            ? claim.getClaimant()
-                            : claim.getPublication().getUser();
-                    ClaimRating counterpartRating = claimRatingRepository.findByClaimAndAuthor(claim, counterpart)
-                            .orElse(null);
-                    return ResolvedCaseDTO.from(claim, user, rating, counterpartRating);
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void rateResolvedCase(Long claimId, RatingRequestDTO request, String email) {
-        User author = userLookupService.getByEmailOrThrow(email);
-        Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
-        if (claim.getStatus() != ClaimStatus.ACCEPTED || claim.getResolvedAt() == null ||
-                claim.getPublication().getStatus() != PublicationStatus.RESOLVED ||
-                claim.getResolvedAt().plusDays(7).isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("El plazo para valorar este caso venció.");
-        }
-        boolean publisher = claim.getPublication().getUser().getId().equals(author.getId());
-        if (!publisher && !claim.getClaimant().getId().equals(author.getId())) {
-            throw new ForbiddenException("No participaste de este caso.");
-        }
-        if (request.getPositive() == null) {
-            throw new BadRequestException("Debes indicar si la valoración es positiva o negativa.");
-        }
-        if (claimRatingRepository.findByClaimAndAuthor(claim, author).isPresent()) {
-            throw new BadRequestException("Ya valoraste este caso.");
-        }
-        User rated = publisher ? claim.getClaimant() : claim.getPublication().getUser();
-        boolean devolver = claim.getPublication().getType() == PublicationType.FOUND ? publisher : !publisher;
-        String thanks = request.getPublicThanks() == null ? null : request.getPublicThanks().trim();
-        if (!devolver && thanks != null && thanks.length() > 280) {
-            throw new BadRequestException("El agradecimiento no puede superar los 280 caracteres.");
-        }
-        ClaimRating rating = new ClaimRating();
-        rating.setClaim(claim);
-        rating.setAuthor(author);
-        rating.setRatedUser(rated);
-        rating.setPositive(request.getPositive());
-        rating.setMessage(trimToLimit(request.getMessage(), 280));
-        rating.setPublicThanks(!devolver ? trimToLimit(thanks, 280) : null);
-        claimRatingRepository.save(rating);
-        if (request.getPositive()) rated.setValoracionesPositivas(rated.getValoracionesPositivas() + 1);
-        else rated.setValoracionesNegativas(rated.getValoracionesNegativas() + 1);
-        userRepository.save(rated);
-    }
-
     private String trimToLimit(String value, int limit) {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed.substring(0, Math.min(trimmed.length(), limit));
-    }
-
-    public PageResponseDTO<ClaimResponseDTO> getMySentClaims(String userEmail, int page, int size) {
-        User claimant = userLookupService.getByEmailOrThrow(userEmail);
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Claim> claims = claimRepository.findByClaimantOrderByClaimDateDesc(claimant, pageable);
-
-        List<ClaimResponseDTO> dtos = claims.getContent().stream()
-                .map(c -> ClaimResponseDTO.fromEntity(c, false))
-                .collect(Collectors.toList());
-
-        return new PageResponseDTO<>(dtos, claims.getNumber(), claims.getSize(), claims.getTotalElements(), claims.getTotalPages(), claims.isLast());
-    }
-
-    public PageResponseDTO<ClaimResponseDTO> getMyReceivedClaims(String userEmail, int page, int size) {
-        User publisher = userLookupService.getByEmailOrThrow(userEmail);
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Claim> claims = claimRepository.findByPublicationUserOrderByClaimDateDesc(publisher, pageable);
-
-        List<ClaimResponseDTO> dtos = claims.getContent().stream()
-                .map(c -> ClaimResponseDTO.fromEntity(c, true))
-                .collect(Collectors.toList());
-
-        return new PageResponseDTO<>(dtos, claims.getNumber(), claims.getSize(), claims.getTotalElements(), claims.getTotalPages(), claims.isLast());
     }
 
 }

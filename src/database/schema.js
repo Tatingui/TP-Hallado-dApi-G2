@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({name: 'cache_entries', columns: [
       {name:'owner',type:'string',isIndexed:true},
@@ -52,6 +52,22 @@ export default appSchema({
         { name: 'last_error', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
+      ],
+    }),
+
+    tableSchema({
+      name: 'claim_notifications',
+      columns: [
+        { name: 'owner', type: 'string', isIndexed: true },
+        { name: 'claim_id', type: 'number', isIndexed: true },
+        { name: 'publication_id', type: 'number', isOptional: true, isIndexed: true },
+        { name: 'type', type: 'string', isIndexed: true },
+        { name: 'event_key', type: 'string', isIndexed: true },
+        { name: 'title', type: 'string', isOptional: true },
+        { name: 'message', type: 'string', isOptional: true },
+        { name: 'payload_json', type: 'string', isOptional: true },
+        { name: 'received_at', type: 'number', isIndexed: true },
+        { name: 'read_at', type: 'number', isOptional: true },
       ],
     }),
 

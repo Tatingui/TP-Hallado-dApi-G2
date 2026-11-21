@@ -35,6 +35,7 @@ export const linkConfig = {
     MyAlerts: 'profile/alerts',
     AlertResults: 'profile/alert/:id',
     FollowedPublications: 'profile/followed',
+    ClaimNotifications: 'profile/claim-notifications',
   },
 };
 

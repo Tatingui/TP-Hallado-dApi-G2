@@ -1,18 +1,19 @@
 package com.hallado.backend.repository;
 
-import com.hallado.backend.model.Claim;
-import com.hallado.backend.model.ClaimStatus;
-import com.hallado.backend.model.Publication;
-import com.hallado.backend.model.User;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import com.hallado.backend.model.PublicationType;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.hallado.backend.model.Claim;
+import com.hallado.backend.model.ClaimStatus;
+import com.hallado.backend.model.Publication;
+import com.hallado.backend.model.PublicationType;
+import com.hallado.backend.model.User;
 
 @Repository
 public interface ClaimRepository extends JpaRepository<Claim, Long> {
@@ -20,15 +21,18 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Punto 7: Cada persona tiene un máximo de 3 intentos de reclamo por publicación.
     long countByPublicationAndClaimant(Publication publication, User claimant);
 
-    List<Claim> findByPublication(Publication publication);
-
-    List<Claim> findByPublicationAndStatus(Publication publication, ClaimStatus status);
-
     boolean existsByPublicationAndClaimant_EmailIgnoreCaseAndStatus(
             Publication publication, String claimantEmail, ClaimStatus status);
 
     // Mis reclamos enviados (yo soy el claimant)
     Page<Claim> findByClaimantOrderByClaimDateDesc(User claimant, Pageable pageable);
+
+    List<Claim> findByPublication(Publication publication);
+
+    List<Claim> findByPublicationAndStatus(Publication publication, ClaimStatus status);
+
+    // Obtener el resto de los reclamos pendientes de una publicación (para rechazarlos si acepto uno)
+    List<Claim> findByPublicationAndStatusAndIdNot(Publication publication, ClaimStatus status, Long idToExclude);
 
     // Mis reclamos recibidos (yo soy el publicador)
     Page<Claim> findByPublicationUserOrderByClaimDateDesc(User publisher, Pageable pageable);
@@ -36,8 +40,16 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Buscar reclamos pendientes vencidos (> 48 hs) para tarea programada (cron)
     List<Claim> findByStatusAndClaimDateBefore(ClaimStatus status, LocalDateTime dateTime);
 
-    // Obtener el resto de los reclamos pendientes de una publicación (para rechazarlos si acepto uno)
-    List<Claim> findByPublicationAndStatusAndIdNot(Publication publication, ClaimStatus status, Long idToExclude);
+    // Obtener novedades de los reclamos cuando:
+    // - se recibe un reclamo nuevo,
+    // - cambia el estado de un reclamo propio,
+    // - la otra parte propone o modifica el punto de encuentro.
+    @Query("select c from Claim c where " +
+           "(c.publication.user = :user and c.claimDate > :since) or " +
+           "(c.claimant = :user and c.statusChangedAt > :since) or " +
+           "(c.meetingChangedAt > :since and c.meetingProposedBy <> :user and (c.claimant = :user or c.publication.user = :user)) " +
+           "order by c.claimDate desc")
+    List<Claim> findNovedades(User user, LocalDateTime since);
 
     // Un caso es historial cuando el publicador confirmó la entrega (publicación resuelta).
     @Query("select c from Claim c where c.status = com.hallado.backend.model.ClaimStatus.ACCEPTED " +

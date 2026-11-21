@@ -8,12 +8,11 @@ import migrations from './migrations';
 import CacheEntry from './models/CacheEntry';
 import Publication from './models/Publication';
 import PendingOperation from './models/PendingOperation';
+import ClaimNotification from './models/ClaimNotification';
 
-const isNativeBridgeAvailable = !!(
-  NativeModules.WMDatabaseBridge ||
-  NativeModules.DatabaseBridge ||
-  NativeModules.WMDatabaseBridgeManager
-);
+// El tag 4/no-driver aparece si se intenta iniciar SQLite sin el bridge nativo real.
+// WMDatabaseBridgeManager puede existir sin que el bridge necesario esté disponible.
+const isNativeBridgeAvailable = !!NativeModules.WMDatabaseBridge;
 
 let adapter;
 
@@ -46,5 +45,6 @@ export const database = new Database({
     CacheEntry,
     Publication,
     PendingOperation,
+    ClaimNotification,
   ],
 });

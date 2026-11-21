@@ -16,4 +16,21 @@ addColumns({table:'pending_operations',columns:[{name:'publication_local_id',typ
 createTable({name:'cache_entries',columns:[{name:'owner',type:'string',isIndexed:true},{name:'cache_key',type:'string',isIndexed:true},{name:'value_json',type:'string'}]})
 ]},
 {toVersion:3,steps:UNUSED_TABLES.map(table => unsafeExecuteSql(`DROP TABLE IF EXISTS ${table};`))},
+{toVersion:4,steps:[
+createTable({
+  name:'claim_notifications',
+  columns:[
+    {name:'owner',type:'string',isIndexed:true},
+    {name:'claim_id',type:'number',isIndexed:true},
+    {name:'publication_id',type:'number',isOptional:true,isIndexed:true},
+    {name:'type',type:'string',isIndexed:true},
+    {name:'event_key',type:'string',isIndexed:true},
+    {name:'title',type:'string',isOptional:true},
+    {name:'message',type:'string',isOptional:true},
+    {name:'payload_json',type:'string',isOptional:true},
+    {name:'received_at',type:'number',isIndexed:true},
+    {name:'read_at',type:'number',isOptional:true},
+  ],
+}),
+]},
 ]});
