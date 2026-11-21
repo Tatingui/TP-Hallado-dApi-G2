@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   },
   loadingBox: {
     flex: 1,
-    justify: "center",
+    justifyContent: "center",
     alignItems: "center",
     padding: 40,
     minHeight: 350,
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     flexDirection: "row",
-    justify: "space-around",
+    justifyContent: "space-around",
     backgroundColor: "rgba(0,0,0,0.75)",
     borderRadius: 14,
     paddingVertical: 10,
