@@ -3,6 +3,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { modalStyles } from '../../constants/sharedStyles';
 
 /**
  * Modal que muestra el código QR de entrega para la persona que devuelve el objeto.
@@ -19,7 +20,7 @@ export default function ShowQrModal({ visible, onClose, claim }) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <View style={modalStyles.overlay}>
         <View style={styles.content}>
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray600} />
@@ -48,8 +49,8 @@ export default function ShowQrModal({ visible, onClose, claim }) {
             También podés usar un código QR impreso físico con el identificador del reclamo.
           </Text>
 
-          <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
-            <Text style={styles.doneBtnText}>Cerrar</Text>
+          <TouchableOpacity style={modalStyles.primaryBtn} onPress={onClose}>
+            <Text style={modalStyles.primaryBtnText}>Cerrar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -58,13 +59,6 @@ export default function ShowQrModal({ visible, onClose, claim }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
   content: {
     width: '100%',
     maxWidth: 360,
@@ -133,16 +127,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  doneBtn: {
-    width: '100%',
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  doneBtnText: {
-    color: Colors.surface,
-    fontSize: 15,
-    fontWeight: '700',
-  },
+
 });

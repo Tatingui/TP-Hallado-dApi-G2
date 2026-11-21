@@ -97,3 +97,46 @@ export const sharedStyles = StyleSheet.create({
     gap: 6,
   },
 });
+
+// --- Estilos compartidos de modales (agregados en fix defensa) ---
+export const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+
+  primaryBtn: {
+    flexDirection: "row",
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  primaryBtnText: {
+    color: Colors.surface,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  secondaryBtn: {
+    flexDirection: "row",
+    backgroundColor: Colors.inputBackground,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  secondaryBtnText: {
+    color: Colors.primary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+});

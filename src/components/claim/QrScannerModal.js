@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
+import { modalStyles } from "../../constants/sharedStyles";
 
 /**
  * Modal de escaneo de código QR para confirmar la entrega del objeto.
@@ -183,7 +184,7 @@ export default function QrScannerModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[modalStyles.overlay, { backgroundColor: "rgba(0,0,0,0.75)" }]}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -227,15 +228,15 @@ export default function QrScannerModal({
 
               <View style={styles.permissionActions}>
                 <TouchableOpacity
-                  style={styles.primaryBtn}
+                  style={modalStyles.primaryBtn}
                   onPress={requestPermission}
                 >
                   <Ionicons name="camera" size={18} color={Colors.surface} />
-                  <Text style={styles.primaryBtnText}>Conceder Permiso</Text>
+                  <Text style={modalStyles.primaryBtnText}>Conceder Permiso</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.secondaryBtn}
+                  style={modalStyles.secondaryBtn}
                   onPress={openSettings}
                 >
                   <Ionicons
@@ -243,13 +244,13 @@ export default function QrScannerModal({
                     size={18}
                     color={Colors.primary}
                   />
-                  <Text style={styles.secondaryBtnText}>
+                  <Text style={modalStyles.secondaryBtnText}>
                     Ir a Configuración
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.secondaryBtn}
+                  style={modalStyles.secondaryBtn}
                   onPress={handlePickFromGallery}
                 >
                   <Ionicons
@@ -257,7 +258,7 @@ export default function QrScannerModal({
                     size={18}
                     color={Colors.primary}
                   />
-                  <Text style={styles.secondaryBtnText}>
+                  <Text style={modalStyles.secondaryBtnText}>
                     Elegir foto de la galería
                   </Text>
                 </TouchableOpacity>
@@ -390,12 +391,6 @@ export default function QrScannerModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
-    padding: 16,
-  },
   container: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
@@ -461,34 +456,7 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 8,
   },
-  primaryBtn: {
-    flexDirection: "row",
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  primaryBtnText: {
-    color: Colors.surface,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  secondaryBtn: {
-    flexDirection: "row",
-    backgroundColor: Colors.inputBackground,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  secondaryBtnText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
+
   textBtn: {
     paddingVertical: 8,
     alignItems: "center",
