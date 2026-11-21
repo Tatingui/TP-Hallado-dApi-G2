@@ -172,17 +172,22 @@ export default function QrScannerModal({
           setDecodingImage(false);
           Alert.alert(
             "QR no detectado",
-            "No se encontró un código QR en la imagen. Podés ingresar el código manualmente.",
-            [{ text: "Entendido" }],
+            "No se encontró un código QR en la imagen.",
+            [
+              { text: "Reintentar", onPress: handlePickFromGallery },
+              { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
+            ],
           );
         }
       } catch (decodeErr) {
         setDecodingImage(false);
-        setShowManualInput(true);
         Alert.alert(
           "No se pudo leer",
-          "No se pudo procesar la imagen. Probá con otra foto o ingresá el código manualmente.",
-          [{ text: "Entendido" }],
+          "No se pudo procesar la imagen.",
+          [
+            { text: "Reintentar", onPress: handlePickFromGallery },
+            { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
+          ],
         );
       }
     } catch (err) {
@@ -231,7 +236,12 @@ export default function QrScannerModal({
             </TouchableOpacity>
           </View>
 
-          {isProcessing ? (
+          {decodingImage ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Validando código QR...</Text>
+            </View>
+          ) : isProcessing ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator size="large" color={Colors.primary} />
               <Text style={styles.loadingText}>Confirmando entrega...</Text>
@@ -416,14 +426,9 @@ export default function QrScannerModal({
                 </View>
               )}
 
-              {decodingImage && (
-                <View style={styles.decodingOverlay}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                  <Text style={styles.decodingText}>Leyendo código QR...</Text>
-                </View>
-              )}
             </View>
           )}
+
         </View>
       </View>
     </Modal>
