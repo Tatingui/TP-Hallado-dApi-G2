@@ -160,36 +160,39 @@ export default function QrScannerModal({
 
       setDecodingImage(true);
 
-      try {
-        const rawBuffer = Buffer.from(base64, "base64");
-        const { data, width, height } = jpeg.decode(rawBuffer, { useTArray: true });
-        const code = jsQR(new Uint8ClampedArray(data), width, height);
+      // setTimeout para que React renderice el spinner antes del trabajo pesado
+      setTimeout(() => {
+        try {
+          const rawBuffer = Buffer.from(base64, "base64");
+          const { data, width, height } = jpeg.decode(rawBuffer, { useTArray: true });
+          const code = jsQR(new Uint8ClampedArray(data), width, height);
 
-        if (code && code.data) {
-          setDecodingImage(false);
-          processScannedData(code.data, false);
-        } else {
+          if (code && code.data) {
+            setDecodingImage(false);
+            processScannedData(code.data, false);
+          } else {
+            setDecodingImage(false);
+            Alert.alert(
+              "QR no detectado",
+              "No se encontró un código QR en la imagen.",
+              [
+                { text: "Reintentar", onPress: handlePickFromGallery },
+                { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
+              ],
+            );
+          }
+        } catch (decodeErr) {
           setDecodingImage(false);
           Alert.alert(
-            "QR no detectado",
-            "No se encontró un código QR en la imagen.",
+            "No se pudo leer",
+            "No se pudo procesar la imagen.",
             [
               { text: "Reintentar", onPress: handlePickFromGallery },
               { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
             ],
           );
         }
-      } catch (decodeErr) {
-        setDecodingImage(false);
-        Alert.alert(
-          "No se pudo leer",
-          "No se pudo procesar la imagen.",
-          [
-            { text: "Reintentar", onPress: handlePickFromGallery },
-            { text: "Ingresar manual", onPress: () => setShowManualInput(true) },
-          ],
-        );
-      }
+      }, 100);
     } catch (err) {
       Alert.alert("Error", "No se pudo abrir la galería de fotos.");
     }
