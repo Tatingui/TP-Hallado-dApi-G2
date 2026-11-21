@@ -15,11 +15,9 @@ import {
 } from '../services/claimService';
 import { ClaimStatus } from '../constants/publicationConstants';
 import {
-  fetchAndSaveClaimNotifications,
   getClaimNotifications,
-  getClaimNotificationNavigation,
 } from '../repositories/claimNotificationRepository';
-import * as Notifications from "expo-notifications";
+import { subscribeNovedades } from '../services/novedadesListener';
 
 /**
  * Hook que encapsula la lógica de "Mis Reclamos": carga paginada de enviados/recibidos,
@@ -49,6 +47,7 @@ export default function useClaims(activeTab) {
   const requestRef = useRef(0);
 
   // Punto 7 "siempre actualizados": recarga al entrar a la pestaña y al cambiar entre Enviados y Recibidos.
+  // El loop de novedades vive en App (novedadesListener); acá solo se lee la bandeja local.
   const fetchClaimNotifications = async () => {
     const session = peekDatabaseSession();
     if (!token || !session) {
@@ -56,18 +55,6 @@ export default function useClaims(activeTab) {
       return;
     }
     try {
-      const saved = await fetchAndSaveClaimNotifications(token, session);
-      for (const notification of saved) {
-        const navigationData = getClaimNotificationNavigation(notification);
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: notification.title,
-            body: notification.message,
-            data: navigationData,
-          },
-          trigger: null,
-        });
-      }
       setClaimNotifications(await getClaimNotifications(session));
     } catch (error) {
       console.warn("Error cargando novedades de reclamos:", error);
@@ -82,12 +69,15 @@ export default function useClaims(activeTab) {
     }, [activeTab])
   );
 
+  // Cuando llega una novedad nueva se actualiza el indicador de no leídas
+  // (y la lista, que puede haber cambiado de estado).
   useEffect(() => {
     if (!token) return undefined;
-    fetchClaimNotifications();
-    const pollingInterval = setInterval(fetchClaimNotifications, 30000);
-    return () => clearInterval(pollingInterval);
-  }, [token]);
+    return subscribeNovedades((saved) => {
+      fetchClaimNotifications();
+      if (saved.length > 0) fetchClaims(0, false);
+    });
+  }, [token, activeTab]);
 
   const fetchClaims = async (pageToFetch = 0, isInitial = false) => {
     const request = ++requestRef.current;

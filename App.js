@@ -7,7 +7,7 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import { startSyncCoordinator } from "./src/sync/syncCoordinator";
 import { registrarTareaBackground } from "./src/tasks/backgroundNotificationsTask";
 import { navigationRef } from "./src/navigation/navigationRef";
-import { fetchAndSaveClaimNotifications } from "./src/repositories/claimNotificationRepository";
+import { iniciarEscuchaNovedades } from "./src/services/novedadesListener";
 import { peekDatabaseSession } from "./src/database/session";
 
 function GlobalOfflineSyncWatcher({ children }) {
@@ -19,43 +19,20 @@ function GlobalOfflineSyncWatcher({ children }) {
 }
 
 function GlobalClaimNotificationsPoller() {
-  const { token } = useAuth();
+  const { token, user, loading } = useAuth();
 
+  // Loop de long polling que vive mientras haya sesión; el cleanup lo corta al cerrar sesión.
   useEffect(() => {
-    if (!token) return undefined;
+    if (!token || !user || loading) return undefined;
+    const session = peekDatabaseSession();
+    if (!session) return undefined;
+    return iniciarEscuchaNovedades(token, session);
+  }, [token, user, loading]);
 
-    const checkNotifications = async () => {
-      const session = peekDatabaseSession();
-      if (!session) return;
-
-      try {
-        const saved = await fetchAndSaveClaimNotifications(token, session);
-        for (const notification of saved) {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: notification.title,
-              body: notification.message,
-              data: notification.claimId
-                ? {
-                    claimId: String(notification.claimId),
-                    tab: notification.type === "CLAIM_RECEIVED"
-                      || notification.type === "MEETING_POINT_PROPOSED"
-                      ? "received"
-                      : "sent",
-                  }
-                : {},
-            },
-            trigger: null,
-          });
-        }
-      } catch (error) {
-        console.warn("[novedades] Error consultando reclamos:", error);
-      }
-    };
-
-    checkNotifications();
-    const interval = setInterval(checkNotifications, 30000);
-    return () => clearInterval(interval);
+  // La tarea de background se registra con sesión activa (logout la desregistra,
+  // así que hay que volver a registrarla al iniciar sesión de nuevo).
+  useEffect(() => {
+    if (token) registrarTareaBackground();
   }, [token]);
 
   return null;
@@ -65,26 +42,22 @@ function GlobalClaimNotificationsPoller() {
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
   }),
 });
 
 export default function App() {
-  // Al montar la app: pedimos permiso de notificaciones y registramos la tarea background.
-  // Se piden permisos apenas se abre la app porque esto está en el componente de mayor jerarquía.
-  // Solo se ejecuta una vez (array vacío []) para no duplicar el registro.
+  // Al montar la app: pedimos permiso de notificaciones (sin permiso no se muestra nada).
   useEffect(() => {
-    const inicializar = async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
+    Notifications.requestPermissionsAsync().then(({ status }) => {
       if (status !== "granted") {
         console.warn("[App] Permiso de notificaciones denegado");
-        return;
       }
-      await registrarTareaBackground();
-    };
-    inicializar();
+    });
   }, []);
+
 
   useEffect(() => {
     const openClaimFromNotification = (response) => {

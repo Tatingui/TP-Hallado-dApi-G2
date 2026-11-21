@@ -17,6 +17,12 @@ public class ClaimResponseDTO {
     private String barrio; // "Lo encontré": dónde se encontró el objeto
     private LocalDateTime claimDate;
 
+    // Fecha (reloj del servidor) de la última novedad del reclamo. La app la usa como cursor "ultimaFecha".
+    private LocalDateTime fecha;
+
+    // Tipo de novedad para quien consulta: CLAIM_RECEIVED, CLAIM_<ESTADO> o MEETING_POINT_PROPOSED
+    private String novedadTipo;
+
     // Verificación: respuesta del reclamante y pregunta/respuesta esperada (solo para el publicador)
     private String verificationAnswer;
     private String verificationQuestion;
@@ -158,6 +164,10 @@ public class ClaimResponseDTO {
     // Getters and Setters...
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public String getNovedadTipo() { return novedadTipo; }
+    public void setNovedadTipo(String novedadTipo) { this.novedadTipo = novedadTipo; }
     public ClaimStatus getStatus() { return status; }
     public void setStatus(ClaimStatus status) { this.status = status; }
     public String getProofMessage() { return proofMessage; }

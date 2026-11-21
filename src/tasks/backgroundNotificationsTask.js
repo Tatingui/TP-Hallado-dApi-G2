@@ -6,7 +6,7 @@ import { getToken } from "../storage/authStorage";
 import { peekDatabaseSession } from "../database/session";
 import {
   fetchAndSaveClaimNotifications,
-  getClaimNotificationNavigation,
+  notifyClaimNotifications,
 } from "../repositories/claimNotificationRepository";
 
 // Nombre único de la tarea; debe coincidir en defineTask y registerTaskAsync
@@ -31,22 +31,11 @@ TaskManager.defineTask(TASK_NAME, async () => {
     // Si el backend devuelve un array con al menos un elemento, hay novedades
     if (Array.isArray(novedades) && novedades.length > 0) {
       // Disparamos una notificación local inmediata (trigger: null = ahora)
-      for (const novedad of novedades) {
-        const navigationData = getClaimNotificationNavigation(novedad);
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: novedad.title || "Hay novedades",
-            body: novedad.message || "Tenés notificaciones nuevas",
-            data: navigationData,
-          },
-          trigger: null,
-        });
-      }
-      return BackgroundTaskResult.Success;
+      await notifyClaimNotifications(novedades, Notifications);
     }
 
-    // Sin novedades: la tarea se completó pero no había nada que hacer
-    return BackgroundTaskResult.Failed;
+    // Sin novedades también es una ejecución correcta: no es un error
+    return BackgroundTaskResult.Success;
   } catch (error) {
     // Error de red o de parseo — el SO puede usar esto para ajustar la frecuencia
     console.warn("[background-task] Error al chequear novedades:", error);

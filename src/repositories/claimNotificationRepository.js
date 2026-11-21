@@ -9,7 +9,10 @@ import { readLocal, writeLocal } from "../database/localStore";
 import { API_URL } from "../constants/apiConfig";
 
 function getNotificationText(claim) {
-  if (claim?.meetingStatus === "PROPOSED") {
+  // El backend indica qué le pasó a ESTA persona (novedadTipo), según su rol en el reclamo.
+  // Así el publicador no recibe "Tu reclamo fue rechazado" por algo que hizo él mismo.
+  const tipo = claim?.novedadTipo;
+  if (tipo === "MEETING_POINT_PROPOSED") {
     return {
       type: "MEETING_POINT_PROPOSED",
       title: "Punto de encuentro actualizado",
@@ -21,12 +24,13 @@ function getNotificationText(claim) {
 
   const statusText = {
     PENDING: ["CLAIM_RECEIVED", "Nuevo reclamo recibido", "Recibiste un reclamo nuevo."],
+    RECEIVED: ["CLAIM_RECEIVED", "Nuevo reclamo recibido", "Recibiste un reclamo nuevo."],
     ACCEPTED: ["CLAIM_ACCEPTED", "Reclamo aceptado", "Tu reclamo fue aceptado."],
     REJECTED: ["CLAIM_REJECTED", "Reclamo rechazado", "Tu reclamo fue rechazado."],
     CANCELLED: ["CLAIM_CANCELLED", "Reclamo cancelado", "El reclamo fue cancelado."],
     EXPIRED: ["CLAIM_EXPIRED", "Reclamo vencido", "El reclamo venció."],
   };
-  const status = statusText[claim?.status];
+  const status = statusText[tipo?.replace("CLAIM_", "") || claim?.status];
   if (status) {
     return { type: status[0], title: status[1], message: status[2] };
   }
@@ -111,14 +115,30 @@ export async function saveClaimNotifications(items, session = getDatabaseSession
   });
 }
 
-export async function fetchAndSaveClaimNotifications(token, session = peekDatabaseSession()) {
+// El cursor es la `fecha` que informa el SERVIDOR (no el reloj ni la zona horaria del
+// teléfono). La clave es nueva: la vieja guardaba la hora del teléfono en UTC, que
+// quedaba por delante de la hora del servidor y ocultaba todas las novedades.
+const CURSOR_KEY = "novedades_ultima_fecha_servidor";
+
+/**
+ * Una única consulta (long polling) a /novedades. El servidor retiene la respuesta hasta
+ * 25 s; si no hay novedades responde 204.
+ * Devuelve las novedades NUEVAS guardadas en la bandeja, para que quien llama las notifique.
+ * En la primera sincronización se guarda el historial pero no se devuelve, para no
+ * disparar una notificación por cada reclamo viejo.
+ */
+export async function fetchAndSaveClaimNotifications(
+  token,
+  session = peekDatabaseSession(),
+  signal,
+) {
   if (!token || !session) return [];
 
-  const storedSince = await readLocal("novedades_ultima_fecha", null, session);
+  const storedSince = await readLocal(CURSOR_KEY, null, session);
   const since = storedSince || "1970-01-01T00:00:00";
   const response = await fetch(
     `${API_URL}/novedades?ultimaFecha=${encodeURIComponent(since)}`,
-    { headers: { Authorization: `Bearer ${token}` } },
+    { headers: { Authorization: `Bearer ${token}` }, signal },
   );
 
   if (!response.ok) {
@@ -132,12 +152,27 @@ export async function fetchAndSaveClaimNotifications(token, session = peekDataba
   if (!Array.isArray(novedades) || novedades.length === 0) return [];
 
   const saved = await saveClaimNotifications(novedades, session);
-  await writeLocal(
-    "novedades_ultima_fecha",
-    new Date().toISOString().replace("Z", ""),
-    session,
-  );
-  return saved;
+  const ultimaFecha = novedades
+    .map((novedad) => novedad.fecha)
+    .filter(Boolean)
+    .sort()
+    .pop();
+  if (ultimaFecha) await writeLocal(CURSOR_KEY, ultimaFecha, session);
+  return storedSince ? saved : [];
+}
+
+/** Dispara la notificación local de cada novedad guardada (se ve aun con la app cerrada o en segundo plano). */
+export async function notifyClaimNotifications(saved, Notifications) {
+  for (const notification of saved) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: notification.title,
+        body: notification.message,
+        data: getClaimNotificationNavigation(notification),
+      },
+      trigger: null,
+    });
+  }
 }
 
 export function getClaimNotificationNavigation(notification) {

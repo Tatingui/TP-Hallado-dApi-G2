@@ -2,7 +2,9 @@ package com.hallado.backend.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -269,11 +271,49 @@ public class ClaimService {
     public List<ClaimResponseDTO> getNovedades(String email, LocalDateTime since) {
         User user = userLookupService.getByEmailOrThrow(email);
         return claimRepository.findNovedades(user, since).stream()
-                .map(claim -> {
-                    boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
-                    return ClaimResponseDTO.fromEntity(claim, isPublisher);
-                })
+                .map(claim -> toNovedad(claim, user, since))
+                .filter(Objects::nonNull)
+                // Ascendente: el último elemento es la novedad más reciente (cursor del cliente)
+                .sorted(Comparator.comparing(ClaimResponseDTO::getFecha))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Arma la novedad desde el punto de vista de quien consulta. Solo se avisa lo que hizo la
+     * OTRA parte: el publicador no se entera de sus propias acciones (aceptar/rechazar) ni
+     * quien reclama de las suyas. Devuelve null si no hay nada para avisarle.
+     */
+    private ClaimResponseDTO toNovedad(Claim claim, User user, LocalDateTime since) {
+        boolean isPublisher = claim.getPublication().getUser().getId().equals(user.getId());
+        String tipo = null;
+        LocalDateTime fecha = null;
+
+        boolean meetingByOther = claim.getMeetingChangedAt() != null
+                && claim.getMeetingChangedAt().isAfter(since)
+                && claim.getMeetingProposedBy() != null
+                && !claim.getMeetingProposedBy().getId().equals(user.getId());
+
+        if (isPublisher) {
+            // Reclamo nuevo (solo si sigue pendiente: si ya lo resolvió, no hay nada que avisarle)
+            if (claim.getClaimDate().isAfter(since) && claim.getStatus() == ClaimStatus.PENDING) {
+                tipo = "CLAIM_RECEIVED";
+                fecha = claim.getClaimDate();
+            }
+        } else if (claim.getStatusChangedAt() != null && claim.getStatusChangedAt().isAfter(since)) {
+            tipo = "CLAIM_" + claim.getStatus().name();
+            fecha = claim.getStatusChangedAt();
+        }
+
+        if (meetingByOther && (fecha == null || claim.getMeetingChangedAt().isAfter(fecha))) {
+            tipo = "MEETING_POINT_PROPOSED";
+            fecha = claim.getMeetingChangedAt();
+        }
+        if (tipo == null) return null;
+
+        ClaimResponseDTO dto = ClaimResponseDTO.fromEntity(claim, isPublisher);
+        dto.setNovedadTipo(tipo);
+        dto.setFecha(fecha);
+        return dto;
     }
 
     @Transactional(readOnly = true)

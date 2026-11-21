@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -17,6 +17,7 @@ import {
   markClaimNotificationAsRead,
   getClaimNotificationNavigation,
 } from "../../repositories/claimNotificationRepository";
+import { subscribeNovedades } from "../../services/novedadesListener";
 
 function formatReceivedAt(receivedAt) {
   if (!receivedAt) return "";
@@ -46,6 +47,9 @@ export default function ClaimNotificationsScreen() {
       loadNotifications();
     }, [loadNotifications]),
   );
+
+  // Si llega una novedad con la bandeja abierta, se actualiza sola
+  useEffect(() => subscribeNovedades(() => loadNotifications()), [loadNotifications]);
 
   const handleRefresh = () => {
     setRefreshing(true);

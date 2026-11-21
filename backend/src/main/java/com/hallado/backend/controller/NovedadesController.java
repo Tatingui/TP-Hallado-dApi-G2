@@ -2,6 +2,7 @@ package com.hallado.backend.controller;
 
 import com.hallado.backend.dto.ClaimResponseDTO;
 import com.hallado.backend.service.ClaimService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +28,9 @@ public class NovedadesController {
 
     @GetMapping
     public ResponseEntity<List<ClaimResponseDTO>> novedades(
-            @RequestParam(required = false) LocalDateTime ultimaFecha,
+            // Sin @DateTimeFormat Spring no parsea el ISO que manda la app (responde 400)
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ultimaFecha,
             Authentication authentication
     ) throws InterruptedException {
         LocalDateTime since = ultimaFecha != null ? ultimaFecha : LocalDateTime.of(1970, 1, 1, 0, 0);
