@@ -49,9 +49,6 @@ export default function ShowQrModal({ visible, onClose, claim }) {
             También podés usar un código QR impreso físico con el identificador del reclamo.
           </Text>
 
-          <TouchableOpacity style={modalStyles.primaryBtn} onPress={onClose}>
-            <Text style={modalStyles.primaryBtnText}>Cerrar</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>

@@ -36,6 +36,7 @@ export default function QrScannerModal({
   const [manualCode, setManualCode] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
   const [facing, setFacing] = useState("back");
+  const [decodingImage, setDecodingImage] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -138,10 +139,11 @@ export default function QrScannerModal({
   };
 
   const handlePickFromGallery = async () => {
+    if (decodingImage) return;
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.5,
         base64: true,
       });
 
@@ -156,15 +158,18 @@ export default function QrScannerModal({
         return;
       }
 
+      setDecodingImage(true);
+
       try {
         const rawBuffer = Buffer.from(base64, "base64");
         const { data, width, height } = jpeg.decode(rawBuffer, { useTArray: true });
         const code = jsQR(new Uint8ClampedArray(data), width, height);
 
         if (code && code.data) {
+          setDecodingImage(false);
           processScannedData(code.data, false);
         } else {
-          setShowManualInput(true);
+          setDecodingImage(false);
           Alert.alert(
             "QR no detectado",
             "No se encontró un código QR en la imagen. Podés ingresar el código manualmente.",
@@ -172,6 +177,7 @@ export default function QrScannerModal({
           );
         }
       } catch (decodeErr) {
+        setDecodingImage(false);
         setShowManualInput(true);
         Alert.alert(
           "No se pudo leer",
@@ -211,7 +217,7 @@ export default function QrScannerModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={[modalStyles.overlay, { backgroundColor: "rgba(0,0,0,0.75)" }]}>
+      <View style={[modalStyles.overlay, { backgroundColor: "rgba(0,0,0,0.75)", alignItems: "stretch" }]}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -409,6 +415,13 @@ export default function QrScannerModal({
                   </TouchableOpacity>
                 </View>
               )}
+
+              {decodingImage && (
+                <View style={styles.decodingOverlay}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={styles.decodingText}>Leyendo código QR...</Text>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -580,16 +593,33 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     zIndex: 10,
   },
+  decodingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 20,
+  },
+  decodingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
   galleryBarBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 6,
   },
   galleryBarBtnText: {
     color: Colors.surface,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "600",
   },
 });
