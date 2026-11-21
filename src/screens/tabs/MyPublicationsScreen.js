@@ -126,14 +126,14 @@ export default function MyPublicationsScreen() {
             {item.title}
           </Text>
 
-          <View style={shared.metaRow}>
-            <View style={shared.metaItem}>
+          <View style={sharedStyles.metaRow}>
+            <View style={sharedStyles.metaItem}>
               <Ionicons name="folder-outline" size={14} color={Colors.textSecondary} />
-              <Text style={shared.metaText}>{getCategoryLabel(item.category)}</Text>
+              <Text style={sharedStyles.metaText}>{getCategoryLabel(item.category)}</Text>
             </View>
-            <View style={shared.metaItem}>
+            <View style={sharedStyles.metaItem}>
               <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-              <Text style={shared.metaText}>{item.barrio || "Sin barrio"}</Text>
+              <Text style={sharedStyles.metaText}>{item.barrio || "Sin barrio"}</Text>
             </View>
           </View>
 

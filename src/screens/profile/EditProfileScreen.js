@@ -10,7 +10,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
-import { shared } from "../../constants/sharedStyles";
+import { sharedStyles as shared } from "../../constants/sharedStyles";
 import useEditProfile from "../../hooks/useEditProfile";
 import EditProfileField from "../../components/profile/EditProfileField";
 import EditProfileImagePicker from "../../components/profile/EditProfileImagePicker";
