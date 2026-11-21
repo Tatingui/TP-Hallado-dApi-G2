@@ -2,9 +2,12 @@ import * as BackgroundTask from "expo-background-task";
 import { BackgroundTaskResult } from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
-
-// URL base del backend — apuntar al servidor real antes de usar en producción
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+import { getToken } from "../storage/authStorage";
+import { peekDatabaseSession } from "../database/session";
+import {
+  fetchAndSaveClaimNotifications,
+  getClaimNotificationNavigation,
+} from "../repositories/claimNotificationRepository";
 
 // Nombre único de la tarea; debe coincidir en defineTask y registerTaskAsync
 const TASK_NAME = "chequear-novedades";
@@ -18,26 +21,27 @@ TaskManager.defineTask(TASK_NAME, async () => {
     // expo-background-task ejecuta esta función una sola vez y la termina;
     // no es posible mantener una conexión HTTP abierta en background con esta API.
     // Para long polling real en background se necesitaría un servidor push (FCM/APNs).
-    const respuesta = await fetch(`${BASE_URL}/novedades`);
+    const token = await getToken();
+    if (!token) return BackgroundTaskResult.Failed;
 
-    if (!respuesta.ok) {
-      // Respuesta HTTP de error (4xx, 5xx) → reportamos fallo
-      return BackgroundTaskResult.Failed;
-    }
-
-    const novedades = await respuesta.json();
+    const session = peekDatabaseSession();
+    if (!session) return BackgroundTaskResult.Failed;
+    const novedades = await fetchAndSaveClaimNotifications(token, session);
 
     // Si el backend devuelve un array con al menos un elemento, hay novedades
     if (Array.isArray(novedades) && novedades.length > 0) {
       // Disparamos una notificación local inmediata (trigger: null = ahora)
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Hay novedades",
-          // Usamos el primer mensaje si existe; fallback genérico si no
-          body: novedades[0]?.mensaje ?? "Tenés notificaciones nuevas",
-        },
-        trigger: null,
-      });
+      for (const novedad of novedades) {
+        const navigationData = getClaimNotificationNavigation(novedad);
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: novedad.title || "Hay novedades",
+            body: novedad.message || "Tenés notificaciones nuevas",
+            data: navigationData,
+          },
+          trigger: null,
+        });
+      }
       return BackgroundTaskResult.Success;
     }
 

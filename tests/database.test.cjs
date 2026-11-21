@@ -14,6 +14,7 @@ require.extensions['.js'] = (mod, filename) => {
   mod._compile(code, filename);
 };
 const { Database } = require('@nozbe/watermelondb');
+const { Q } = require('@nozbe/watermelondb');
 const LokiAdapter = require('@nozbe/watermelondb/adapters/lokijs').default;
 const schema = require('../src/database/schema').default;
 const migrations = require('../src/database/migrations').default;
@@ -39,8 +40,41 @@ const sessions = require('../src/database/session');
 const publications = require('../src/repositories/publicationRepository');
 const pending = require('../src/repositories/pendingRepository');
 const local = require('../src/database/localStore');
+const claimNotifications = require('../src/repositories/claimNotificationRepository');
 
 test.after(() => database.adapter.underlyingAdapter._driver.loki.close());
+
+test('claim_notifications table stores records by account', async () => {
+  sessions.setDatabaseSession('a@example.com', 'a');
+  await claimNotifications.saveClaimNotifications([{
+    id: 7,
+    publicationId: 12,
+    status: 'ACCEPTED',
+    meetingStatus: 'PROPOSED',
+    meetingAddress: 'Plaza Serrano',
+  }]);
+  await claimNotifications.saveClaimNotifications([{
+    id: 7,
+    publicationId: 12,
+    status: 'ACCEPTED',
+    meetingStatus: 'PROPOSED',
+    meetingAddress: 'Plaza Serrano',
+  }]);
+
+  sessions.setDatabaseSession('a@example.com', 'a');
+  const ownRows = await claimNotifications.getClaimNotifications();
+  assert.equal(ownRows.length, 1);
+  assert.equal(ownRows[0].claimId, 7);
+  await claimNotifications.markClaimNotificationAsRead(ownRows[0].id);
+  const readRows = await claimNotifications.getClaimNotifications();
+  assert.ok(readRows[0].readAt);
+
+  sessions.setDatabaseSession('b@example.com', 'b');
+  const otherRows = await database.get('claim_notifications')
+    .query(Q.where('owner', 'b'))
+    .fetch();
+  assert.equal(otherRows.length, 0);
+});
 
 test('WatermelonDB domain operations (Loki test adapter): account isolation, upsert, durable queue and migration replay', async () => {
   sessions.setDatabaseSession('a@example.com', 'a');

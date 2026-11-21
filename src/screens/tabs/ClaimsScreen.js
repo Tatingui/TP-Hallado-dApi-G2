@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   View,
@@ -19,18 +19,35 @@ import useClaims from '../../hooks/useClaims';
 
 export default function ClaimsScreen() {
   const navigation = useNavigation();
-  const { tab } = useRoute().params ?? {};
+  const { tab, claimId } = useRoute().params ?? {};
 
   const [selectedTab, setActiveTab] = useState('SENT');
+  const [highlightedClaimId, setHighlightedClaimId] = useState(
+    claimId != null ? String(claimId) : null,
+  );
+  const claimsListRef = useRef(null);
   const activeTab = tab === 'received' ? 'RECEIVED' : tab === 'sent' ? 'SENT' : selectedTab;
 
   useEffect(() => {
     if (tab === 'received' || tab === 'sent') {
       setActiveTab(tab === 'received' ? 'RECEIVED' : 'SENT');
-      // Consumir el destino permite volver a pedirlo tras cambiar de pestaña manualmente.
-      navigation.setParams({ tab: undefined });
     }
-  }, [tab, navigation]);
+    if (claimId != null) {
+      setHighlightedClaimId(String(claimId));
+    }
+    if (tab === 'received' || tab === 'sent' || claimId != null) {
+      // Consumir el destino permite volver a pedirlo tras cambiar de pestaña manualmente.
+      navigation.setParams({ tab: undefined, claimId: undefined });
+    }
+  }, [tab, claimId, navigation]);
+
+  useEffect(() => {
+    if (!highlightedClaimId) return;
+    const index = claims.findIndex((claim) => String(claim.id) === highlightedClaimId);
+    if (index >= 0) {
+      claimsListRef.current?.scrollToIndex({ index, animated: true });
+    }
+  }, [highlightedClaimId, claims]);
 
   // La carga, la paginación y las acciones viven en useClaims; su efecto corre después del de la pestaña, como antes.
   const {
@@ -43,6 +60,7 @@ export default function ClaimsScreen() {
     meetingClaim,
     setMeetingClaim,
     isSubmittingMeeting,
+    claimNotifications,
     handleRefresh,
     handleLoadMore,
     handleRespond,
@@ -51,12 +69,32 @@ export default function ClaimsScreen() {
     handleConfirmDelivery,
     handleCancelClaim,
   } = useClaims(activeTab);
+  const unreadNotifications = claimNotifications.filter(
+    (notification) => !notification.readAt,
+  ).length;
 
   return (
     <View style={styles.container}>
       {/* Header and Tabs */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis Reclamos</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.headerTitle}>Mis Reclamos</Text>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate("ClaimNotifications")}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir novedades"
+          >
+            <Ionicons name="notifications-outline" size={24} color={Colors.text} />
+            {unreadNotifications > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'SENT' && styles.tabActive]}
@@ -91,24 +129,33 @@ export default function ClaimsScreen() {
         </View>
       ) : (
         <FlatList
+          ref={claimsListRef}
           data={claims}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
-            <ClaimCard
-              isOfflineMode={isOfflineMode}
-              claim={item}
-              type={activeTab}
-              onOpenPublication={(publicationId) =>
-                navigation.navigate("PublicationDetail", { id: String(publicationId) })
+            <View
+              style={
+                highlightedClaimId && String(item.id) === highlightedClaimId
+                  ? styles.highlightedClaim
+                  : null
               }
-              isProcessing={processingId === item.id}
-              onAccept={(id) => handleRespond(id, ClaimStatus.ACCEPTED)}
-              onReject={(id) => handleRespond(id, ClaimStatus.REJECTED)}
-              onProposeMeeting={(claim) => setMeetingClaim(claim)}
-              onAcceptMeeting={handleAcceptMeeting}
-              onConfirmDelivery={handleConfirmDelivery}
-              onCancelClaim={handleCancelClaim}
-            />
+            >
+              <ClaimCard
+                isOfflineMode={isOfflineMode}
+                claim={item}
+                type={activeTab}
+                onOpenPublication={(publicationId) =>
+                  navigation.navigate("PublicationDetail", { id: String(publicationId) })
+                }
+                isProcessing={processingId === item.id}
+                onAccept={(id) => handleRespond(id, ClaimStatus.ACCEPTED)}
+                onReject={(id) => handleRespond(id, ClaimStatus.REJECTED)}
+                onProposeMeeting={(claim) => setMeetingClaim(claim)}
+                onAcceptMeeting={handleAcceptMeeting}
+                onConfirmDelivery={handleConfirmDelivery}
+                onCancelClaim={handleCancelClaim}
+              />
+            </View>
           )}
           contentContainerStyle={claims.length === 0 ? { flex: 1 } : { padding: 16 }}
           refreshControl={
@@ -153,6 +200,11 @@ export default function ClaimsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  highlightedClaim: {
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
   header: {
     paddingTop: 56,
     paddingHorizontal: 20,
@@ -161,7 +213,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: Colors.text, marginBottom: 12 },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: Colors.text },
+  notificationButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.inputBackground,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    backgroundColor: Colors.error,
+  },
+  notificationBadgeText: {
+    color: Colors.surface,
+    fontSize: 9,
+    fontWeight: '800',
+  },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.inputBackground,

@@ -6,6 +6,9 @@ import { useAuth } from "./src/hooks/useAuth";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { startSyncCoordinator } from "./src/sync/syncCoordinator";
 import { registrarTareaBackground } from "./src/tasks/backgroundNotificationsTask";
+import { navigationRef } from "./src/navigation/navigationRef";
+import { fetchAndSaveClaimNotifications } from "./src/repositories/claimNotificationRepository";
+import { peekDatabaseSession } from "./src/database/session";
 
 function GlobalOfflineSyncWatcher({ children }) {
   const { token, user, loading } = useAuth();
@@ -13,6 +16,49 @@ function GlobalOfflineSyncWatcher({ children }) {
     if (token && user && !loading) return startSyncCoordinator();
   }, [token, user, loading]);
   return children;
+}
+
+function GlobalClaimNotificationsPoller() {
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (!token) return undefined;
+
+    const checkNotifications = async () => {
+      const session = peekDatabaseSession();
+      if (!session) return;
+
+      try {
+        const saved = await fetchAndSaveClaimNotifications(token, session);
+        for (const notification of saved) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: notification.title,
+              body: notification.message,
+              data: notification.claimId
+                ? {
+                    claimId: String(notification.claimId),
+                    tab: notification.type === "CLAIM_RECEIVED"
+                      || notification.type === "MEETING_POINT_PROPOSED"
+                      ? "received"
+                      : "sent",
+                  }
+                : {},
+            },
+            trigger: null,
+          });
+        }
+      } catch (error) {
+        console.warn("[novedades] Error consultando reclamos:", error);
+      }
+    };
+
+    checkNotifications();
+    const interval = setInterval(checkNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  return null;
 }
 
 // Configura cómo mostrar las notificaciones cuando la app está en primer plano
@@ -40,8 +86,39 @@ export default function App() {
     inicializar();
   }, []);
 
+  useEffect(() => {
+    const openClaimFromNotification = (response) => {
+      const data = response.notification.request.content.data || {};
+      if (!data.claimId) return;
+
+      const navigateToClaim = () => {
+        if (!navigationRef.isReady()) return;
+        navigationRef.navigate("Main", {
+          screen: "ClaimsTab",
+          params: {
+            tab: data.tab === "received" ? "received" : "sent",
+            claimId: String(data.claimId),
+          },
+        });
+      };
+
+      if (navigationRef.isReady()) {
+        navigateToClaim();
+      } else {
+        setTimeout(navigateToClaim, 500);
+      }
+    };
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(openClaimFromNotification);
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) openClaimFromNotification(response);
+    });
+    return () => subscription.remove();
+  }, []);
+
   return (
     <AuthProvider>
+      <GlobalClaimNotificationsPoller />
       <GlobalOfflineSyncWatcher>
         <StatusBar style="dark" />
         <AppNavigator />

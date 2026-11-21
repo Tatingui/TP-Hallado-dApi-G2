@@ -14,6 +14,7 @@ import {
   getUserEmail,
   saveSession,
 } from "../storage/authStorage";
+import { desregistrarTareaBackground } from "../tasks/backgroundNotificationsTask";
 
 export const AuthContext = createContext(null);
 

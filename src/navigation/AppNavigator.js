@@ -38,6 +38,7 @@ import ResolvedHistoryScreen from '../screens/profile/ResolvedHistoryScreen';
 import MyAlertsScreen from '../screens/profile/MyAlertsScreen';
 import AlertResultsScreen from '../screens/profile/AlertResultsScreen';
 import FollowedPublicationsScreen from '../screens/profile/FollowedPublicationsScreen';
+import ClaimNotificationsScreen from '../screens/profile/ClaimNotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -166,6 +167,7 @@ export default function AppNavigator() {
           <Stack.Screen name="MyAlerts" component={MyAlertsScreen} />
           <Stack.Screen name="AlertResults" component={AlertResultsScreen} />
           <Stack.Screen name="FollowedPublications" component={FollowedPublicationsScreen} />
+          <Stack.Screen name="ClaimNotifications" component={ClaimNotificationsScreen} />
         </Stack.Group>
       </Stack.Navigator>
     </NavigationContainer>

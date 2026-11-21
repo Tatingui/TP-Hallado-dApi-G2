@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from './useAuth';
+import { peekDatabaseSession } from '../database/session';
 import { checkNetworkConnection, useNetworkStatus } from './useNetworkStatus';
 import {
   getMySentClaimsApi,
@@ -13,6 +14,12 @@ import {
   cancelClaimApi,
 } from '../services/claimService';
 import { ClaimStatus } from '../constants/publicationConstants';
+import {
+  fetchAndSaveClaimNotifications,
+  getClaimNotifications,
+  getClaimNotificationNavigation,
+} from '../repositories/claimNotificationRepository';
+import * as Notifications from "expo-notifications";
 
 /**
  * Hook que encapsula la lógica de "Mis Reclamos": carga paginada de enviados/recibidos,
@@ -35,17 +42,52 @@ export default function useClaims(activeTab) {
   // Punto 8: reclamo sobre el que se está proponiendo un punto de encuentro
   const [meetingClaim, setMeetingClaim] = useState(null);
   const [isSubmittingMeeting, setIsSubmittingMeeting] = useState(false);
+  const [claimNotifications, setClaimNotifications] = useState([]);
 
   // Solo se aplica la respuesta del último pedido: al cambiar rápido de pestaña,
   // una respuesta vieja de Enviados no puede pisar la lista de Recibidos.
   const requestRef = useRef(0);
 
   // Punto 7 "siempre actualizados": recarga al entrar a la pestaña y al cambiar entre Enviados y Recibidos.
+  const fetchClaimNotifications = async () => {
+    const session = peekDatabaseSession();
+    if (!token || !session) {
+      setClaimNotifications([]);
+      return;
+    }
+    try {
+      const saved = await fetchAndSaveClaimNotifications(token, session);
+      for (const notification of saved) {
+        const navigationData = getClaimNotificationNavigation(notification);
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: notification.title,
+            body: notification.message,
+            data: navigationData,
+          },
+          trigger: null,
+        });
+      }
+      setClaimNotifications(await getClaimNotifications(session));
+    } catch (error) {
+      console.warn("Error cargando novedades de reclamos:", error);
+      setClaimNotifications([]);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchClaims(0, true);
+      fetchClaimNotifications();
     }, [activeTab])
   );
+
+  useEffect(() => {
+    if (!token) return undefined;
+    fetchClaimNotifications();
+    const pollingInterval = setInterval(fetchClaimNotifications, 30000);
+    return () => clearInterval(pollingInterval);
+  }, [token]);
 
   const fetchClaims = async (pageToFetch = 0, isInitial = false) => {
     const request = ++requestRef.current;
@@ -89,6 +131,7 @@ export default function useClaims(activeTab) {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchClaims(0, false);
+    fetchClaimNotifications();
   };
 
   const handleLoadMore = () => {
@@ -247,6 +290,7 @@ export default function useClaims(activeTab) {
     meetingClaim,
     setMeetingClaim,
     isSubmittingMeeting,
+    claimNotifications,
     handleRefresh,
     handleLoadMore,
     handleRespond,
