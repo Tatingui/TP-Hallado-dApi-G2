@@ -60,6 +60,25 @@ class PublicationFollowServiceTest {
     }
 
     @Test
+    void marcarComoVistaGuardaElMomentoExactoDeLaVisita() throws Exception {
+        String email = usuario().getEmail();
+        Publication publicacion = publicacion();
+        follows.follow(email, publicacion.getId());
+        publicacion.setStatus(PublicationStatus.IN_CLAIM);
+        publications.saveAndFlush(publicacion);
+        LocalDateTime actualizada = publicacion.getUpdatedAt();
+
+        Thread.sleep(20);
+        LocalDateTime antes = LocalDateTime.now();
+        LocalDateTime vista = follows.markAsSeen(email, publicacion.getId()).lastSeenAt();
+        LocalDateTime despues = LocalDateTime.now();
+
+        assertNotEquals(actualizada, vista);
+        assertFalse(vista.isBefore(antes));
+        assertFalse(vista.isAfter(despues));
+    }
+
+    @Test
     void marcarComoVistaUnaPublicacionNoSeguida() {
         SeenStatusDTO resultado = follows.markAsSeen(usuario().getEmail(), publicacion().getId());
         assertFalse(resultado.seen());

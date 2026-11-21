@@ -3,6 +3,7 @@ import {
   getAlertPublicationsApi,
   markAlertAsSeenApi,
 } from "../services/alertService";
+import { refreshProfileTabBadge } from "../services/profileBadgeRefresher";
 
 /**
  * Hook que encapsula la carga paginada de las publicaciones que coinciden con una alerta.
@@ -31,6 +32,7 @@ export default function useAlertResults(id) {
       setIsLastPage(data?.last ?? true);
       // Se marca como vista después de cargar, así las nuevas siguen marcadas en esta pantalla
       await markAlertAsSeenApi(id);
+      refreshProfileTabBadge().catch(() => {});
     } catch (err) {
       setError(err?.message || "No se pudieron cargar las publicaciones de la alerta.");
     } finally {

@@ -53,14 +53,12 @@ export default function useProfile() {
       const updates = await getFollowedUpdatesCountApi();
       const updatesCount = updates?.count || 0;
       setFollowedUpdatesCount(updatesCount);
-      setProfileTabBadge(updatesCount > 0);
       return updatesCount > 0;
     } catch (err) {
       console.warn("Error cargando publicaciones seguidas:", err);
       setFollowedPublications([]);
       setFollowedTotal(0);
       setFollowedUpdatesCount(0);
-      setProfileTabBadge(false);
       return false;
     }
   }, []);

@@ -13,6 +13,7 @@ import {
   markPublicationAsSeenApi,
   unfollowPublicationApi,
 } from "../services/publicationService";
+import { refreshProfileTabBadge } from "../services/profileBadgeRefresher";
 import {
   savePublicationDetailOffline,
   getOfflinePublicationDetail,
@@ -85,7 +86,10 @@ export default function usePublicationDetail() {
       const followed = Boolean(followStatus?.followed);
       setIsFollowing(followed);
       if (followed) {
-        try { await markPublicationAsSeenApi(pubId); } catch (error) { console.warn("No se pudo marcar como vista:", error.message); }
+        try {
+          await markPublicationAsSeenApi(pubId);
+          refreshProfileTabBadge().catch(() => {});
+        } catch (error) { console.warn("No se pudo marcar como vista:", error.message); }
       }
     } catch {
       setIsFollowing(false);
