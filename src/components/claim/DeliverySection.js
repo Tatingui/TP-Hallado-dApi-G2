@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
-import ShowQrModal from './ShowQrModal';
-import QrScannerModal from './QrScannerModal';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Colors } from "../../constants/theme";
+import QrScannerModal from "./QrScannerModal";
+import ShowQrModal from "./ShowQrModal";
 
 /**
  * Cierre del reclamo aceptado con lectura de QR y alternativa manual.
@@ -26,15 +32,17 @@ export default function DeliverySection({
     return (
       <View style={styles.deliveredBox}>
         <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
-        <Text style={styles.deliveredText}>Entrega confirmada: el caso está en el historial</Text>
+        <Text style={styles.deliveredText}>
+          Entrega confirmada: el caso está en el historial
+        </Text>
       </View>
     );
   }
 
   const disabled = isProcessing || isOfflineMode;
 
-  const isReceived = type === 'RECEIVED';
-  const isFoundPub = claim.publicationType === 'FOUND';
+  const isReceived = type === "RECEIVED";
+  const isFoundPub = claim.publicationType === "FOUND";
 
   // Quien devuelve: Publicador en FOUND, Reclamante en LOST.
   const isDevolver = (isReceived && isFoundPub) || (!isReceived && !isFoundPub);
@@ -48,14 +56,18 @@ export default function DeliverySection({
     <View style={styles.container}>
       <Text style={styles.hint}>
         {isDevolver
-          ? 'Muestra tu código QR al momento de entregar el objeto:'
-          : 'Escanea el código QR para confirmar que recibiste el objeto:'}
+          ? "Muestra tu código QR al momento de entregar el objeto:"
+          : "Escanea el código QR para confirmar que recibiste el objeto:"}
       </Text>
 
       <View style={styles.actionsVertical}>
         {isDevolver ? (
           <TouchableOpacity
-            style={[styles.actionBtn, styles.qrBtn, disabled && styles.disabled]}
+            style={[
+              styles.actionBtn,
+              styles.qrBtn,
+              disabled && styles.disabled,
+            ]}
             onPress={() => setShowQrModalVisible(true)}
             disabled={disabled}
           >
@@ -64,7 +76,11 @@ export default function DeliverySection({
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.actionBtn, styles.scanBtn, disabled && styles.disabled]}
+            style={[
+              styles.actionBtn,
+              styles.scanBtn,
+              disabled && styles.disabled,
+            ]}
             onPress={() => setScannerModalVisible(true)}
             disabled={disabled}
           >
@@ -72,7 +88,11 @@ export default function DeliverySection({
               <ActivityIndicator color={Colors.surface} size="small" />
             ) : (
               <>
-                <Ionicons name="camera-outline" size={18} color={Colors.surface} />
+                <Ionicons
+                  name="camera-outline"
+                  size={18}
+                  color={Colors.surface}
+                />
                 <Text style={styles.scanBtnText}>Escanear QR de entrega</Text>
               </>
             )}
@@ -91,7 +111,11 @@ export default function DeliverySection({
           )}
 
           <TouchableOpacity
-            style={[styles.secondaryBtn, styles.manualBtn, disabled && styles.disabled]}
+            style={[
+              styles.secondaryBtn,
+              styles.manualBtn,
+              disabled && styles.disabled,
+            ]}
             onPress={() => onConfirmDelivery(claim.id)}
             disabled={disabled}
           >
@@ -127,17 +151,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.gray600,
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   actionsVertical: {
     gap: 8,
   },
   actionBtn: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    justify: 'center',
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   qrBtn: {
@@ -145,35 +169,35 @@ const styles = StyleSheet.create({
   },
   qrBtnText: {
     color: Colors.surface,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 14,
   },
   scanBtn: {
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.primary,
   },
   scanBtnText: {
     color: Colors.surface,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 14,
   },
   secondaryActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 2,
   },
   secondaryBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    justify: 'center',
+    alignItems: "center",
+    justify: "center",
   },
   cancelBtn: {
     backgroundColor: Colors.errorLight,
   },
   cancelBtnText: {
     color: Colors.error,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 12,
   },
   manualBtn: {
@@ -183,26 +207,26 @@ const styles = StyleSheet.create({
   },
   manualBtnText: {
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 12,
   },
   disabled: {
     opacity: 0.6,
   },
   deliveredBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginHorizontal: 14,
     marginBottom: 14,
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: "#DCFCE7",
   },
   deliveredText: {
     flex: 1,
     color: Colors.successDark,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

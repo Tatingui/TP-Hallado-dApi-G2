@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { sharedStyles } from "../../constants/sharedStyles";
 import { Colors } from '../../constants/theme';
 import LogoHallado from '../LogoHallado';
 
@@ -9,10 +9,10 @@ import LogoHallado from '../LogoHallado';
  */
 export default function HomeHeader({ onOpenGuidedSearch }) {
   return (
-    <View style={styles.appHeader}>
+    <View style={sharedStyles.tabHeader}>
       <View style={styles.brandContainer}>
         <LogoHallado size={28} color={Colors.surface} />
-        <Text style={styles.brandTitle}>Hallado</Text>
+        <Text style={[sharedStyles.tabHeaderTitle, styles.brandTitle]}>Hallado</Text>
       </View>
 
       <Pressable
@@ -27,24 +27,13 @@ export default function HomeHeader({ onOpenGuidedSearch }) {
 }
 
 const styles = StyleSheet.create({
-  appHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    paddingTop: 50,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
-  },
   brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   brandTitle: {
-    fontSize: 22,
     fontWeight: '800',
-    color: Colors.surface,
     letterSpacing: 0.5,
   },
   guidedSearchButtonHeader: {

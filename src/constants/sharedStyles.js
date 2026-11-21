@@ -1,11 +1,11 @@
 import { StyleSheet } from "react-native";
-import { Colors, Spacing, FontSize } from "./theme";
+import { Colors, FontSize, Spacing } from "./theme";
 
 /**
  * Estilos compartidos reutilizables en toda la app.
- * Usar con spread: style={[shared.card, styles.miEstiloExtra]}
+ * Usar con spread: style={[sharedStyles.card, styles.miEstiloExtra]}
  */
-export const shared = StyleSheet.create({
+export const sharedStyles = StyleSheet.create({
   // --- Cards ---
   card: {
     backgroundColor: Colors.surface,
@@ -15,7 +15,6 @@ export const shared = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-
 
   // --- Top bar (pantallas internas con flecha atrás) ---
   topBar: {
@@ -36,6 +35,24 @@ export const shared = StyleSheet.create({
 
   backButton: {
     padding: 4,
+  },
+
+  // --- Banner superior de pestañas principales (Inicio, Mis Publicaciones, Perfil) ---
+  tabHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    paddingTop: 50,
+    paddingBottom: Spacing.md,
+    paddingHorizontal: 20,
+    minHeight: 100,
+  },
+
+  tabHeaderTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.textOnPrimary,
   },
 
   // --- Contenedores comunes ---
@@ -79,7 +96,4 @@ export const shared = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
   },
-
-
-
 });
