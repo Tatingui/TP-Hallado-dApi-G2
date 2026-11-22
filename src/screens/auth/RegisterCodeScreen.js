@@ -10,7 +10,7 @@ export default function RegisterCodeScreen() {
   const { email, nextState } = useRoute().params ?? {};
 
   function handleVerified(_response, code) {
-    navigation.navigate("CompleteRegistration", { email, code, nextState });
+    navigation.replace("CompleteRegistration", { email, code, nextState });
   }
 
   return (
