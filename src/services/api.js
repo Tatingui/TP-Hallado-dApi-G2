@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { clearSession, getToken } from '../storage/authStorage';
 import { resetTo } from '../navigation/navigationRef';
 import { API_URL } from '../constants/apiConfig';
@@ -17,6 +18,7 @@ function check(session) { if (session) assertCurrentSession(session); }
 async function expire(session) {
   if (!session || !isCurrentSession(session)) return;
   await clearSession();
+  Alert.alert('Sesión expirada', 'Tu sesión venció. Por favor iniciá sesión de nuevo.');
   resetTo('Login');
 }
 async function invalidate(endpoint, session) {
