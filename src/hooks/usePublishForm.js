@@ -41,7 +41,7 @@ export default function usePublishForm() {
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState({});
   const { getLocation: readLocation } = useLocation();
-  const { pickImages: pickImagesFromGallery } = useImagePicker();
+  const { pickImages: pickImagesFromGallery, takePhoto: takePhotoFromCamera } = useImagePicker();
 
   const markTouched = useCallback((field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -104,7 +104,7 @@ export default function usePublishForm() {
     if (step > 0) setStep(step - 1);
   };
 
-  // ─── Seleccionar imágenes ───
+  // ─── Seleccionar imágenes de galería ───
   const pickImages = async () => {
     try {
       const newImages = await pickImagesFromGallery(4 - form.images.length);
@@ -121,6 +121,24 @@ export default function usePublishForm() {
       }
     } catch (error) {
       Alert.alert("No se pudieron guardar las fotos", error.message);
+    }
+  };
+
+  // ─── Tomar foto con cámara ───
+  const takePhoto = async () => {
+    try {
+      const result = await takePhotoFromCamera({ allowsEditing: false });
+      if (result.status === "denied") {
+        return result;
+      }
+      if (result.status === "selected" && result.asset) {
+        const durable = await persistImages([result.asset]);
+        updateField("images", [...form.images, ...durable].slice(0, 4));
+      }
+      return result;
+    } catch (error) {
+      Alert.alert("No se pudo guardar la foto", error.message);
+      return { status: "error", asset: null };
     }
   };
 
@@ -222,6 +240,7 @@ export default function usePublishForm() {
     nextStep,
     prevStep,
     pickImages,
+    takePhoto,
     removeImage,
     getLocation,
     handleSubmit,

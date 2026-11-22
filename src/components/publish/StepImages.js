@@ -1,12 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/theme";
 
-export default function StepImages({ form, pickImages, removeImage }) {
+export default function StepImages({ form, pickImages, takePhoto, removeImage }) {
+  const remaining = 4 - form.images.length;
+
+  const handleAddImage = () => {
+    if (remaining <= 0) return;
+    Alert.alert("Agregar foto", "¿De dónde querés agregar la foto?", [
+      { text: "Cámara", onPress: handleTakePhoto },
+      { text: "Galería", onPress: pickImages },
+      { text: "Cancelar", style: "cancel" },
+    ]);
+  };
+
+  const handleTakePhoto = async () => {
+    const result = await takePhoto();
+    if (result.status === "denied") {
+      Alert.alert(
+        "Permiso necesario",
+        "Necesitamos acceso a la cámara para sacar fotos.",
+      );
+    }
+  };
+
   return (
     <View>
       <Text style={styles.stepTitle}>Fotos (opcional)</Text>
-      <Text style={styles.stepSubtitle}>Agregá hasta 4 fotos</Text>
+      <Text style={styles.stepSubtitle}>
+        Agregá hasta 4 fotos — desde la galería o sacando una foto
+      </Text>
       <View style={styles.imageGrid}>
         {form.images.map((img, i) => (
           <View key={i} style={styles.imageContainer}>
@@ -16,8 +39,8 @@ export default function StepImages({ form, pickImages, removeImage }) {
             </TouchableOpacity>
           </View>
         ))}
-        {form.images.length < 4 && (
-          <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
+        {remaining > 0 && (
+          <TouchableOpacity style={styles.addImageBtn} onPress={handleAddImage}>
             <Ionicons name="camera-outline" size={32} color={Colors.textSecondary} />
             <Text style={styles.addImageText}>Agregar</Text>
           </TouchableOpacity>
