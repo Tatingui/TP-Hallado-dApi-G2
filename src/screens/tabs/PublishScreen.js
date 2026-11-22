@@ -31,6 +31,7 @@ export default function PublishScreen() {
     nextStep,
     prevStep,
     pickImages,
+    takePhoto,
     removeImage,
     getLocation,
     handleSubmit,
@@ -64,6 +65,7 @@ export default function PublishScreen() {
           <StepImages
             form={form}
             pickImages={pickImages}
+            takePhoto={takePhoto}
             removeImage={removeImage}
           />
         );
