@@ -8,12 +8,14 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { authenticate, getBiometricType } from "../../services/biometricService";
+import { useAuth } from "../../hooks/useAuth";
 import { Colors, Spacing, FontSize } from "../../constants/theme";
 import LogoHallado from "../../components/LogoHallado";
 
 export default function LockScreen() {
   const navigation = useNavigation();
   const { nextState } = useRoute().params ?? {};
+  const { logout } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Biometría");
@@ -53,6 +55,10 @@ export default function LockScreen() {
     }
   }
 
+  async function handleManualLogin() {
+    await logout();
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -83,6 +89,10 @@ export default function LockScreen() {
           ) : (
             <Text style={styles.buttonText}>DESBLOQUEAR</Text>
           )}
+        </Pressable>
+
+        <Pressable style={styles.manualLoginLink} onPress={handleManualLogin}>
+          <Text style={styles.manualLoginText}>Iniciar sesión manualmente</Text>
         </Pressable>
       </View>
     </View>
@@ -153,5 +163,14 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: "bold",
     letterSpacing: 1,
+  },
+  manualLoginLink: {
+    marginTop: Spacing.lg,
+    padding: Spacing.sm,
+  },
+  manualLoginText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: FontSize.sm,
+    textDecorationLine: "underline",
   },
 });
